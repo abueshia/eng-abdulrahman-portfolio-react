@@ -1,0 +1,4 @@
+/* Stylesheet entry: Tailwind core, then design tokens, then global base layer. */
+@import 'tailwindcss';
+@import './tokens.css';
+@import './globals.css';

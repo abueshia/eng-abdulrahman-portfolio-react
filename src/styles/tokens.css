@@ -1,0 +1,174 @@
+/*
+ * Design tokens.
+ *
+ * Two layers:
+ *  1. Raw CSS custom properties (`--bg-0`, `--accent`, ...) that change per theme
+ *     via the `[data-theme]` attribute on <html>.
+ *  2. A Tailwind `@theme inline` mapping that exposes those variables as
+ *     semantic utilities (`bg-canvas`, `text-ink`, `text-ember`, ...).
+ *
+ * Why `inline`: utilities reference the variable itself (not a resolved value),
+ * so switching `data-theme` re-colours the whole UI without re-generating CSS.
+ */
+
+/* Dark mode is attribute-driven (not media-driven) so the user's choice wins. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+@custom-variant light (&:where([data-theme='light'], [data-theme='light'] *));
+
+/* Mouse-only variant: used to gate cursor / hover-only effects away from touch. */
+@custom-variant pointer-fine {
+  @media (hover: hover) and (pointer: fine) {
+    @slot;
+  }
+}
+
+:root,
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Surfaces: near-black with a cool blue undertone, never flat #000. */
+  --bg-0: #07080b;
+  --bg-1: #0c0e13;
+  --surface: #12151c;
+  --surface-2: #191d26;
+  --border: #242a36;
+  --border-strong: #343c4c;
+
+  /* Ink */
+  --text: #eceef2;
+  --text-muted: #9aa3b2;
+  --text-dim: #5c6575;
+
+  /* Brand: Ember (backend / requests) x Ion (frontend / responses). */
+  --accent: #ff5a36;
+  --accent-strong: #ff7a5c;
+  --accent-contrast: #07080b;
+  --secondary: #3ddcff;
+  --signal: #7cffb2;
+  --danger: #ff4d6d;
+
+  --glow-accent: rgb(255 90 54 / 0.35);
+  --glow-secondary: rgb(61 220 255 / 0.28);
+  --shadow-elevated: 0 24px 60px -24px rgb(0 0 0 / 0.75), 0 0 0 1px rgb(255 255 255 / 0.04);
+  --grain-opacity: 0.06;
+  --grid-line: rgb(255 255 255 / 0.035);
+  --selection: rgb(255 90 54 / 0.32);
+}
+
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* "Paper & Ink": warm paper instead of clinical white. */
+  --bg-0: #f4f1ea;
+  --bg-1: #ede9e0;
+  --surface: #fbfaf6;
+  --surface-2: #ffffff;
+  --border: #d9d3c7;
+  --border-strong: #c3bba9;
+
+  --text: #14161b;
+  --text-muted: #555b66;
+  --text-dim: #8a8f98;
+
+  /* Darker brand shades so text-on-paper meets WCAG AA (>= 4.5:1). */
+  --accent: #c2310f;
+  --accent-strong: #a52508;
+  --accent-contrast: #fbfaf6;
+  --secondary: #086f91;
+  --signal: #0f7a45;
+  --danger: #b4173a;
+
+  /* Light mode uses ink shadows rather than glow. */
+  --glow-accent: rgb(194 49 15 / 0.18);
+  --glow-secondary: rgb(8 111 145 / 0.16);
+  --shadow-elevated: 0 24px 50px -28px rgb(40 30 10 / 0.35), 0 0 0 1px rgb(20 22 27 / 0.06);
+  --grain-opacity: 0.09;
+  --grid-line: rgb(20 22 27 / 0.05);
+  --selection: rgb(194 49 15 / 0.2);
+}
+
+/* Typography stacks are language-aware: Arabic gets Arabic-first families. */
+:root {
+  --ff-display:
+    'Bricolage Grotesque Variable', 'Alexandria Variable', ui-sans-serif, system-ui, sans-serif;
+  --ff-body: 'Geist Variable', 'IBM Plex Sans Arabic', ui-sans-serif, system-ui, sans-serif;
+  --ff-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --ff-serif: 'Instrument Serif', 'Alexandria Variable', ui-serif, Georgia, serif;
+
+  /* Motion durations (ms values mirrored in src/utils/motion.js). */
+  --dur-fast: 160ms;
+  --dur-base: 320ms;
+  --dur-slow: 640ms;
+  --dur-cinematic: 1100ms;
+
+  /* Layout rhythm */
+  --space-section: clamp(5rem, 4rem + 6vw, 11rem);
+  --gutter: clamp(1.25rem, 0.75rem + 2.5vw, 3rem);
+  --nav-height: 4.5rem;
+}
+
+:root[lang='ar'] {
+  --ff-display:
+    'Alexandria Variable', 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+  --ff-body: 'IBM Plex Sans Arabic', 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --ff-serif: 'Alexandria Variable', 'Instrument Serif', ui-serif, serif;
+}
+
+@theme inline {
+  --color-canvas: var(--bg-0);
+  --color-canvas-raised: var(--bg-1);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-ink: var(--text);
+  --color-ink-muted: var(--text-muted);
+  --color-ink-dim: var(--text-dim);
+  --color-ember: var(--accent);
+  --color-ember-strong: var(--accent-strong);
+  --color-on-ember: var(--accent-contrast);
+  --color-ion: var(--secondary);
+  --color-signal: var(--signal);
+  --color-danger: var(--danger);
+
+  --font-display: var(--ff-display);
+  --font-sans: var(--ff-body);
+  --font-mono: var(--ff-mono);
+  --font-serif: var(--ff-serif);
+
+  --shadow-elevated: var(--shadow-elevated);
+  --shadow-glow: 0 0 0 1px var(--glow-accent), 0 10px 40px -8px var(--glow-accent);
+  --shadow-glow-ion: 0 0 0 1px var(--glow-secondary), 0 10px 40px -8px var(--glow-secondary);
+}
+
+@theme {
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 2rem;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --breakpoint-xs: 22.5rem;
+  --breakpoint-3xl: 120rem;
+  --breakpoint-4k: 160rem;
+
+  --text-display-xl: clamp(3.25rem, 1.5rem + 8vw, 12rem);
+  --text-display-xl--line-height: 0.92;
+  --text-display-lg: clamp(2.5rem, 1.4rem + 4.6vw, 7rem);
+  --text-display-lg--line-height: 1;
+  --text-display-md: clamp(2rem, 1.3rem + 2.6vw, 4.25rem);
+  --text-display-md--line-height: 1.05;
+
+  --animate-blink: blink 1.1s steps(1) infinite;
+
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+}

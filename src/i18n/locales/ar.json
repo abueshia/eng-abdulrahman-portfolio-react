@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "siteName": "م. عبدالرحمن أبو عيشة",
+    "defaultTitle": "م. عبدالرحمن أبو عيشة | مهندس برمجيات Full-Stack",
+    "titleTemplate": "%s | عبدالرحمن أبو عيشة",
+    "defaultDescription": "مهندس برمجيات Full-Stack متخصص في PHP 8.3 وLaravel وReact وبناء واجهات REST نظيفة وقابلة للتوسع.",
+    "blogTitle": "ملاحظات هندسية",
+    "notFoundTitle": "الصفحة غير موجودة"
+  },
+  "a11y": {
+    "skipToContent": "تخطَّ إلى المحتوى الرئيسي",
+    "primaryNav": "التنقل الرئيسي",
+    "mobileNav": "قائمة التنقل للجوال",
+    "footerNav": "روابط التذييل",
+    "openMenu": "افتح القائمة",
+    "closeMenu": "أغلق القائمة",
+    "scrollProgress": "نسبة التمرير في الصفحة",
+    "homeLink": "عبدالرحمن أبو عيشة، الصفحة الرئيسية",
+    "externalLink": "(يفتح في تبويب جديد)",
+    "backToTop": "العودة إلى الأعلى"
+  },
+  "nav": {
+    "about": "نبذة",
+    "skills": "التقنيات",
+    "experience": "الخبرات",
+    "projects": "الأعمال",
+    "services": "الخدمات",
+    "blog": "المدونة",
+    "contact": "تواصل",
+    "cta": "ابدأ مشروعك"
+  },
+  "theme": {
+    "toggle": "تبديل المظهر",
+    "switchToLight": "التبديل إلى الوضع الفاتح",
+    "switchToDark": "التبديل إلى الوضع الداكن"
+  },
+  "locale": {
+    "switch": "تغيير اللغة",
+    "switchTo": "التبديل إلى الإنجليزية",
+    "targetShort": "EN"
+  },
+  "sections": {
+    "hero": "الواجهة",
+    "stats": "مؤشرات النظام",
+    "about": "نبذة",
+    "skills": "التقنيات",
+    "experience": "الخبرات",
+    "projects": "أعمال مختارة",
+    "services": "الخدمات",
+    "credentials": "الشهادات",
+    "testimonials": "آراء العملاء",
+    "blog": "المدونة",
+    "faq": "الأسئلة الشائعة",
+    "contact": "تواصل",
+    "placeholder": "هذا القسم قيد البناء (المرحلة {{phase}}).",
+    "itemsLoaded": "تم تحميل {{count}} عنصر من طبقة البيانات"
+  },
+  "common": {
+    "loading": "جارٍ التحميل…",
+    "retry": "إعادة المحاولة",
+    "backHome": "العودة للرئيسية",
+    "readMore": "اقرأ المزيد",
+    "viewProject": "عرض المشروع",
+    "minRead": "{{count}} دقائق قراءة",
+    "error": "حدث خطأ أثناء تحميل هذا المحتوى."
+  },
+  "blog": {
+    "title": "ملاحظات هندسية",
+    "subtitle": "كتابات عن المعمارية وLaravel وReact وحرفة بناء البرمجيات."
+  },
+  "project": {
+    "backToWork": "العودة إلى الأعمال"
+  },
+  "notFound": {
+    "code": "404",
+    "title": "المسار غير موجود",
+    "description": "المورد الذي تبحث عنه غير موجود، أو انتقل إلى endpoint جديد."
+  },
+  "footer": {
+    "tagline": "أصمّم أنظمة متينة، وأصنع واجهات راقية.",
+    "rights": "جميع الحقوق محفوظة.",
+    "builtWith": "مبني بـ React · مدعوم بـ Laravel API",
+    "version": "v{{version}} · commit {{commit}}"
+  }
+}

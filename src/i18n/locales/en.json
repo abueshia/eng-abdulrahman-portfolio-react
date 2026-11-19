@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "siteName": "Eng. Abdulrahman Abu Eisha",
+    "defaultTitle": "Eng. Abdulrahman Abu Eisha | Full-Stack Software Engineer",
+    "titleTemplate": "%s | Abdulrahman Abu Eisha",
+    "defaultDescription": "Full-Stack Software Engineer specialising in PHP 8.3, Laravel, React and clean, scalable REST APIs.",
+    "blogTitle": "Engineering Notes",
+    "notFoundTitle": "Page not found"
+  },
+  "a11y": {
+    "skipToContent": "Skip to main content",
+    "primaryNav": "Primary navigation",
+    "mobileNav": "Mobile navigation",
+    "footerNav": "Footer navigation",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "scrollProgress": "Page scroll progress",
+    "homeLink": "Abdulrahman Abu Eisha, home",
+    "externalLink": "(opens in a new tab)",
+    "backToTop": "Back to top"
+  },
+  "nav": {
+    "about": "About",
+    "skills": "Stack",
+    "experience": "Experience",
+    "projects": "Work",
+    "services": "Services",
+    "blog": "Blog",
+    "contact": "Contact",
+    "cta": "Start a project"
+  },
+  "theme": {
+    "toggle": "Toggle colour theme",
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode"
+  },
+  "locale": {
+    "switch": "Change language",
+    "switchTo": "Switch to Arabic",
+    "targetShort": "ع"
+  },
+  "sections": {
+    "hero": "Hero",
+    "stats": "System metrics",
+    "about": "About",
+    "skills": "Technologies",
+    "experience": "Experience",
+    "projects": "Selected work",
+    "services": "Services",
+    "credentials": "Credentials",
+    "testimonials": "Testimonials",
+    "blog": "Blog",
+    "faq": "FAQ",
+    "contact": "Contact",
+    "placeholder": "This section is under construction (phase {{phase}}).",
+    "itemsLoaded": "{{count}} items loaded from the data layer"
+  },
+  "common": {
+    "loading": "Loading…",
+    "retry": "Retry",
+    "backHome": "Back to home",
+    "readMore": "Read more",
+    "viewProject": "View project",
+    "minRead": "{{count}} min read",
+    "error": "Something went wrong while loading this content."
+  },
+  "blog": {
+    "title": "Engineering notes",
+    "subtitle": "Writing about architecture, Laravel, React and the craft of shipping software."
+  },
+  "project": {
+    "backToWork": "Back to work"
+  },
+  "notFound": {
+    "code": "404",
+    "title": "Route not found",
+    "description": "The resource you requested doesn't exist, or it moved to a new endpoint."
+  },
+  "footer": {
+    "tagline": "Designing robust systems, crafting refined interfaces.",
+    "rights": "All rights reserved.",
+    "builtWith": "Built with React · Powered by a Laravel API",
+    "version": "v{{version}} · commit {{commit}}"
+  }
+}
