@@ -67,7 +67,7 @@ describe('Locale & RTL/LTR routing system', () => {
 
   it('switches language immediately without reload, preserving the current route', async () => {
     const { user } = renderWithProviders(<LocaleProbe />, {
-      initialEntries: ['/projects/nexus-commerce-platform'],
+      initialEntries: ['/projects/sample-commerce-platform'],
     });
 
     expect(screen.getByTestId('locale')).toHaveTextContent('ar');
@@ -76,7 +76,7 @@ describe('Locale & RTL/LTR routing system', () => {
     await user.click(screen.getByRole('button'));
 
     expect(screen.getByTestId('locale')).toHaveTextContent('en');
-    expect(screen.getByTestId('path')).toHaveTextContent('/en/projects/nexus-commerce-platform');
+    expect(screen.getByTestId('path')).toHaveTextContent('/en/projects/sample-commerce-platform');
     expect(screen.getByTestId('nav-projects')).toHaveTextContent('Work');
     expect(document.documentElement.lang).toBe('en');
     expect(document.documentElement.dir).toBe('ltr');
@@ -84,7 +84,7 @@ describe('Locale & RTL/LTR routing system', () => {
     await user.click(screen.getByRole('button'));
 
     expect(screen.getByTestId('locale')).toHaveTextContent('ar');
-    expect(screen.getByTestId('path')).toHaveTextContent('/projects/nexus-commerce-platform');
+    expect(screen.getByTestId('path')).toHaveTextContent('/projects/sample-commerce-platform');
     expect(document.documentElement.lang).toBe('ar');
     expect(document.documentElement.dir).toBe('rtl');
   });

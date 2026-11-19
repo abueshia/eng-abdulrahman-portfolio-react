@@ -1,6 +1,7 @@
 import { media, t } from './helpers';
 
-// TODO_REAL_DATA: sample projects, metrics, links and images. Replace with the owner's real records.
+// MOCK_UNTIL_API: sample case studies, served by the mock adapter until the Laravel API
+// is connected. Clearly fictional on purpose; never publish as real content.
 
 /**
  * Projects / case studies. `GET /projects` returns a paginated summary list,
@@ -10,8 +11,8 @@ import { media, t } from './helpers';
 export const projects = [
   {
     id: 1,
-    slug: 'nexus-commerce-platform',
-    title: t('منصة Nexus للتجارة', 'Nexus Commerce Platform'),
+    slug: 'sample-commerce-platform',
+    title: t('نموذج · منصة تجارة إلكترونية', 'Sample · Commerce Platform'),
     summary: t(
       'منصة تجارة إلكترونية متعددة البائعين بمعمارية modular وواجهة React سريعة.',
       'A multi-vendor e-commerce platform with a modular Laravel core and a fast React storefront.',
@@ -21,13 +22,13 @@ export const projects = [
     is_featured: true,
     role: t('مهندس Full-Stack رئيسي', 'Lead Full-Stack Engineer'),
     duration: t('7 أشهر', '7 months'),
-    client: t('شركة تجزئة إقليمية', 'Regional retail group'),
+    client: t('عميل نموذجي', 'Sample client'),
     technologies: ['laravel', 'php', 'react', 'mysql', 'redis', 'docker'],
-    cover_image: media('projects/nexus-commerce-platform/cover.webp'),
+    cover_image: media('projects/sample-commerce-platform/cover.webp'),
     gallery: [
-      media('projects/nexus-commerce-platform/01.webp'),
-      media('projects/nexus-commerce-platform/02.webp'),
-      media('projects/nexus-commerce-platform/03.webp'),
+      media('projects/sample-commerce-platform/01.webp'),
+      media('projects/sample-commerce-platform/02.webp'),
+      media('projects/sample-commerce-platform/03.webp'),
     ],
     problem: t(
       'نظام قديم monolith يتباطأ بشدة في مواسم التخفيضات، ويصعب إضافة بائعين جدد دون تعديل الكود.',
@@ -48,17 +49,17 @@ export const projects = [
       { id: 'cache', label: 'Redis' },
     ],
     metrics: [
-      { label: t('أسرع في زمن الاستجابة', 'faster response time'), value: 68, suffix: '%' },
-      { label: t('طلب يومياً', 'orders per day'), value: 12, suffix: 'k+' },
-      { label: t('تغطية الاختبارات', 'test coverage'), value: 85, suffix: '%' },
+      { label: t('أسرع في زمن الاستجابة', 'faster response time'), value: 0, suffix: '' },
+      { label: t('طلب يومياً', 'orders per day'), value: 0, suffix: '' },
+      { label: t('تغطية الاختبارات', 'test coverage'), value: 0, suffix: '' },
     ],
-    live_url: 'TODO_REAL_DATA',
+    live_url: null,
     github_url: null,
   },
   {
     id: 2,
-    slug: 'atlas-fleet-api',
-    title: t('Atlas API لإدارة الأساطيل', 'Atlas Fleet API'),
+    slug: 'sample-fleet-api',
+    title: t('نموذج · API لإدارة الأساطيل', 'Sample · Fleet API'),
     summary: t(
       'REST API لتتبع المركبات وجدولة الرحلات مع مصادقة وصلاحيات دقيقة.',
       'A REST API for vehicle tracking and trip scheduling with fine-grained auth and permissions.',
@@ -68,10 +69,13 @@ export const projects = [
     is_featured: true,
     role: t('مهندس باك إند', 'Back-end Engineer'),
     duration: t('5 أشهر', '5 months'),
-    client: t('شركة لوجستيات', 'Logistics company'),
+    client: t('عميل نموذجي', 'Sample client'),
     technologies: ['laravel', 'php', 'postgresql', 'redis', 'pest', 'rest-api'],
-    cover_image: media('projects/atlas-fleet-api/cover.webp'),
-    gallery: [media('projects/atlas-fleet-api/01.webp'), media('projects/atlas-fleet-api/02.webp')],
+    cover_image: media('projects/sample-fleet-api/cover.webp'),
+    gallery: [
+      media('projects/sample-fleet-api/01.webp'),
+      media('projects/sample-fleet-api/02.webp'),
+    ],
     problem: t(
       'بيانات تتبع متفرقة بين عدة أنظمة، وتطبيقات الجوال تحتاج API موحدة وموثوقة.',
       'Tracking data was scattered across systems, and the mobile apps needed one reliable, versioned API.',
@@ -89,17 +93,17 @@ export const projects = [
       { id: 'db', label: 'PostgreSQL' },
     ],
     metrics: [
-      { label: t('endpoint موثقة', 'documented endpoints'), value: 64, suffix: '' },
-      { label: t('متوسط زمن الاستجابة', 'avg. response time'), value: 120, suffix: 'ms' },
-      { label: t('تغطية الاختبارات', 'test coverage'), value: 90, suffix: '%' },
+      { label: t('endpoint موثقة', 'documented endpoints'), value: 0, suffix: '' },
+      { label: t('متوسط زمن الاستجابة', 'avg. response time'), value: 0, suffix: '' },
+      { label: t('تغطية الاختبارات', 'test coverage'), value: 0, suffix: '' },
     ],
     live_url: null,
-    github_url: 'TODO_REAL_DATA',
+    github_url: null,
   },
   {
     id: 3,
-    slug: 'pulse-analytics-dashboard',
-    title: t('لوحة Pulse التحليلية', 'Pulse Analytics Dashboard'),
+    slug: 'sample-analytics-dashboard',
+    title: t('نموذج · لوحة تحليلات', 'Sample · Analytics Dashboard'),
     summary: t(
       'لوحة تحكم تحليلية لحظية بمخططات تفاعلية وصلاحيات متعددة المستويات.',
       'A real-time analytics dashboard with interactive charts and multi-level permissions.',
@@ -109,10 +113,10 @@ export const projects = [
     is_featured: true,
     role: t('مهندس Full-Stack', 'Full-Stack Engineer'),
     duration: t('4 أشهر', '4 months'),
-    client: t('شركة SaaS ناشئة', 'SaaS startup'),
+    client: t('عميل نموذجي', 'Sample client'),
     technologies: ['react', 'javascript', 'tailwind', 'laravel', 'mysql'],
-    cover_image: media('projects/pulse-analytics-dashboard/cover.webp'),
-    gallery: [media('projects/pulse-analytics-dashboard/01.webp')],
+    cover_image: media('projects/sample-analytics-dashboard/cover.webp'),
+    gallery: [media('projects/sample-analytics-dashboard/01.webp')],
     problem: t(
       'التقارير كانت تُستخرج يدوياً من قاعدة البيانات وتستغرق ساعات.',
       'Reports were pulled manually from the database and took hours to produce.',
@@ -128,16 +132,16 @@ export const projects = [
       { id: 'db', label: 'MySQL' },
     ],
     metrics: [
-      { label: t('توفير في وقت التقارير', 'reporting time saved'), value: 95, suffix: '%' },
-      { label: t('مستخدم نشط', 'active users'), value: 1.4, suffix: 'k' },
+      { label: t('توفير في وقت التقارير', 'reporting time saved'), value: 0, suffix: '' },
+      { label: t('مستخدم نشط', 'active users'), value: 0, suffix: '' },
     ],
-    live_url: 'TODO_REAL_DATA',
+    live_url: null,
     github_url: null,
   },
   {
     id: 4,
-    slug: 'medica-clinic-system',
-    title: t('نظام Medica للعيادات', 'Medica Clinic System'),
+    slug: 'sample-clinic-system',
+    title: t('نموذج · نظام عيادات', 'Sample · Clinic System'),
     summary: t(
       'نظام حجوزات وملفات مرضى للعيادات مع إشعارات تلقائية.',
       'Appointments and patient records for clinics, with automated notifications.',
@@ -147,9 +151,9 @@ export const projects = [
     is_featured: false,
     role: t('مهندس Full-Stack', 'Full-Stack Engineer'),
     duration: t('6 أشهر', '6 months'),
-    client: t('مجموعة عيادات', 'Clinic network'),
+    client: t('عميل نموذجي', 'Sample client'),
     technologies: ['laravel', 'php', 'livewire', 'mysql', 'queues'],
-    cover_image: media('projects/medica-clinic-system/cover.webp'),
+    cover_image: media('projects/sample-clinic-system/cover.webp'),
     gallery: [],
     problem: t(
       'حجوزات متضاربة ومواعيد فائتة بسبب الجدولة اليدوية.',
@@ -166,15 +170,15 @@ export const projects = [
       { id: 'db', label: 'MySQL' },
     ],
     metrics: [
-      { label: t('انخفاض المواعيد الفائتة', 'fewer missed appointments'), value: 40, suffix: '%' },
+      { label: t('انخفاض المواعيد الفائتة', 'fewer missed appointments'), value: 0, suffix: '' },
     ],
     live_url: null,
     github_url: null,
   },
   {
     id: 5,
-    slug: 'orbit-learning-platform',
-    title: t('منصة Orbit التعليمية', 'Orbit Learning Platform'),
+    slug: 'sample-learning-platform',
+    title: t('نموذج · منصة تعليمية', 'Sample · Learning Platform'),
     summary: t(
       'منصة دورات تعليمية مع اشتراكات ومدفوعات وتتبع تقدم الطلاب.',
       'An online course platform with subscriptions, payments and student progress tracking.',
@@ -184,9 +188,9 @@ export const projects = [
     is_featured: false,
     role: t('مطوّر Full-Stack', 'Full-Stack Developer'),
     duration: t('5 أشهر', '5 months'),
-    client: t('أكاديمية تدريب', 'Training academy'),
+    client: t('عميل نموذجي', 'Sample client'),
     technologies: ['laravel', 'react', 'mysql', 'tailwind'],
-    cover_image: media('projects/orbit-learning-platform/cover.webp'),
+    cover_image: media('projects/sample-learning-platform/cover.webp'),
     gallery: [],
     problem: t(
       'محتوى تعليمي موزع بدون نظام اشتراكات.',
@@ -202,14 +206,14 @@ export const projects = [
       { id: 'billing', label: 'Billing' },
       { id: 'db', label: 'MySQL' },
     ],
-    metrics: [{ label: t('طالب مسجل', 'enrolled students'), value: 3, suffix: 'k+' }],
-    live_url: 'TODO_REAL_DATA',
+    metrics: [{ label: t('طالب مسجل', 'enrolled students'), value: 0, suffix: '' }],
+    live_url: null,
     github_url: null,
   },
   {
     id: 6,
-    slug: 'hermes-notification-service',
-    title: t('خدمة Hermes للإشعارات', 'Hermes Notification Service'),
+    slug: 'sample-notification-service',
+    title: t('نموذج · خدمة إشعارات', 'Sample · Notification Service'),
     summary: t(
       'خدمة إشعارات متعددة القنوات (Email, SMS, Push) قابلة لإعادة الاستخدام.',
       'A reusable multi-channel notification service (Email, SMS, Push).',
@@ -219,9 +223,9 @@ export const projects = [
     is_featured: false,
     role: t('مهندس باك إند', 'Back-end Engineer'),
     duration: t('3 أشهر', '3 months'),
-    client: t('مشروع داخلي', 'Internal product'),
+    client: t('عميل نموذجي', 'Sample client'),
     technologies: ['laravel', 'php', 'redis', 'queues', 'docker'],
-    cover_image: media('projects/hermes-notification-service/cover.webp'),
+    cover_image: media('projects/sample-notification-service/cover.webp'),
     gallery: [],
     problem: t(
       'كل تطبيق يكرر منطق الإشعارات بطريقته.',
@@ -233,12 +237,12 @@ export const projects = [
     ),
     architecture: [
       { id: 'apps', label: 'Client Apps' },
-      { id: 'api', label: 'Hermes API' },
+      { id: 'api', label: 'Notification API' },
       { id: 'queue', label: 'Redis Queue' },
       { id: 'channels', label: 'Channels' },
     ],
-    metrics: [{ label: t('إشعار شهرياً', 'notifications / month'), value: 250, suffix: 'k' }],
+    metrics: [{ label: t('إشعار شهرياً', 'notifications / month'), value: 0, suffix: '' }],
     live_url: null,
-    github_url: 'TODO_REAL_DATA',
+    github_url: null,
   },
 ];

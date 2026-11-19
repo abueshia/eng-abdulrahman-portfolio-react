@@ -4,9 +4,9 @@ import { LuArrowUp, LuArrowUpRight } from 'react-icons/lu';
 import { LocalizedLink } from '@/components/ui/LocalizedLink';
 import { Logo } from '@/components/ui/Logo';
 import { env } from '@/config/env';
-import { NAV_ITEMS } from '@/config/navigation';
 import { useSettings } from '@/hooks/useSettings';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
+import { useNavItems } from '@/hooks/useNavItems';
 
 /**
  * Site footer (foundation version; the cinematic wordmark lands in phase 5).
@@ -14,6 +14,7 @@ import { useSmoothScroll } from '@/hooks/useSmoothScroll';
  */
 export function Footer() {
   const { t } = useTranslation();
+  const navItems = useNavItems();
   const { data } = useSettings();
   const { scrollTo } = useSmoothScroll();
   const general = data?.data?.general;
@@ -29,7 +30,7 @@ export function Footer() {
 
         <nav aria-label={t('a11y.footerNav')}>
           <ul className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <li key={item.key}>
                 <LocalizedLink
                   to={item.to}

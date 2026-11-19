@@ -1,6 +1,7 @@
 import { media, t } from './helpers';
 
-// TODO_REAL_DATA: sample articles (sample posts until real ones are published). Replace with the owner's real records.
+// MOCK_UNTIL_API: sample articles, served by the mock adapter until the Laravel API
+// is connected. Clearly fictional on purpose; never publish as real content.
 
 /**
  * GET /blogs (paginated), GET /blogs/{slug}, GET /blogs/categories.

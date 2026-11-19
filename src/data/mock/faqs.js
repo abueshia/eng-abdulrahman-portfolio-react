@@ -1,5 +1,8 @@
 import { t } from './helpers';
 
+// MOCK_UNTIL_API: sample FAQs, served by the mock adapter until the Laravel API
+// is connected. Clearly fictional on purpose; never publish as real content.
+
 /** GET /faqs */
 export const faqs = [
   {

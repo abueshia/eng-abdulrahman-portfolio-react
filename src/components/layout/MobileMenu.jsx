@@ -5,12 +5,12 @@ import { LuArrowUpRight, LuX } from 'react-icons/lu';
 
 import { Button } from '@/components/ui/Button';
 import { LocalizedLink } from '@/components/ui/LocalizedLink';
-import { NAV_ITEMS } from '@/config/navigation';
 import { paths, SECTION_IDS } from '@/config/routes';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 import { EASE } from '@/utils/motion';
 import { LocaleSwitch } from './LocaleSwitch';
 import { ThemeToggle } from './ThemeToggle';
+import { useNavItems } from '@/hooks/useNavItems';
 
 const listVariants = {
   open: { transition: { staggerChildren: 0.05, delayChildren: 0.15 } },
@@ -33,6 +33,7 @@ const itemVariants = {
  */
 export function MobileMenu({ open, onClose }) {
   const { t } = useTranslation();
+  const navItems = useNavItems();
   const { lenisRef } = useSmoothScroll();
   const dialogRef = useRef(/** @type {HTMLDivElement | null} */ (null));
 
@@ -104,7 +105,7 @@ export function MobileMenu({ open, onClose }) {
             initial="closed"
             animate="open"
           >
-            {NAV_ITEMS.map((item, index) => (
+            {navItems.map((item, index) => (
               <m.li key={item.key} variants={itemVariants}>
                 <LocalizedLink
                   to={item.to}

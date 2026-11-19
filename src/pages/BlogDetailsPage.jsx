@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Seo } from '@/components/ui/Seo';
 import { useBlog } from '@/features/blog/hooks/useBlogs';
+import { useSectionVisible } from '@/hooks/useSettings';
 import NotFoundPage from './NotFoundPage';
 
 /**
@@ -11,6 +12,12 @@ import NotFoundPage from './NotFoundPage';
  * Sanitised HTML rendering, Shiki highlighting and TOC land in phase 5.
  */
 export default function BlogDetailsPage() {
+  // A hidden blog (settings.sections_visibility.blog) has no public pages.
+  const visible = useSectionVisible('blog');
+  return visible ? <BlogPost /> : <NotFoundPage />;
+}
+
+function BlogPost() {
   const { slug } = useParams();
   const { t } = useTranslation();
   const { data, isPending, isError, error, refetch } = useBlog(slug);

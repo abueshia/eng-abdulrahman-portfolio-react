@@ -5,13 +5,13 @@ import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { LocalizedLink } from '@/components/ui/LocalizedLink';
 import { Logo } from '@/components/ui/Logo';
-import { NAV_ITEMS } from '@/config/navigation';
 import { paths, SECTION_IDS } from '@/config/routes';
 import { useScrollState } from '@/hooks/useScrollState';
 import { cn } from '@/utils/cn';
 import { LocaleSwitch } from './LocaleSwitch';
 import { MobileMenu } from './MobileMenu';
 import { ThemeToggle } from './ThemeToggle';
+import { useNavItems } from '@/hooks/useNavItems';
 
 /**
  * Fixed top navigation.
@@ -23,6 +23,7 @@ import { ThemeToggle } from './ThemeToggle';
  */
 export function Navbar() {
   const { t } = useTranslation();
+  const navItems = useNavItems();
   const { scrolled, hidden } = useScrollState();
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
@@ -48,7 +49,7 @@ export function Navbar() {
           <Logo />
 
           <ul className="hidden items-center gap-1 lg:flex">
-            {NAV_ITEMS.map((item, index) => (
+            {navItems.map((item, index) => (
               <li key={item.key}>
                 <LocalizedLink
                   to={item.to}

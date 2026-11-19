@@ -5,6 +5,9 @@
 import { env } from '@/config/env';
 import { localizePath } from '@/config/routes';
 
+/** Contact channels, not identity profiles: never listed in `sameAs`. */
+const NON_PROFILE_PLATFORMS = new Set(['whatsapp', 'email', 'phone']);
+
 /** Only absolute http(s) URLs are valid `sameAs` / `url` values. */
 const isAbsoluteUrl = (/** @type {unknown} */ value) =>
   typeof value === 'string' && /^https?:\/\//.test(value);
@@ -30,7 +33,10 @@ export function buildHomeJsonLd(general, locale) {
         jobTitle: general.job_title,
         url,
         ...(general.avatar ? { image: new URL(general.avatar, `${env.siteUrl}/`).href } : {}),
-        sameAs: (general.socials ?? []).map((s) => s.url).filter(isAbsoluteUrl),
+        sameAs: (general.socials ?? [])
+          .filter((s) => !NON_PROFILE_PLATFORMS.has(s.platform))
+          .map((s) => s.url)
+          .filter(isAbsoluteUrl),
         knowsAbout: ['PHP', 'Laravel', 'React', 'REST API', 'Clean Architecture', 'SOLID'],
       },
       {

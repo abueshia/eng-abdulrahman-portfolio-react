@@ -21,7 +21,7 @@ import { routes } from '@/app/router';
 import { env } from '@/config/env';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, getLocaleFromPath, paths } from '@/config/routes';
 import i18n from '@/i18n';
-import { blogsService, projectsService } from '@/services/api';
+import { blogsService, projectsService, settingsService } from '@/services/api';
 
 // Re-exported for scripts/prerender.js (it only imports this bundle).
 export { env };
@@ -135,20 +135,23 @@ async function fetchAll(list) {
 
 /**
  * Lists every indexable, locale-agnostic route. Each one is rendered once
- * per supported locale.
+ * per supported locale. The blog is skipped entirely while
+ * `sections_visibility.blog` is false (no pages, no sitemap entries).
  * @returns {Promise<{ routes: PrerenderRoute[], locales: readonly string[] }>}
  */
 export async function getPrerenderRoutes() {
+  const settings = await settingsService.get({ lang: DEFAULT_LOCALE });
+  const blogVisible = settings.data?.sections_visibility?.blog !== false;
   const [projects, posts] = await Promise.all([
     fetchAll(projectsService.list),
-    fetchAll(blogsService.list),
+    blogVisible ? fetchAll(blogsService.list) : Promise.resolve([]),
   ]);
 
   return {
     locales: SUPPORTED_LOCALES,
     routes: [
       { path: paths.home() },
-      { path: paths.blog() },
+      ...(blogVisible ? [{ path: paths.blog() }] : []),
       ...projects.map((project) => ({
         path: paths.project(project.slug),
         lastmod: project.updated_at ?? project.published_at,

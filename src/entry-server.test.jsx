@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { getPrerenderRoutes, renderPage } from '@/entry-server';
 import { headToHtml } from '@/utils/head';
 
-const SLUG = 'atlas-fleet-api';
+const SLUG = 'sample-fleet-api';
 
 describe('Prerendering (entry-server)', () => {
   it('renders a case study with its data, final <head> and no deferred boundaries', async () => {
@@ -14,14 +14,14 @@ describe('Prerendering (entry-server)', () => {
     expect(result.status).toBe(200);
     expect(result.locale).toBe('en');
     // Real content, not the loading fallback or an outlined Suspense segment.
-    expect(result.html).toMatch(/<h1[^>]*>Atlas Fleet API/);
+    expect(result.html).toMatch(/<h1[^>]*>Sample · Fleet API/);
     expect(result.html).not.toContain('<!--$?-->');
     expect(result.html).not.toContain('Loading');
 
-    expect(head).toContain('<title>Atlas Fleet API | Abdulrahman Abu Eisha</title>');
-    expect(head).toMatch(/rel="canonical" href="[^"]*\/en\/projects\/atlas-fleet-api"/);
-    expect(head).toMatch(/hreflang="ar" href="[^"]*\/projects\/atlas-fleet-api"/);
-    expect(head).toMatch(/hreflang="x-default" href="[^"]*\/projects\/atlas-fleet-api"/);
+    expect(head).toContain('<title>Sample · Fleet API | Abdulrahman Abu Eisha</title>');
+    expect(head).toMatch(/rel="canonical" href="[^"]*\/en\/projects\/sample-fleet-api"/);
+    expect(head).toMatch(/hreflang="ar" href="[^"]*\/projects\/sample-fleet-api"/);
+    expect(head).toMatch(/hreflang="x-default" href="[^"]*\/projects\/sample-fleet-api"/);
     expect(head).toContain('content="index, follow');
   });
 
@@ -40,8 +40,12 @@ describe('Prerendering (entry-server)', () => {
 
     expect(graph.map((node) => node['@type'])).toEqual(['Person', 'WebSite']);
     expect(graph[0].name).toBe('Abdulrahman Abu Eisha');
-    // Placeholder (non-URL) socials must never leak into sameAs.
-    expect(graph[0].sameAs.every((url) => /^https?:\/\//.test(url))).toBe(true);
+    // Identity profiles only: no contact channels (WhatsApp) and no X.
+    expect(graph[0].sameAs).toEqual([
+      'https://github.com/abueshia',
+      'https://www.linkedin.com/in/eng-abdulrahman-abu-eisha/',
+      'https://www.facebook.com/abdo.saad.35762241',
+    ]);
   });
 
   it('marks unknown URLs as 404 + noindex', async () => {
@@ -51,12 +55,17 @@ describe('Prerendering (entry-server)', () => {
     expect(headToHtml(/** @type {any} */ (result.head))).toContain('noindex');
   });
 
-  it('lists every static, project and blog route for generation', async () => {
+  it('lists home and every project for generation, skipping the hidden blog', async () => {
     const { routes, locales } = await getPrerenderRoutes();
     const routePaths = routes.map((route) => route.path);
 
     expect(locales).toEqual(['ar', 'en']);
-    expect(routePaths).toEqual(expect.arrayContaining(['/', '/blog', `/projects/${SLUG}`]));
-    expect(routePaths.some((p) => p.startsWith('/blog/'))).toBe(true);
+    expect(routePaths).toEqual(expect.arrayContaining(['/', `/projects/${SLUG}`]));
+    // sections_visibility.blog = false → no blog pages and no sitemap entries.
+    expect(routePaths.some((p) => p.startsWith('/blog'))).toBe(false);
+  });
+
+  it('renders the blog as 404 while the section is hidden', async () => {
+    expect((await renderPage('/en/blog')).status).toBe(404);
   });
 });

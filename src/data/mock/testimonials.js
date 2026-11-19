@@ -1,6 +1,7 @@
 import { t } from './helpers';
 
-// TODO_REAL_DATA: sample testimonials (names, roles, companies, quotes). Replace with the owner's real records.
+// MOCK_UNTIL_API: sample testimonials, served by the mock adapter until the Laravel API
+// is connected. Clearly fictional on purpose; never publish as real content.
 
 /** GET /testimonials: placeholder quotes, to be replaced with real ones. */
 export const testimonials = [

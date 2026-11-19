@@ -1,6 +1,7 @@
 import { media, t } from './helpers';
 
-// TODO_REAL_DATA: sample certificates, issuers, dates and verification URLs; education. Replace with the owner's real records.
+// MOCK_UNTIL_API: sample certificates and education, served by the mock adapter until the Laravel API
+// is connected. Clearly fictional on purpose; never publish as real content.
 
 /** GET /credentials: education, certifications and courses. Placeholder data. */
 export const credentials = [
@@ -23,7 +24,7 @@ export const credentials = [
     title: t('Laravel Certified Developer', 'Laravel Certified Developer'),
     issuer: t('Laravel', 'Laravel'),
     issued_at: '2024-04-01',
-    credential_url: 'TODO_REAL_DATA',
+    credential_url: null,
     image: media('credentials/laravel.webp'),
     description: t(
       'اعتماد رسمي في تطوير تطبيقات Laravel.',
@@ -36,7 +37,7 @@ export const credentials = [
     title: t('Meta Front-End Developer', 'Meta Front-End Developer'),
     issuer: t('Meta · Coursera', 'Meta · Coursera'),
     issued_at: '2023-09-01',
-    credential_url: 'TODO_REAL_DATA',
+    credential_url: null,
     image: media('credentials/meta.webp'),
     description: t(
       'برنامج احترافي في React وتطوير الواجهات.',

@@ -2,7 +2,7 @@
 
 هذا الملف هو المرجع الإلزامي لأي مطوّر أو وكيل ذكاء اصطناعي يعمل على مشروع البورتفوليو الشخصي لـ **م. عبدالرحمن أبو عيشة (Eng. Abdulrahman Abu Eisha)** — مهندس برمجيات Full-Stack (PHP 8.3 · Laravel · React · Clean Architecture/SOLID).
 
-**قرارات المالك الملزمة:** التهجئة المعتمدة للاسم هي **Abdulrahman Abu Eisha** فقط. الصورة المعتمدة هي `public/images/profile-cutout.png`. ملف CV واحد لكل اللغات تحت `public/cv/`. البيانات حقيقية، وأي قيمة ناقصة تُعلَّم بـ `TODO_REAL_DATA` (راجع `TODO_REAL_DATA.md` والأمر `npm run data:todo`). وتحسين محركات البحث أولوية قصوى (راجع `SEO.md`).
+**قرارات المالك الملزمة:** التهجئة المعتمدة للاسم هي **Abdulrahman Abu Eisha** فقط. الصورة المعتمدة هي `public/images/profile-cutout.png`. ملف CV واحد لكل اللغات تحت `public/cv/`. بيانات الملف الشخصي حقيقية. أي قيمة ناقصة ضرورية قبل النشر تُعلَّم بـ `TODO_REAL_DATA`، وأي ملف mock مؤقت لحين ربط الـ API يُعلَّم في رأسه بـ `MOCK_UNTIL_API` ويجب أن يكون محتواه نموذجياً واضحاً (بدون أسماء شركات حقيقية ولا أرقام تبدو حقيقية). راجع `TODO_REAL_DATA.md` والأمر `npm run data:todo`. وتحسين محركات البحث أولوية قصوى (راجع `SEO.md`).
 
 ---
 
@@ -75,7 +75,7 @@ scripts/          prerender.js (توليد الصفحات الثابتة + sitem
    ```
    وتفك الدالة `unwrap()` هذا الغلاف وتحوّل أي خطأ (بما فيه `422` و`404`) إلى كائن `ApiError` موحد.
 4. **اللغة في الطلبات:** كل طلب يمرر `?lang=ar|en` وترويسة `Accept-Language`، ومفتاح التخزين المؤقت في TanStack Query يتضمن اللغة النشطة دائماً.
-5. **إظهار/إخفاء الأقسام:** يعتمد كل قسم في الصفحة الرئيسية على `<Section id="...">` الذي يقرأ `settings.sections_visibility[id]`.
+5. **إظهار/إخفاء الأقسام:** يعتمد كل قسم في الصفحة الرئيسية على `<Section id="...">` الذي يقرأ `settings.sections_visibility[id]`. والقسم المخفي يُحذف أيضاً من التنقل (`useNavItems`)، وصفحات المدونة تعرض 404 ولا تُولَّد مسبقاً ولا تدخل الـ sitemap.
 
 ---
 
@@ -128,3 +128,6 @@ scripts/          prerender.js (توليد الصفحات الثابتة + sitem
 - `ThemeProvider` عبر `useSyncExternalStore` بقيمة خادم ثابتة (لا hydration mismatch ولا قلب الوضع الفاتح إلى الداكن).
 - تطبيق قرارات المالك: تهجئة **Abdulrahman Abu Eisha** في كل مكان، والصورة `profile-cutout.png`، وCV واحد (`/cv/abdulrahman-abu-eisha-cv.pdf`)، وتعليم البيانات الناقصة بـ `TODO_REAL_DATA` مع `TODO_REAL_DATA.md` و`npm run data:todo`، وجعل `VITE_SITE_URL` الافتراضي هو أصل الإنتاج.
 - توثيق `SEO.md`، واختبارات جديدة: مخرجات التوليد (المحتوى، الـ head، الـ JSON-LD، حالة 404، قائمة المسارات)، وأدوات الـ head ومكوّن `<Seo>`، وhydration الصفحات المولّدة (بما فيها زائر الوضع الفاتح).
+- **البيانات الحقيقية:** البريد والهاتف وواتساب والموقع (القاهرة، حدائق الأهرام) والمنطقة الزمنية `Africa/Cairo` وGitHub وLinkedIn وFacebook، وحذف X نهائياً، وCV في `public/cv/Abdulrahman_Saad_Backend_Engineer_CV.pdf`. والـ `sameAs` في JSON-LD يضم الحسابات فقط (بدون واتساب).
+- إخفاء `credentials` و`testimonials` و`blog` لحين وجود محتوى حقيقي، وتحويل بيانات الخبرات والمشاريع والإحصائيات إلى نماذج واضحة (`Sample ·` و`sample-*` و`Sample Company A/B/C` وأرقام صفرية، ما عدا سنوات الخبرة 4).
+- `npm run data:todo` أصبح يفرّق بين «ناقص ضروري قبل النشر» (يفشل الأمر) و«mock مؤقت لحين الـ API» (للعلم فقط)، ويتحقق من صيغة الصور وأبعادها.

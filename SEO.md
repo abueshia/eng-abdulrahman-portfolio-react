@@ -103,12 +103,13 @@ Passed to `<Seo jsonLd={…}>`. Builders live in `src/utils/structured-data.js` 
 | Article | `BlogPosting` (headline, datePublished, dateModified, author → Person `@id`, image) + `BreadcrumbList` | Phase 5 |
 | FAQ section | `FAQPage` | Phase 5 |
 
-Rules: only absolute `https` URLs, so placeholder or non-URL values are filtered out (e.g. `sameAs`). Mark up only content that is visible on the page. Validate with the [Rich Results Test](https://search.google.com/test/rich-results) before every release.
+Rules: only absolute `https` URLs, so placeholder or non-URL values are filtered out. `sameAs` lists identity profiles only (GitHub, LinkedIn, Facebook), never contact channels like WhatsApp. Mark up only content that is visible on the page. Validate with the [Rich Results Test](https://search.google.com/test/rich-results) before every release.
 
 ---
 
 ## 6. Crawling & indexing
 
+- **Hidden sections are not published:** with `sections_visibility.blog = false`, `/blog` and its posts are neither prerendered nor listed in the sitemap, they render the 404 page, and the nav link disappears.
 - **`sitemap.xml`** is generated from the same route list that is prerendered: every route × locale, with `xhtml:link` alternates and `lastmod` (from `updated_at` / `published_at`, else the build date).
 - **`robots.txt`:** allow all, plus the sitemap location.
 - **404:** `dist/404.html` (Arabic, `noindex`) is served by Vercel with a real `404` status for any URL that was not generated.

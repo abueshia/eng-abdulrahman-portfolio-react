@@ -1,9 +1,9 @@
-import { TODO_REAL_DATA, media, t } from './helpers';
+import { media, t } from './helpers';
 
 /**
  * GET /settings
- * Personal facts marked `TODO_REAL_DATA` are waiting for the owner's real
- * values (see TODO_REAL_DATA.md). Copy will be managed from the Laravel admin.
+ * Profile facts (contact, location, socials, CV) are the owner's real data.
+ * Copy will be managed from the Laravel admin once the API is live.
  */
 export const settings = {
   general: {
@@ -12,21 +12,29 @@ export const settings = {
     first_name: t('عبدالرحمن', 'Abdulrahman'),
     last_name: t('أبو عيشة', 'Abu Eisha'),
     job_title: t('مهندس برمجيات Full-Stack', 'Full-Stack Software Engineer'),
-    years_of_experience: 4, // TODO_REAL_DATA: confirm
+    years_of_experience: 4,
     // Transparent cutout: lets the head break out of the hero frame.
     avatar: media('profile-cutout.png'),
-    // One CV for both languages (owner decision). File name is provisional.
-    cv_url: '/cv/abdulrahman-abu-eisha-cv.pdf',
-    email: TODO_REAL_DATA,
-    phone: TODO_REAL_DATA,
-    location: t(TODO_REAL_DATA, TODO_REAL_DATA),
-    timezone: 'Asia/Gaza', // TODO_REAL_DATA: confirm
+    // One CV for both languages (owner decision).
+    cv_url: '/cv/Abdulrahman_Saad_Backend_Engineer_CV.pdf',
+    email: 'rm01062293490@gmail.com',
+    phone: '+201028292449',
+    location: t('القاهرة، حدائق الأهرام', 'Hadayek El Ahram, Cairo, Egypt'),
+    timezone: 'Africa/Cairo',
     available_for_work: true,
     socials: [
-      { platform: 'github', label: 'GitHub', url: TODO_REAL_DATA },
-      { platform: 'linkedin', label: 'LinkedIn', url: TODO_REAL_DATA },
-      { platform: 'x', label: 'X', url: TODO_REAL_DATA },
-      { platform: 'whatsapp', label: 'WhatsApp', url: TODO_REAL_DATA },
+      { platform: 'github', label: 'GitHub', url: 'https://github.com/abueshia' },
+      {
+        platform: 'linkedin',
+        label: 'LinkedIn',
+        url: 'https://www.linkedin.com/in/eng-abdulrahman-abu-eisha/',
+      },
+      {
+        platform: 'facebook',
+        label: 'Facebook',
+        url: 'https://www.facebook.com/abdo.saad.35762241',
+      },
+      { platform: 'whatsapp', label: 'WhatsApp', url: 'https://wa.me/201028292449' },
     ],
   },
   seo: {
@@ -52,9 +60,10 @@ export const settings = {
     experience: true,
     projects: true,
     services: true,
-    credentials: true,
-    testimonials: true,
-    blog: true,
+    // Hidden until they hold real content (also excluded from nav + prerender).
+    credentials: false,
+    testimonials: false,
+    blog: false,
     faq: true,
     contact: true,
   },
@@ -124,8 +133,8 @@ export const settings = {
       'أخبرني عن فكرتك أو التحدي التقني الذي تواجهه، وسأرد خلال 24 ساعة.',
       "Tell me about your idea or the technical challenge you're facing. I reply within 24 hours.",
     ),
-    email: TODO_REAL_DATA,
-    phone: TODO_REAL_DATA,
+    email: 'rm01062293490@gmail.com',
+    phone: '+201028292449',
     project_types: [
       { value: 'web_app', label: t('تطبيق ويب متكامل', 'Full web application') },
       { value: 'api', label: t('تصميم وبناء API', 'API design & development') },

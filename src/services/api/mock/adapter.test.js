@@ -44,8 +44,8 @@ describe('Axios mock adapter & resource services', () => {
   });
 
   it('returns a full case study with related_projects and rejects unknown slugs with 404', async () => {
-    const detail = await projectsService.show('nexus-commerce-platform', { lang: 'en' });
-    expect(detail.data.title).toBe('Nexus Commerce Platform');
+    const detail = await projectsService.show('sample-commerce-platform', { lang: 'en' });
+    expect(detail.data.title).toBe('Sample · Commerce Platform');
     expect(detail.data.related_projects.length).toBeGreaterThan(0);
     expect(detail.data.technologies[0]).toHaveProperty('name');
 

@@ -52,7 +52,7 @@ async function hydrateUrl(url, expectedText) {
 
 describe('Hydration of prerendered pages', () => {
   it('hydrates the English case study without mismatches', async () => {
-    expect(await hydrateUrl('/en/projects/atlas-fleet-api', 'Atlas Fleet API')).toEqual([]);
+    expect(await hydrateUrl('/en/projects/sample-fleet-api', 'Sample · Fleet API')).toEqual([]);
   });
 
   it('hydrates the Arabic home page without mismatches', async () => {
@@ -62,7 +62,7 @@ describe('Hydration of prerendered pages', () => {
 
   it('hydrates for a light-theme visitor (prerendered as dark) without mismatches', async () => {
     document.documentElement.dataset.theme = 'light';
-    expect(await hydrateUrl('/en/blog', 'Engineering notes')).toEqual([]);
+    expect(await hydrateUrl('/en', 'Sample · Fleet API')).toEqual([]);
     expect(document.documentElement.dataset.theme).toBe('light');
   });
 });

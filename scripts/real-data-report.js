@@ -1,20 +1,23 @@
 /**
- * Lists every value still waiting for the owner's real data
- * (`TODO_REAL_DATA` markers) plus required files that are missing.
- * Exit code 1 when anything is outstanding, so it can gate a release.
+ * Real-data report (`npm run data:todo`).
+ *
+ * Two very different kinds of "not real yet":
+ *
+ *  1. REQUIRED BEFORE PUBLISHING: values marked `TODO_REAL_DATA` and required
+ *     public files that are missing or invalid (wrong format/dimensions).
+ *     These fail the command (exit 1) and must be zero before going live.
+ *
+ *  2. TEMPORARY MOCK UNTIL THE API: whole mock files marked `MOCK_UNTIL_API`.
+ *     They are expected until VITE_USE_MOCK=false and do not fail the command.
+ *
+ * Hidden sections (settings.sections_visibility) are listed for context.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
-const MARKER = 'TODO_REAL_DATA';
 const SCAN = ['src/data', 'src/i18n', 'index.html'];
-const REQUIRED_FILES = [
-  'public/cv/abdulrahman-abu-eisha-cv.pdf',
-  'public/images/og-cover.jpg',
-  'public/images/profile-cutout.png',
-];
 
 /** @param {string} path @returns {string[]} */
 const walk = (path) =>
@@ -22,22 +25,121 @@ const walk = (path) =>
     ? readdirSync(path).flatMap((name) => walk(join(path, name)))
     : [path];
 
-const hits = SCAN.map((p) => join(root, p))
+const files = SCAN.map((p) => join(root, p))
   .filter(existsSync)
   .flatMap(walk)
-  .filter((file) => !/\.test\./.test(file))
-  .flatMap((file) =>
-    readFileSync(file, 'utf-8')
-      .split('\n')
-      .map((line, i) => ({ file: relative(root, file), line: i + 1, text: line.trim() }))
-      .filter(
-        ({ text }) => text.includes(MARKER) && !text.startsWith('export const TODO_REAL_DATA'),
-      ),
-  );
+  .filter((file) => !/\.test\./.test(file));
 
-const missing = REQUIRED_FILES.filter((file) => !existsSync(join(root, file)));
+/* ---------------------------------------------------------------- images */
 
-for (const { file, line, text } of hits) console.log(`${file}:${line}  ${text}`);
-for (const file of missing) console.log(`missing file  ${file}`);
-console.log(`\n${hits.length} placeholder(s), ${missing.length} missing file(s).`);
-process.exit(hits.length + missing.length > 0 ? 1 : 0);
+/**
+ * Reads format, size and alpha support from an image header (PNG/JPEG only).
+ * @param {Buffer} buf
+ * @returns {{ format: string, width?: number, height?: number, alpha?: boolean }}
+ */
+function inspectImage(buf) {
+  if (buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
+    const colorType = buf[25];
+    return {
+      format: 'png',
+      width: buf.readUInt32BE(16),
+      height: buf.readUInt32BE(20),
+      alpha: colorType === 4 || colorType === 6 || buf.includes(Buffer.from('tRNS')),
+    };
+  }
+  if (buf[0] === 0xff && buf[1] === 0xd8) {
+    let offset = 2;
+    while (offset < buf.length - 9) {
+      if (buf[offset] !== 0xff) break;
+      const marker = buf[offset + 1];
+      const length = buf.readUInt16BE(offset + 2);
+      // SOF0..SOF15 except DHT (C4), JPG (C8), DAC (CC) carry the dimensions.
+      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+        return {
+          format: 'jpeg',
+          height: buf.readUInt16BE(offset + 5),
+          width: buf.readUInt16BE(offset + 7),
+          alpha: false,
+        };
+      }
+      offset += 2 + length;
+    }
+    return { format: 'jpeg', alpha: false };
+  }
+  return { format: 'unknown' };
+}
+
+/**
+ * Required public files and what makes each one valid.
+ * @type {Array<{ path: string, why: string, check?: (info: ReturnType<typeof inspectImage>) => string | null }>}
+ */
+const REQUIRED_FILES = [
+  { path: 'public/cv/Abdulrahman_Saad_Backend_Engineer_CV.pdf', why: 'CV download' },
+  {
+    path: 'public/images/profile-cutout.png',
+    why: 'hero portrait (transparent cutout)',
+    check: (img) =>
+      img.format === 'png' && img.alpha
+        ? null
+        : `must be a PNG with transparency; found ${img.format.toUpperCase()}` +
+          (img.width ? ` ${img.width}×${img.height}` : '') +
+          (img.alpha ? '' : ', no alpha channel'),
+  },
+  {
+    path: 'public/images/og-cover.jpg',
+    why: 'social preview (Open Graph)',
+    check: (img) =>
+      img.width === 1200 && img.height === 630
+        ? null
+        : `must be 1200×630; found ${img.format.toUpperCase()} ${img.width ?? '?'}×${img.height ?? '?'}`,
+  },
+];
+
+/* ------------------------------------------------------------- collect */
+
+const required = [];
+
+for (const file of files) {
+  readFileSync(file, 'utf-8')
+    .split('\n')
+    .forEach((line, i) => {
+      const text = line.trim();
+      if (text.includes('TODO_REAL_DATA') && !text.startsWith('export const TODO_REAL_DATA')) {
+        required.push(`${relative(root, file)}:${i + 1}  ${text}`);
+      }
+    });
+}
+
+for (const { path, why, check } of REQUIRED_FILES) {
+  const full = join(root, path);
+  if (!existsSync(full)) {
+    required.push(`${path}  missing (${why})`);
+    continue;
+  }
+  const problem = check?.(inspectImage(readFileSync(full)));
+  if (problem) required.push(`${path}  ${problem} (${why})`);
+}
+
+const mocks = files
+  .filter((file) => readFileSync(file, 'utf-8').includes('MOCK_UNTIL_API:'))
+  .map((file) => relative(root, file).split(sep).join('/'));
+
+// Parsed textually: mock modules use Vite-style extensionless imports that
+// plain Node cannot resolve.
+const settingsSource = readFileSync(join(root, 'src/data/mock/settings.js'), 'utf-8');
+const visibilityBlock = settingsSource.match(/sections_visibility:\s*\{([\s\S]*?)\}/)?.[1] ?? '';
+const hidden = [...visibilityBlock.matchAll(/(\w+):\s*false/g)].map(([, key]) => key);
+
+/* -------------------------------------------------------------- report */
+
+const list = (items) => (items.length ? items.map((item) => `  • ${item}`).join('\n') : '  (none)');
+
+console.log(`\n✗ REQUIRED BEFORE PUBLISHING (${required.length})\n${list(required)}`);
+console.log(`\n◌ TEMPORARY MOCK UNTIL THE API (${mocks.length} files)\n${list(mocks)}`);
+console.log(`\nℹ Hidden sections (settings.sections_visibility): ${hidden.join(', ') || 'none'}`);
+console.log(
+  required.length
+    ? `\n${required.length} item(s) block publishing.`
+    : '\nNothing blocks publishing (mock content still needs the API).',
+);
+process.exit(required.length > 0 ? 1 : 0);

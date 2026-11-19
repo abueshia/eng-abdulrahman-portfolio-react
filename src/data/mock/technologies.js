@@ -1,5 +1,8 @@
 import { t } from './helpers';
 
+// MOCK_UNTIL_API: sample technology catalogue, served by the mock adapter until the Laravel API
+// is connected. Clearly fictional on purpose; never publish as real content.
+
 /**
  * Technology catalogue. `GET /technologies` returns it grouped by category.
  * `proficiency` is 0-100; `icon` is a Simple Icons key resolved by the UI.

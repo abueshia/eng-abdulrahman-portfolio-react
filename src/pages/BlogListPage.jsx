@@ -6,9 +6,16 @@ import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Seo } from '@/components/ui/Seo';
 import { paths } from '@/config/routes';
 import { useBlogs } from '@/features/blog/hooks/useBlogs';
+import { useSectionVisible } from '@/hooks/useSettings';
+import NotFoundPage from './NotFoundPage';
 
 /** Blog index (foundation version; the editorial index lands in phase 5). */
 export default function BlogListPage() {
+  const visible = useSectionVisible('blog');
+  return visible ? <BlogList /> : <NotFoundPage />;
+}
+
+function BlogList() {
   const { t } = useTranslation();
   const { data, isPending, isError, refetch } = useBlogs();
 

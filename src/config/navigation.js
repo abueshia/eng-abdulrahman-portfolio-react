@@ -2,7 +2,8 @@ import { SECTION_IDS, paths } from './routes';
 
 /**
  * Primary navigation model. Labels are i18n keys; `to` is locale-agnostic
- * and gets prefixed by `LocalizedLink`.
+ * and gets prefixed by `LocalizedLink`. Items with a `section` disappear when
+ * `settings.sections_visibility[section]` is false (see `useNavItems`).
  * @type {ReadonlyArray<{ key: string, to: string, section?: string }>}
  */
 export const NAV_ITEMS = Object.freeze([
@@ -11,6 +12,6 @@ export const NAV_ITEMS = Object.freeze([
   { key: 'nav.experience', to: paths.section(SECTION_IDS.experience), section: 'experience' },
   { key: 'nav.projects', to: paths.section(SECTION_IDS.projects), section: 'projects' },
   { key: 'nav.services', to: paths.section(SECTION_IDS.services), section: 'services' },
-  { key: 'nav.blog', to: paths.blog() },
+  { key: 'nav.blog', to: paths.blog(), section: 'blog' },
   { key: 'nav.contact', to: paths.section(SECTION_IDS.contact), section: 'contact' },
 ]);
