@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 
+import { isStationAnchor, stationForSection } from '@/config/journey';
 import { useSectionVisible } from '@/hooks/useSettings';
 import { cn } from '@/utils/cn';
 
@@ -7,8 +8,9 @@ import { cn } from '@/utils/cn';
  * Home-page section wrapper.
  *
  * - Respects `settings.sections_visibility[visibilityKey]` (renders nothing when hidden).
- * - Emits `data-section` so the global background layer can react to the
- *   active section (phase 2).
+ * - Emits `data-section` and its journey station (`data-station`); a section
+ *   where a station begins is also a route stop (`data-station-anchor`), which
+ *   the journey tracker measures (see config/journey.js).
  * - Links the landmark to its heading via `aria-labelledby`.
  *
  * @type {import('react').ForwardRefExoticComponent<{
@@ -30,6 +32,8 @@ export const Section = forwardRef(function Section(
       ref={ref}
       id={id}
       data-section={id}
+      data-station={stationForSection(id)}
+      data-station-anchor={isStationAnchor(id) ? 'true' : undefined}
       aria-labelledby={`${id}-title`}
       className={cn('section-y relative', className)}
       {...props}

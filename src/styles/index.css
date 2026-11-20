@@ -1,4 +1,8 @@
-/* Stylesheet entry: Tailwind core, then design tokens, then global base layer. */
+/* Stylesheet entry: Tailwind core, design tokens, global base layer, then the
+ * effect layers and the hero (global on purpose: prerendered pages must be
+ * fully styled before any lazy chunk loads). */
 @import 'tailwindcss';
 @import './tokens.css';
 @import './globals.css';
+@import './fx.css';
+@import './hero.css';

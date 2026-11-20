@@ -48,6 +48,27 @@ describe('Prerendering (entry-server)', () => {
     ]);
   });
 
+  it('prerenders the full hero: the intro and motion layers never hide content', async () => {
+    const { html } = await renderPage('/en');
+
+    // The name is the <h1> (and the LCP element), as real text.
+    expect(html).toMatch(/<h1[^>]*id="hero-title"[^>]*>[\s\S]*Abdulrahman[\s\S]*Abu Eisha/);
+    expect(html).toContain('I build robust back-end systems');
+    expect(html).toContain('Explore case studies');
+    expect(html).toContain('Download CV');
+    expect(html).toContain('php artisan engineer:profile --stack');
+    expect(html).toMatch(/<img[^>]*alt="Portrait of Abdulrahman Abu Eisha"/);
+    // Journey stops are in the markup; client-only layers are not.
+    expect(html).toContain('data-station-anchor="true"');
+    expect(html).not.toContain('class="boot');
+    expect(html).not.toContain('mesh-canvas');
+  });
+
+  it('prerenders the Arabic hero name word-intact', async () => {
+    const { html } = await renderPage('/');
+    expect(html).toMatch(/<h1[^>]*id="hero-title"[^>]*>[\s\S]*عبدالرحمن[\s\S]*أبو عيشة/);
+  });
+
   it('marks unknown URLs as 404 + noindex', async () => {
     const result = await renderPage('/en/projects/does-not-exist');
 

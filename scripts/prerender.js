@@ -7,10 +7,17 @@
  * description, canonical, hreflang, OG, JSON-LD) and the dehydrated data the
  * client hydrates from. It also emits `404.html`, `sitemap.xml` and `robots.txt`.
  *
+ * Resource hints per page (from the Vite manifest, then the manifest is
+ * deleted): `modulepreload` for the page's own chunk (otherwise hydration
+ * waits for a request waterfall: entry → lazy page chunk), and `preload` for
+ * the display font of that language, because the name in that font is the
+ * home page's LCP element.
+ *
  * Content comes from the same services as the app: the mock adapter when
  * VITE_USE_MOCK=true, the live Laravel API otherwise. New CMS content
  * therefore needs a rebuild (see SEO.md → "Publishing workflow").
  */
+import { readdirSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -32,13 +39,67 @@ const {
 } = await import(pathToFileURL(join(ssrDir, 'entry-server.js')).href);
 
 const template = await readFile(join(distDir, 'index.html'), 'utf-8');
+const manifest = JSON.parse(await readFile(join(distDir, '.vite', 'manifest.json'), 'utf-8'));
+const assetFiles = readdirSync(join(distDir, 'assets'));
+
+/** Page module per locale-agnostic path (mirrors src/app/router.jsx). */
+const PAGE_MODULES = [
+  [/^\/$/, 'src/pages/HomePage.jsx'],
+  [/^\/projects\/[^/]+$/, 'src/pages/ProjectDetailsPage.jsx'],
+  [/^\/blog$/, 'src/pages/BlogListPage.jsx'],
+  [/^\/blog\/[^/]+$/, 'src/pages/BlogDetailsPage.jsx'],
+];
+
+/** Display-font file whose glyphs render the name, per language. */
+const DISPLAY_FONTS = {
+  en: /^bricolage-grotesque-latin-wght-normal-.+\.woff2$/,
+  ar: /^alexandria-arabic-wght-normal-.+\.woff2$/,
+};
+
+/**
+ * The module's chunk plus its static imports, as asset paths.
+ * @param {string} source Manifest key, e.g. "src/pages/HomePage.jsx".
+ * @returns {string[]}
+ */
+function chunkClosure(source) {
+  const seen = new Set();
+  /** @type {string[]} */
+  const files = [];
+  const visit = (/** @type {string} */ key) => {
+    if (seen.has(key) || !manifest[key]) return;
+    seen.add(key);
+    files.push(manifest[key].file);
+    (manifest[key].imports ?? []).forEach(visit);
+  };
+  visit(source);
+  return files;
+}
+
+/**
+ * <link> hints for one page.
+ * @param {string} routePath Locale-agnostic path.
+ * @param {string} locale
+ */
+function resourceHints(routePath, locale) {
+  const page =
+    PAGE_MODULES.find(([pattern]) => pattern.test(routePath))?.[1] ?? 'src/pages/NotFoundPage.jsx';
+  const scripts = chunkClosure(page)
+    .filter((file) => !template.includes(`/${file}`))
+    .map((file) => `<link rel="modulepreload" crossorigin href="/${file}">`);
+  const font = assetFiles.find((file) => DISPLAY_FONTS[locale]?.test(file));
+  const fonts = font
+    ? [`<link rel="preload" href="/assets/${font}" as="font" type="font/woff2" crossorigin>`]
+    : [];
+  return [...fonts, ...scripts].join('\n    ');
+}
 
 /**
  * Injects rendered output into the client HTML shell.
  * @param {Awaited<ReturnType<typeof renderPage>>} result
  * @param {string} path Exact pathname this HTML will be served at.
+ * @param {string} routePath Locale-agnostic route (picks the resource hints).
  */
-function buildDocument(result, path) {
+function buildDocument(result, path, routePath) {
   const state = { path, queryState: result.queryState };
   return template
     .replace(
@@ -47,7 +108,10 @@ function buildDocument(result, path) {
     )
     .replace(/\s*<title>[\s\S]*?<\/title>/, '')
     .replace(/\s*<meta[^>]*data-seo[^>]*>/g, '')
-    .replace('</head>', `  ${result.head ? headToHtml(result.head) : ''}\n  </head>`)
+    .replace(
+      '</head>',
+      `  ${resourceHints(routePath, result.locale)}\n    ${result.head ? headToHtml(result.head) : ''}\n  </head>`,
+    )
     .replace(
       '<div id="root"></div>',
       `<div id="root">${result.html}</div>\n    <script>window.${PRERENDER_GLOBAL}=${serializeJson(state)}</script>`,
@@ -86,7 +150,7 @@ for (const route of routes) {
     try {
       const result = await renderPage(url);
       if (result.status !== 200) throw new Error(`rendered with status ${result.status}`);
-      await writePage(url, buildDocument(result, url));
+      await writePage(url, buildDocument(result, url, route.path));
       written += 1;
     } catch (error) {
       failures.push(`${url}: ${error instanceof Error ? error.message : error}`);
@@ -96,7 +160,7 @@ for (const route of routes) {
 
 // 404 page: served by the host for unknown URLs with a real 404 status.
 const notFound = await renderPage('/__not-found__');
-await writeFile(join(distDir, '404.html'), buildDocument(notFound, '/404'), 'utf-8');
+await writeFile(join(distDir, '404.html'), buildDocument(notFound, '/404', '/404'), 'utf-8');
 
 // sitemap.xml with hreflang alternates (one <url> per locale variant).
 const buildDate = new Date().toISOString().slice(0, 10);
@@ -124,8 +188,9 @@ await writeFile(
   'utf-8',
 );
 
-// The server bundle is a build intermediate only.
+// The server bundle and the manifest are build intermediates only.
 await rm(ssrDir, { recursive: true, force: true });
+await rm(join(distDir, '.vite'), { recursive: true, force: true });
 
 const seconds = ((performance.now() - started) / 1000).toFixed(1);
 console.log(

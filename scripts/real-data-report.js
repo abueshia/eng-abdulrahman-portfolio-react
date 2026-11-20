@@ -10,6 +10,9 @@
  *  2. TEMPORARY MOCK UNTIL THE API: whole mock files marked `MOCK_UNTIL_API`.
  *     They are expected until VITE_USE_MOCK=false and do not fail the command.
  *
+ * 3. RECOMMENDED: quality issues that do not block publishing (e.g. a portrait
+ *    too small to stay sharp at hero size). Listed, never fatal.
+ *
  * Hidden sections (settings.sections_visibility) are listed for context.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
@@ -74,7 +77,7 @@ function inspectImage(buf) {
  * @type {Array<{ path: string, why: string, check?: (info: ReturnType<typeof inspectImage>) => string | null }>}
  */
 const REQUIRED_FILES = [
-  { path: 'public/cv/Abdulrahman_Saad_Backend_Engineer_CV.pdf', why: 'CV download' },
+  { path: 'public/cv/Abdulrahman_abu_eisha_CV.pdf', why: 'CV download' },
   {
     path: 'public/images/profile-cutout.png',
     why: 'hero portrait (transparent cutout)',
@@ -120,6 +123,25 @@ for (const { path, why, check } of REQUIRED_FILES) {
   if (problem) required.push(`${path}  ${problem} (${why})`);
 }
 
+/** Quality notes that do not block publishing. */
+const recommended = [];
+const factsFile = join(root, 'src/assets/portrait/portrait.json');
+if (existsSync(factsFile)) {
+  const facts = JSON.parse(readFileSync(factsFile, 'utf-8'));
+  const figure = facts.source;
+  if (facts.status === 'cutout' && figure && figure.figureHeight < 900) {
+    recommended.push(
+      `public/images/profile-cutout.png  the figure is only ${figure.figureWidth}×${figure.figureHeight}px after trimming; ` +
+        'a cutout ≥ 1400px tall keeps the hero portrait sharp on large and retina screens',
+    );
+  }
+  if (facts.status === 'photo') {
+    recommended.push(
+      'public/images/profile-cutout.png  opaque photo: the hero uses its cropped fallback (a transparent cutout lets the head break the frame)',
+    );
+  }
+}
+
 const mocks = files
   .filter((file) => readFileSync(file, 'utf-8').includes('MOCK_UNTIL_API:'))
   .map((file) => relative(root, file).split(sep).join('/'));
@@ -135,6 +157,7 @@ const hidden = [...visibilityBlock.matchAll(/(\w+):\s*false/g)].map(([, key]) =>
 const list = (items) => (items.length ? items.map((item) => `  • ${item}`).join('\n') : '  (none)');
 
 console.log(`\n✗ REQUIRED BEFORE PUBLISHING (${required.length})\n${list(required)}`);
+console.log(`\n◇ RECOMMENDED, NOT BLOCKING (${recommended.length})\n${list(recommended)}`);
 console.log(`\n◌ TEMPORARY MOCK UNTIL THE API (${mocks.length} files)\n${list(mocks)}`);
 console.log(`\nℹ Hidden sections (settings.sections_visibility): ${hidden.join(', ') || 'none'}`);
 console.log(

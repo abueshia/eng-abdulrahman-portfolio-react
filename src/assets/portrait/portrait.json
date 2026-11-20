@@ -1,0 +1,20 @@
+{
+  "status": "cutout",
+  "width": 360,
+  "height": 811,
+  "widths": [
+    360
+  ],
+  "head": {
+    "x": 0.3435,
+    "chin": 0.2304
+  },
+  "source": {
+    "width": 455,
+    "height": 549,
+    "figureWidth": 181,
+    "figureHeight": 408,
+    "hash": "2cdc909a7e6f"
+  },
+  "version": 4
+}

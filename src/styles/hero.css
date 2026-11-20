@@ -1,0 +1,1133 @@
+/*
+ * Hero: "The Architect's Core" (features/hero).
+ *
+ * Layout is CSS only and never depends on JavaScript: the prerendered HTML is
+ * the final composition, and motion is layered on top by the hero director.
+ * Logical properties throughout, so RTL mirrors automatically; the portrait
+ * photo itself is never mirrored (physical left/right inside the figure).
+ */
+
+/*
+ * Composition geometry. The name's size and the portrait's position share
+ * one reference (the grid's width in `cqw`), so the depth sandwich holds at
+ * every viewport: the first line ends exactly behind the head.
+ *  --line-ratio: first-line width ÷ font size, measured for each display font
+ *                (Bricolage "ABDULRAHMAN" 7.44, Alexandria "عبدالرحمن" 5.18).
+ *  --head-at:    where the head stands, as a fraction of the width from the
+ *                inline start (desktop).
+ *  --name-indent: second line offset so it crosses the body.
+ */
+.hero {
+  --marquee-h: 4.25rem;
+  --line-ratio: 7.44;
+  --name-fill: 0.96;
+  --name-lh: 0.86;
+  --name-indent: 1.55em;
+  position: relative;
+}
+:root[lang='ar'] .hero {
+  --line-ratio: 5.18;
+  --name-fill: 0.92;
+  --name-lh: 1.12;
+  --name-indent: 0.75em;
+}
+
+.hero__stage {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  padding-top: calc(var(--nav-height) + 1rem);
+}
+.hero__grid {
+  --portrait-h: min(62svh, 34rem);
+  position: relative;
+  isolation: isolate;
+  container-type: inline-size;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2.2vh, 1.75rem);
+  padding-bottom: 2rem;
+}
+
+.hero__defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* ── Service mesh canvas (rendered by HeroFx, fixed behind the page) ── */
+.mesh-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100lvh;
+  pointer-events: none;
+}
+
+/* ── Status strip ── */
+.hero__status {
+  position: relative;
+  z-index: 4;
+}
+.hero-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  font-family: var(--ff-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+:root[lang='ar'] .hero-status {
+  font-family: var(--ff-body);
+  font-size: 0.8125rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.hero-status__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--text-muted);
+}
+.hero-status__item--muted {
+  color: var(--text-dim);
+}
+.hero-status__dot {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+.hero-status__dot[data-on='true'] {
+  background: var(--signal);
+  box-shadow: 0 0 10px color-mix(in oklab, var(--signal) 60%, transparent);
+}
+.hero-status__dot[data-on='true']::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid var(--signal);
+  animation: status-ping 2.4s var(--ease-out-expo) infinite;
+}
+@keyframes status-ping {
+  from {
+    opacity: 0.8;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+.hero-status__clock {
+  display: inline-block;
+  min-width: 9ch;
+  font-variant-numeric: tabular-nums;
+}
+.hero-status__clock:not(:empty)::before {
+  content: '·';
+  margin-inline-end: 0.65rem;
+}
+
+/* ── Name: the depth sandwich (line 1 behind the portrait, line 2 in front) ── */
+.hero-name {
+  font-family: var(--ff-display);
+  font-weight: 800;
+  /* Phones/tablets: the first line fills the width (--name-fill of it). */
+  font-size: calc(100cqw * var(--name-fill) / var(--line-ratio));
+  line-height: var(--name-lh);
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+  color: var(--text);
+  font-variation-settings: 'wdth' 100;
+}
+:root[lang='ar'] .hero-name {
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.hero-name__line {
+  position: relative;
+  display: block;
+  width: max-content;
+  max-width: none;
+  white-space: nowrap;
+}
+.hero-name__line--first {
+  z-index: 1;
+}
+/*
+ * The outlined surname. `-webkit-text-stroke` would trace every contour of
+ * the variable fonts, including where glyph parts (and Arabic joins) overlap,
+ * drawing seams inside the letters. Instead the text is filled in the stroke
+ * colour and an SVG filter (#hero-outline in Hero.jsx) keeps only a ring
+ * around the union of the glyphs: a clean outline in both scripts.
+ * `::after` holds a solid copy (not indexed: it is CSS content) that the
+ * entrance flashes on via `--fill`.
+ */
+.hero-name__line--last {
+  --fill: 0;
+  z-index: 3;
+  margin-inline-start: var(--name-indent);
+  color: var(--text-muted);
+}
+.hero-name__ink {
+  display: inline-block;
+  filter: url('#hero-outline');
+}
+.hero-name__line--last::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: var(--text);
+  opacity: var(--fill);
+  pointer-events: none;
+}
+.hn-char {
+  display: inline-block;
+  text-align: center;
+}
+/* Word masks (Arabic reveal) get room for dots and descenders. */
+.hero-name [class*='-mask'] {
+  padding-block: 0.18em;
+  margin-block: -0.18em;
+}
+
+/* ── Copy column: role, summary, actions ── */
+.hero__copy {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  max-width: 34rem;
+}
+.hero-role {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6ch;
+  min-height: 1.5em;
+  font-family: var(--ff-mono);
+  font-size: clamp(0.875rem, 0.8rem + 0.35vw, 1.0625rem);
+  color: var(--text);
+}
+:root[lang='ar'] .hero-role {
+  font-family: var(--ff-body);
+  font-weight: 500;
+}
+.hero-role__prompt {
+  font-family: var(--ff-mono);
+  color: var(--accent);
+}
+.hero-role__caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  align-self: center;
+  background: var(--accent);
+  animation: blink 1.1s steps(1) infinite;
+}
+.hero__summary {
+  font-size: clamp(0.9375rem, 0.88rem + 0.25vw, 1.0625rem);
+  line-height: 1.7;
+  color: var(--text-muted);
+  text-wrap: pretty;
+}
+
+/* ── Calls to action ── */
+.hero-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin-top: 0.4rem;
+}
+.magnetic {
+  display: inline-flex;
+  padding: 0.85rem;
+  margin: -0.85rem;
+  will-change: transform;
+}
+.cta {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  height: 3.5rem;
+  padding-inline: 1.65rem;
+  overflow: hidden;
+  border-radius: 999px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    color 0.4s var(--ease-out-expo),
+    box-shadow 0.4s var(--ease-out-expo),
+    transform 0.3s var(--ease-out-expo);
+}
+.cta:active {
+  transform: scale(0.97);
+}
+.cta__label,
+.cta__icon {
+  position: relative;
+  z-index: 1;
+}
+.cta--ember {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--glow-accent),
+    0 12px 40px -10px var(--glow-accent);
+}
+.cta__fill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: var(--text);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.6s var(--ease-shutter);
+}
+[dir='rtl'] .cta__fill {
+  transform-origin: right;
+}
+.cta--ember:hover .cta__fill,
+.cta--ember:focus-visible .cta__fill {
+  transform: scaleX(1);
+}
+.cta--ember:hover,
+.cta--ember:focus-visible {
+  color: var(--bg-0);
+}
+.cta__icon {
+  width: 1.1rem;
+  height: 1.1rem;
+  transition: transform 0.5s var(--ease-out-expo);
+}
+.cta--ember:hover .cta__icon {
+  transform: translate(calc(3px * var(--dir-sign)), -3px) rotate(calc(45deg * var(--dir-sign)));
+}
+
+@property --orbit {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+.cta--ion {
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-strong);
+}
+.cta__orbit {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--orbit),
+    transparent 0deg,
+    var(--secondary) 70deg,
+    transparent 140deg,
+    transparent 360deg
+  );
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.cta--ion:hover,
+.cta--ion:focus-visible {
+  color: var(--secondary);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--secondary) 35%, transparent),
+    0 10px 40px -12px var(--glow-secondary);
+}
+.cta--ion:hover .cta__orbit,
+.cta--ion:focus-visible .cta__orbit {
+  opacity: 1;
+  animation: orbit 2.4s linear infinite;
+}
+@keyframes orbit {
+  to {
+    --orbit: 360deg;
+  }
+}
+.cta--ghost {
+  height: auto;
+  padding: 0.5rem 0.25rem;
+  overflow: visible;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 0.4em;
+}
+.cta--ghost:hover {
+  color: var(--text);
+  text-decoration-color: var(--accent);
+}
+.cta__drop {
+  width: 1rem;
+  height: 1rem;
+}
+.cta--ghost:hover .cta__drop {
+  animation: drop 0.9s var(--ease-out-expo) infinite;
+}
+@keyframes drop {
+  0% {
+    transform: translateY(-3px);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(4px);
+    opacity: 0;
+  }
+}
+
+/* ── Portrait: "Monolith Portal" ── */
+.portrait {
+  --H: var(--portrait-h);
+  --W: calc(var(--H) * 0.66);
+  --fig-h: calc(var(--H) * 0.94);
+  --fig-w: calc(var(--fig-h) * var(--fig-aspect));
+  --mx: 0;
+  --my: 0;
+  position: relative;
+  width: var(--W);
+  height: var(--H);
+  margin: 0;
+}
+.portrait__settle,
+.portrait__tilt {
+  position: absolute;
+  inset: 0;
+}
+.portrait__tilt {
+  transform: perspective(1400px) rotateY(calc(var(--mx) * 5deg)) rotateX(calc(var(--my) * -4deg));
+  transform-style: preserve-3d;
+}
+.portrait__layer {
+  --d: 0.5;
+  transform: translate3d(calc(var(--mx) * var(--d) * 26px), calc(var(--my) * var(--d) * 18px), 0);
+}
+
+/* Rings */
+/* Centred on the chest: an orbit around "the core", clear of the navbar. */
+.portrait__rings {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--H) * 0.06 + var(--fig-h) * 0.36);
+  width: calc(var(--H) * 0.74);
+  aspect-ratio: 1;
+  margin-left: calc(var(--H) * -0.37);
+  margin-top: calc(var(--H) * -0.37);
+}
+.portrait__rings-scroll,
+.rings {
+  width: 100%;
+  height: 100%;
+}
+.rings {
+  overflow: visible;
+}
+.rings__outer {
+  transform-origin: 200px 200px;
+  animation: ring-spin 90s linear infinite;
+}
+.rings__mid {
+  transform-origin: 200px 200px;
+  animation: ring-spin 120s linear infinite reverse;
+}
+@keyframes ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.rings__hair {
+  stroke: var(--border-strong);
+  stroke-width: 0.6;
+  opacity: 0.7;
+}
+.rings__ticks {
+  stroke: var(--text-dim);
+  stroke-width: 4;
+  stroke-dasharray: 0.6 9.35;
+  opacity: 0.55;
+}
+.rings__arc {
+  stroke: var(--accent);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+.rings__dash {
+  stroke: var(--border-strong);
+  stroke-width: 0.8;
+  stroke-dasharray: 2 8;
+}
+.rings__cross {
+  stroke: var(--text-dim);
+  stroke-width: 0.7;
+}
+.rings__label,
+.rings__note {
+  font: 500 7.5px var(--ff-mono);
+  letter-spacing: 0.32em;
+  fill: var(--text-dim);
+}
+.rings__note {
+  letter-spacing: 0.1em;
+}
+.rings__node--ember {
+  fill: var(--accent);
+}
+.rings__node--ion {
+  fill: var(--secondary);
+}
+
+/* Monolith frame: an arch whose apex sits at eye level, so the head rises out of it. */
+.portrait__frame {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  top: calc(var(--H) * 0.06 + var(--fig-h) * var(--chin) * 0.42);
+  width: calc(var(--H) * 0.4);
+  margin-left: calc(var(--H) * -0.2);
+}
+.portrait__frame-glass {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px 999px 1.25rem 1.25rem;
+  border: 1px solid color-mix(in oklab, var(--text) 14%, transparent);
+  background:
+    radial-gradient(
+      120% 60% at 50% 0%,
+      color-mix(in oklab, var(--secondary) 16%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      120% 70% at 50% 100%,
+      color-mix(in oklab, var(--accent) 22%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(
+      color-mix(in oklab, var(--surface) 55%, transparent),
+      color-mix(in oklab, var(--bg-1) 30%, transparent)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--text) 10%, transparent),
+    0 40px 80px -40px rgb(0 0 0 / 0.6);
+  mask-image: linear-gradient(#000 70%, transparent);
+}
+.portrait__frame-glass::after {
+  /* Blueprint grid engraved inside the monolith. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 18px 18px;
+  opacity: 1.6;
+}
+.portrait__frame-tag {
+  position: absolute;
+  bottom: 18%;
+  left: 50%;
+  transform: translateX(-50%) rotate(-90deg);
+  transform-origin: center;
+  white-space: nowrap;
+  font: 500 0.5625rem var(--ff-mono);
+  letter-spacing: 0.4em;
+  color: var(--text-dim);
+  translate: calc(var(--H) * -0.21) 0;
+}
+
+/* Figure (the photograph) */
+.portrait__figure {
+  position: absolute;
+  bottom: 0;
+  height: var(--fig-h);
+  width: var(--fig-w);
+  left: calc(var(--W) / 2 - var(--fig-w) * var(--head-x));
+}
+.portrait__figure-inner {
+  --scan: 100%;
+  position: absolute;
+  inset: 0;
+}
+/*
+ * The glow lives on <picture>, not on the image: CSS applies filter → clip →
+ * mask, so a drop-shadow on the masked/clipped <img> would be cut at its box
+ * edges (hard rectangles). On the parent it wraps the final silhouette.
+ */
+.portrait__figure-inner picture {
+  position: absolute;
+  inset: 0;
+  display: block;
+  filter: drop-shadow(
+      calc(-14px * var(--dir-sign)) 22px 34px rgb(255 90 54 / calc(0.18 + 0.16 * var(--daylight)))
+    )
+    drop-shadow(
+      calc(12px * var(--dir-sign)) -14px 34px
+        rgb(61 220 255 / calc(0.12 + 0.14 * (1 - var(--daylight))))
+    );
+}
+[data-theme='light'] .portrait__figure-inner picture {
+  filter: drop-shadow(calc(-10px * var(--dir-sign)) 26px 30px rgb(40 30 10 / 0.22));
+}
+.portrait__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom;
+  mask-image: linear-gradient(#000 82%, transparent 99%);
+  clip-path: inset(0 0 calc(100% - var(--scan)) 0);
+  /* Grade the daylight photo into the night scene. */
+  filter: saturate(0.9) contrast(1.06) brightness(0.97);
+}
+[data-theme='light'] .portrait__img {
+  filter: saturate(0.95) contrast(1.04);
+}
+/* Rim light: Ember from below on the inline-start side, Ion from above on the
+ * inline-end side, masked to the silhouette itself. */
+.portrait__rim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mask: var(--portrait-mask) bottom / contain no-repeat;
+  background:
+    linear-gradient(
+      calc(60deg * var(--dir-sign)),
+      color-mix(in oklab, var(--accent) 55%, transparent) 0%,
+      transparent 32%
+    ),
+    linear-gradient(
+      calc(-120deg * var(--dir-sign)),
+      color-mix(in oklab, var(--secondary) 45%, transparent) 0%,
+      transparent 30%
+    );
+  mix-blend-mode: screen;
+  opacity: calc(0.55 + 0.25 * var(--daylight));
+  clip-path: inset(0 0 calc(100% - var(--scan)) 0);
+}
+[data-theme='light'] .portrait__rim {
+  mix-blend-mode: soft-light;
+  opacity: 0.6;
+}
+/* Dot-matrix silhouette: shown below the scan line during the entrance, then
+ * as an "x-ray" lens that follows the pointer over the portrait. */
+.portrait__dots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle, var(--secondary) 0 1.05px, transparent 1.45px) 0 0 / 5px 5px;
+  mask: var(--portrait-mask) bottom / contain no-repeat;
+  clip-path: inset(var(--scan) 0 0 0);
+  opacity: 0.9;
+}
+.portrait[data-scanned='true'] .portrait__dots {
+  clip-path: circle(4.5rem at calc(50% + var(--mx) * 50%) calc(42% + var(--my) * 40%));
+  opacity: 0;
+}
+@media (hover: hover) and (pointer: fine) {
+  .portrait[data-scanned='true']:hover .portrait__dots {
+    opacity: 0.75;
+    transition: opacity 0.5s ease;
+  }
+}
+.portrait__scan {
+  position: absolute;
+  inset-inline: -12%;
+  top: var(--scan);
+  height: 1px;
+  background: var(--secondary);
+  box-shadow: 0 0 14px 2px var(--glow-secondary);
+  opacity: 0;
+}
+.portrait[data-scanning='true'] .portrait__scan {
+  opacity: 1;
+}
+
+/* Opaque photo fallback: cropped, graded and faded inside the frame. */
+.portrait[data-status='photo'] .portrait__figure {
+  left: 50%;
+  top: calc(var(--H) * 0.06 + var(--fig-h) * var(--chin) * 0.42);
+  width: calc(var(--H) * 0.4);
+  height: auto;
+  margin-left: calc(var(--H) * -0.2);
+  border-radius: 999px 999px 1.25rem 1.25rem;
+  overflow: hidden;
+}
+.portrait[data-status='photo'] .portrait__img {
+  object-fit: cover;
+  object-position: 68% 18%;
+  filter: grayscale(0.35) contrast(1.08) brightness(0.85);
+  mask-image: linear-gradient(#000 60%, transparent 98%);
+}
+.portrait[data-status='photo'] .portrait__img + .portrait__rim,
+.portrait[data-status='photo'] .portrait__dots {
+  mask: none;
+}
+.portrait[data-status='photo'] .portrait__rim {
+  background: linear-gradient(transparent 40%, color-mix(in oklab, var(--accent) 35%, transparent));
+  mix-blend-mode: color;
+}
+/* Missing file: monogram inside the frame. */
+.portrait__monogram {
+  position: absolute;
+  inset: auto 0 22% 0;
+  text-align: center;
+  font: 800 calc(var(--H) * 0.16) / 1 var(--ff-display);
+  color: transparent;
+  -webkit-text-stroke: 1px var(--text-muted);
+}
+
+/* Floating badges */
+.portrait__badges {
+  position: absolute;
+  inset: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.portrait__badge {
+  position: absolute;
+  inset-inline-start: calc(var(--x) * 100%);
+  top: calc(var(--y) * 100%);
+}
+.portrait__badge > span {
+  display: inline-block;
+  padding: 0.38rem 0.7rem;
+  border: 1px solid color-mix(in oklab, var(--text) 12%, transparent);
+  border-radius: 999px;
+  font: 500 0.6875rem/1 var(--ff-mono);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--text-muted);
+  background: color-mix(in oklab, var(--surface) 62%, transparent);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px -14px rgb(0 0 0 / 0.6);
+}
+.portrait__badge[data-slot='0'] > span,
+.portrait__badge[data-slot='3'] > span {
+  border-color: color-mix(in oklab, var(--accent) 35%, transparent);
+  color: var(--text);
+}
+.portrait__badge[data-slot='1'] > span {
+  border-color: color-mix(in oklab, var(--secondary) 35%, transparent);
+}
+.portrait__badge--code > span {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  font-size: 0.8125rem;
+  color: color-mix(in oklab, var(--secondary) 70%, var(--text-dim));
+  filter: blur(0.4px);
+  opacity: 0.75;
+}
+.portrait__badge--code:nth-last-child(2) > span {
+  color: color-mix(in oklab, var(--accent) 75%, var(--text-dim));
+}
+
+/* ── Terminal ── */
+.hero-terminal {
+  position: relative;
+  z-index: 4;
+  perspective: 1200px;
+}
+.hero-terminal__inner {
+  border: 1px solid color-mix(in oklab, var(--text) 10%, transparent);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+  overflow: hidden;
+  font: 400 0.75rem/1.7 var(--ff-mono);
+  transform-origin: 50% 100%;
+}
+.term__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--text) 7%, transparent);
+  color: var(--text-dim);
+  font-size: 0.6875rem;
+}
+.term__lights {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+.term__lights i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+.term__lights i:first-child {
+  background: var(--accent);
+}
+.term__body {
+  max-height: 12.5rem;
+  overflow: hidden auto;
+  padding: 0.7rem 0.95rem 0.35rem;
+  text-align: left;
+  scrollbar-width: none;
+}
+.term__line {
+  min-height: 1.7em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+.term__line[data-tone='muted'] {
+  color: var(--text-muted);
+}
+.term__line--tree {
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.term__line[data-tone='ok'] {
+  color: var(--signal);
+}
+.term__line[data-tone='ember'] {
+  color: var(--accent);
+}
+.term__line[data-tone='ion'] {
+  color: var(--secondary);
+}
+.term__line[data-tone='error'] {
+  color: var(--danger);
+}
+.term__ps1 {
+  color: var(--accent);
+}
+.term__caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  margin-inline-start: 2px;
+  vertical-align: -0.15em;
+  background: var(--accent);
+  animation: blink 1.1s steps(1) infinite;
+}
+.term__status {
+  padding: 0 0.95rem 0.35rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.term__prompt {
+  display: flex;
+  align-items: center;
+  gap: 0.6ch;
+  padding: 0.5rem 0.95rem 0.65rem;
+  border-top: 1px dashed color-mix(in oklab, var(--text) 9%, transparent);
+  direction: ltr;
+}
+.term__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  caret-color: var(--accent);
+}
+.term__input::placeholder {
+  color: var(--text-dim);
+}
+.term__prompt:focus-within {
+  background: color-mix(in oklab, var(--accent) 6%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 40%, transparent);
+}
+
+/* ── Scroll cue & transmission line ── */
+.hero__cue {
+  position: relative;
+  z-index: 4;
+  display: none;
+  align-items: center;
+  gap: 0.85rem;
+  font: 500 0.625rem var(--ff-mono);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: opacity 0.6s var(--ease-out-expo);
+}
+:root[lang='ar'] .hero__cue {
+  font-family: var(--ff-body);
+  font-size: 0.75rem;
+  letter-spacing: 0;
+}
+html[data-scrolled='true'] .hero__cue {
+  opacity: 0;
+}
+.hero__cue-line {
+  position: relative;
+  width: 1px;
+  height: 2.5rem;
+  overflow: hidden;
+  background: var(--border);
+}
+.hero__cue-line::after {
+  content: '';
+  position: absolute;
+  inset-inline: -1.5px;
+  top: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--glow-accent);
+  animation: cue-packet 2.2s var(--ease-shutter) infinite;
+}
+@keyframes cue-packet {
+  0% {
+    transform: translateY(-6px);
+  }
+  70%,
+  100% {
+    transform: translateY(2.6rem);
+  }
+}
+.hero__transmit {
+  position: absolute;
+  z-index: 4;
+  inset-inline: 0;
+  bottom: 18%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  font: 500 clamp(0.75rem, 0.6rem + 0.5vw, 1rem) var(--ff-mono);
+  letter-spacing: 0.06em;
+  color: var(--text);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.hero__transmit-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 14px 3px var(--glow-accent);
+}
+
+/* ── Live bands ── */
+.hero-marquee {
+  position: relative;
+  z-index: 4;
+  height: var(--marquee-h);
+  border-top: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+.hero-marquee__inner {
+  display: grid;
+  align-content: center;
+  gap: 0.35rem;
+  height: 100%;
+}
+.marquee {
+  overflow: hidden;
+  direction: ltr;
+}
+.marquee__track {
+  display: flex;
+  width: max-content;
+  animation: marquee 48s linear infinite;
+}
+.marquee[data-reverse='true'] .marquee__track {
+  animation-direction: reverse;
+  animation-duration: 60s;
+}
+[dir='rtl'] .marquee .marquee__track {
+  animation-direction: reverse;
+}
+[dir='rtl'] .marquee[data-reverse='true'] .marquee__track {
+  animation-direction: normal;
+}
+.hero-marquee:hover .marquee__track,
+.hero-marquee:focus-within .marquee__track {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+.marquee__group {
+  display: flex;
+  flex-shrink: 0;
+}
+.marquee__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding-inline: 1.25rem;
+  font: 500 0.6875rem/1.4 var(--ff-mono);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+.marquee__item em {
+  font-style: normal;
+  color: var(--signal);
+}
+.marquee__item--log {
+  color: var(--text-dim);
+}
+.marquee__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--signal);
+}
+.marquee__tick {
+  font-style: normal;
+  color: var(--accent);
+}
+
+/* ───────── Phones & tablets: purpose-built stack (name first) ───────── */
+@media (max-width: 63.999rem) {
+  .hero-status__item--muted {
+    display: block;
+  }
+  .hero-name__ink {
+    filter: url('#hero-outline-thin');
+  }
+  :root[lang='en'] .hero-name__line--last {
+    letter-spacing: 0.01em;
+  }
+  .hero__portrait {
+    align-self: center;
+    margin-top: 1.5rem;
+  }
+  .portrait__badge:nth-child(n + 4):not(.portrait__badge--code),
+  .portrait__badge--code {
+    display: none;
+  }
+  .hero-terminal {
+    margin-top: -4.5rem;
+    width: min(100%, 26rem);
+    align-self: center;
+  }
+  /* Three lines of terminal on phones. */
+  .term__body {
+    max-height: calc(1.7em * 3 + 1rem);
+  }
+  .hero-ctas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .hero-ctas .magnetic {
+    padding: 0;
+    margin: 0;
+  }
+  .hero-ctas .cta:not(.cta--ghost) {
+    width: 100%;
+    padding-inline: 1rem;
+  }
+  .cta--ghost {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+@media (max-width: 29.999rem) {
+  .hero-ctas {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ───────── Desktop: the asymmetric composition ───────── */
+@media (min-width: 64rem) {
+  .hero {
+    --head-at: 0.83;
+    --name-indent: 2.85em;
+  }
+  :root[lang='ar'] .hero {
+    --head-at: 0.62;
+    --name-indent: 1.25em;
+  }
+  .hero__stage {
+    height: 100svh;
+    min-height: 40rem;
+  }
+  .hero__grid {
+    --portrait-h: min(calc(100svh - var(--nav-height) - var(--marquee-h) - 2.5rem), 54rem);
+    gap: clamp(0.75rem, 2vh, 1.5rem);
+  }
+  /* The first line ends at the head: size and position share one reference. */
+  .hero-name {
+    margin-top: clamp(0rem, 2vh, 1.5rem);
+    font-size: min(calc(100cqw * var(--head-at) / var(--line-ratio)), 21svh);
+  }
+  .hero__copy {
+    margin-top: clamp(0.5rem, 2.5vh, 2rem);
+  }
+  .hero__portrait {
+    position: absolute;
+    z-index: 2;
+    bottom: 0;
+    inset-inline-end: calc(var(--gutter) + 100cqw * (1 - var(--head-at)) - var(--W) / 2);
+  }
+  /* Terminal docked over the portrait's lower edge, on the side facing the copy. */
+  .hero-terminal {
+    position: absolute;
+    bottom: 7%;
+    width: min(26rem, 30cqw);
+    inset-inline-end: calc(
+      var(--gutter) + 100cqw * (1 - var(--head-at)) + var(--portrait-h) * 0.12
+    );
+  }
+  /* Arabic: the name is shorter, so the portrait stands nearer the centre and
+   * the terminal docks on its outer side instead. */
+  :root[lang='ar'] .hero-terminal {
+    inset-inline-end: var(--gutter);
+    bottom: 5%;
+  }
+  .hero__cue {
+    display: inline-flex;
+    position: absolute;
+    bottom: 2rem;
+    inset-inline-start: var(--gutter);
+  }
+}
+@media (min-width: 64rem) and (max-height: 46rem) {
+  .hero__summary,
+  .hero__cue {
+    display: none;
+  }
+}
+/* Arabic: the terminal docks on the badges' outer side; keep them apart. */
+@media (min-width: 64rem) {
+  :root[lang='ar'] .portrait__badge[data-slot='3'] {
+    display: none;
+  }
+}

@@ -10,6 +10,7 @@ import { useScrollState } from '@/hooks/useScrollState';
 import { cn } from '@/utils/cn';
 import { LocaleSwitch } from './LocaleSwitch';
 import { MobileMenu } from './MobileMenu';
+import { SoundToggle } from './SoundToggle';
 import { ThemeToggle } from './ThemeToggle';
 import { useNavItems } from '@/hooks/useNavItems';
 
@@ -68,6 +69,7 @@ export function Navbar() {
           </ul>
 
           <div className="flex items-center gap-2">
+            <SoundToggle className="hidden sm:grid" />
             <LocaleSwitch />
             <ThemeToggle />
             <Button

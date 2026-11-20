@@ -9,6 +9,7 @@ import { paths, SECTION_IDS } from '@/config/routes';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 import { EASE } from '@/utils/motion';
 import { LocaleSwitch } from './LocaleSwitch';
+import { SoundToggle } from './SoundToggle';
 import { ThemeToggle } from './ThemeToggle';
 import { useNavItems } from '@/hooks/useNavItems';
 
@@ -137,6 +138,7 @@ export function MobileMenu({ open, onClose }) {
             </Button>
             <LocaleSwitch className="size-14" />
             <ThemeToggle className="size-14" />
+            <SoundToggle className="size-14" />
           </div>
         </m.div>
       )}

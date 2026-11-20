@@ -9,6 +9,8 @@ import App from '@/app/App';
 import { PRERENDER_GLOBAL, normalizePath } from '@/app/prerender-state';
 import { createQueryClient } from '@/app/query-client';
 import { createAppRouter } from '@/app/router';
+import { env } from '@/config/env';
+import { HYDRATED_MARK } from '@/features/hero/lib/telemetry';
 import {
   DEFAULT_LOCALE,
   LOCALE_STORAGE_KEY,
@@ -40,6 +42,13 @@ function applySavedLocale() {
 }
 
 const rewritten = applySavedLocale();
+
+// The boot intro was requested before paint (index.html). Start fetching its
+// chunk now, in parallel with hydration; drop the request if effects are off.
+if (document.documentElement.dataset.boot === 'play') {
+  if (env.fx) import('@/features/intro/components/BootSequence');
+  else delete document.documentElement.dataset.boot;
+}
 const container = /** @type {HTMLElement} */ (document.getElementById('root'));
 const queryClient = createQueryClient();
 const router = createAppRouter();
@@ -68,3 +77,6 @@ if (canHydrate) {
   container.replaceChildren();
   createRoot(container).render(app);
 }
+
+// Real number for the hero's access log ("hydrated in …ms").
+requestAnimationFrame(() => performance.mark(HYDRATED_MARK));

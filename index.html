@@ -16,7 +16,11 @@
       Pre-paint bootstrap (kept tiny and dependency-free).
       Resolves theme and locale BEFORE the first paint so there is no flash of
       the wrong theme or a left-to-right layout on Arabic pages.
-      Mirrors: src/context/ThemeContext.jsx and src/main.jsx.
+      Also decides whether the boot intro plays: first home-page view of the
+      session only. It sets data-boot="play", which shows a CSS cover until
+      React takes over (the content underneath is fully rendered, and without
+      JavaScript nothing is covered).
+      Mirrors: src/context/ThemeContext.jsx, src/main.jsx, src/features/intro.
     -->
     <script>
       (function () {
@@ -38,6 +42,13 @@
         root.dir = isEn ? 'ltr' : 'rtl';
         var meta = document.querySelector('meta[name="theme-color"]');
         if (meta) meta.setAttribute('content', theme === 'light' ? '#f4f1ea' : '#07080b');
+        var booted = null;
+        try {
+          booted = sessionStorage.getItem('portfolio.boot');
+        } catch (e) {}
+        if (booted !== '1' && /^\/(en\/?)?$/.test(location.pathname)) {
+          root.setAttribute('data-boot', 'play');
+        }
       })();
     </script>
   </head>

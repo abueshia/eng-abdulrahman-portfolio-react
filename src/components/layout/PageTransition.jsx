@@ -2,36 +2,73 @@ import { AnimatePresence, m } from 'motion/react';
 import { useLocation, useOutlet } from 'react-router-dom';
 
 import { stripLocale } from '@/config/routes';
+import { useLocale } from '@/hooks/useLocale';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { EVENTS, emit } from '@/lib/events';
+import { sfx } from '@/lib/sound/sfx';
 import { EASE } from '@/utils/motion';
 
+/** Reads the CURRENT location, so a leaving page's curtain names the destination. */
+function CurtainRequest() {
+  const { pathname } = useLocation();
+  return (
+    <span className="curtain__request" dir="ltr">
+      GET {stripLocale(pathname)}
+    </span>
+  );
+}
+
 /**
- * Animated route outlet.
+ * Route transitions: an Ember-edged curtain (a new page is a new request).
  *
- * `useOutlet()` is captured per render so the exiting page keeps rendering
- * its own content during the exit animation (a plain `<Outlet />` would swap
- * to the new route immediately).
+ * Leaving: the curtain sweeps in from the inline start, its leading edge a
+ * line of Ember light, with the next request line (`GET /path`) at its
+ * centre. Arriving: it retreats toward the inline end and uncovers the new
+ * page. Scroll resets while the screen is covered (`EVENTS.covered`), so the
+ * old page never visibly jumps.
  *
- * The key ignores the locale prefix: switching language re-renders the same
- * page in place instead of playing a page transition.
+ * `useOutlet()` is captured per render so the leaving page keeps its content
+ * during the exit. The key ignores the locale prefix: switching language
+ * re-renders in place, no curtain. First load: no curtain (the boot intro
+ * owns that moment). Reduced motion: instant swap.
  */
 export function PageTransition() {
   const location = useLocation();
   const outlet = useOutlet();
   const reduced = useReducedMotion();
+  const { dir } = useLocale();
   const key = stripLocale(location.pathname);
 
   if (reduced) return outlet;
 
+  const start = dir === 'rtl' ? 1 : 0;
+  const curtain = {
+    initial: { scaleX: 1, originX: 1 - start },
+    enter: {
+      scaleX: 0,
+      originX: 1 - start,
+      transition: { duration: 0.8, ease: EASE.shutter, delay: 0.08 },
+    },
+    exit: {
+      scaleX: [0, 1],
+      originX: start,
+      transition: { duration: 0.55, ease: EASE.inOutQuart },
+    },
+  };
+
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <m.div
-        key={key}
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE.outExpo } }}
-        exit={{ opacity: 0, y: -12, transition: { duration: 0.25, ease: EASE.inOutQuart } }}
-      >
+    <AnimatePresence mode="wait" initial={false} onExitComplete={() => emit(EVENTS.covered)}>
+      <m.div key={key} initial="initial" animate="enter" exit="exit">
         {outlet}
+        <m.div
+          className="curtain"
+          variants={curtain}
+          aria-hidden="true"
+          onAnimationStart={(definition) => definition === 'exit' && sfx('whoosh')}
+        >
+          <span className="curtain__edge" />
+          <CurtainRequest />
+        </m.div>
       </m.div>
     </AnimatePresence>
   );

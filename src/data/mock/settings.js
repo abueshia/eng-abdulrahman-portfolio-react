@@ -16,7 +16,7 @@ export const settings = {
     // Transparent cutout: lets the head break out of the hero frame.
     avatar: media('profile-cutout.png'),
     // One CV for both languages (owner decision).
-    cv_url: '/cv/Abdulrahman_Saad_Backend_Engineer_CV.pdf',
+    cv_url: '/cv/Abdulrahman_abu_eisha_CV.pdf',
     email: 'rm01062293490@gmail.com',
     phone: '+201028292449',
     location: t('القاهرة، حدائق الأهرام', 'Hadayek El Ahram, Cairo, Egypt'),

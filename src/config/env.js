@@ -11,6 +11,9 @@
  * @property {string}  siteUrl      Public canonical origin (canonical, hreflang, OG, sitemap).
  * @property {string}  appVersion   Injected at build time from package.json.
  * @property {string}  commit       Short git hash injected at build time.
+ * @property {boolean} fx           Client-only visual effects (intro, canvas/WebGL layers,
+ *                                  GSAP scenes, custom cursor). Off in tests; content never
+ *                                  depends on it.
  */
 
 const raw = import.meta.env;
@@ -38,4 +41,5 @@ export const env = Object.freeze({
   siteUrl: (raw.VITE_SITE_URL || 'https://eng-abdulrahman-abu-eisha.vercel.app').replace(/\/$/, ''),
   appVersion: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.0.0',
   commit: typeof __APP_COMMIT__ !== 'undefined' ? __APP_COMMIT__ : 'dev',
+  fx: parseBool(raw.VITE_FX, true),
 });

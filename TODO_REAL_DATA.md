@@ -1,10 +1,11 @@
 # Real data checklist
 
-Run `npm run data:todo`. It reports two separate lists:
+Run `npm run data:todo`. It reports three separate lists:
 
 | Category | Marker | Blocks publishing? |
 | --- | --- | --- |
 | **Required before publishing** | `TODO_REAL_DATA` values, plus required files that are missing or invalid (format/dimensions are checked) | **Yes** (exit code 1) |
+| **Recommended** | Quality issues (e.g. a portrait too small to stay sharp) | No |
 | **Temporary mock until the API** | Whole mock files headed `MOCK_UNTIL_API` | No: expected until `VITE_USE_MOCK=false` |
 
 It also lists the sections hidden through `settings.sections_visibility`.
@@ -23,15 +24,19 @@ It also lists the sections hidden through `settings.sections_visibility`.
 | LinkedIn | https://www.linkedin.com/in/eng-abdulrahman-abu-eisha/ |
 | Facebook | https://www.facebook.com/abdo.saad.35762241 |
 | X | Removed (not used) |
-| CV | `public/cv/Abdulrahman_Saad_Backend_Engineer_CV.pdf` (one file for both languages) |
+| CV | `public/cv/Abdulrahman_abu_eisha_CV.pdf` (one file for both languages) |
+| Portrait | `public/images/profile-cutout.png`: transparent PNG cutout ✓ (hero runs in `cutout` mode) |
 
 JSON-LD `sameAs` lists identity profiles only (GitHub, LinkedIn, Facebook). WhatsApp is a contact channel, so it stays out.
 
 ## ✗ Required before publishing
 
-- [ ] `public/images/profile-cutout.png`: currently a **JPEG** (848×1024) with a `.png` name and **no transparency**. It needs a real PNG with an alpha channel (≥ 1200px tall if possible) for the hero's frame-breaking effect.
 - [ ] `public/images/og-cover.jpg`: currently a copy of the portrait (848×1024). It needs a **1200×630** social preview image (see `SEO.md` §4).
 - [ ] Final domain: update `VITE_SITE_URL` (see `SEO.md` §10). Not detectable by the script.
+
+## ◇ Recommended (not blocking)
+
+- [ ] `public/images/profile-cutout.png`: the transparent cutout works, but the figure is only **181×408 px** once the empty margins are trimmed, so the hero upscales it. A cutout **≥ 1400 px tall** (same framing, transparent background) will make the portrait sharp on desktop and retina screens. Replacing the file is all it takes: `npm run dev` / `npm run build` regenerate the AVIF/WebP variants automatically (or run `npm run images`).
 
 ## ◌ Temporary mock until the API
 

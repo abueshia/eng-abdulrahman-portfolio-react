@@ -114,7 +114,9 @@ Rules: only absolute `https` URLs, so placeholder or non-URL values are filtered
 - **`robots.txt`:** allow all, plus the sitemap location.
 - **404:** `dist/404.html` (Arabic, `noindex`) is served by Vercel with a real `404` status for any URL that was not generated.
 - **Internal linking:** real `<a href>` links (`LocalizedLink`) for every page. Never navigate with `onClick` alone. Case studies link to related projects and the next case. Posts link to related posts.
-- **Images:** descriptive `alt` (from the API, localised), explicit `width`/`height`, AVIF/WebP via `npm run images` (phase 2), lazy below the fold, `fetchpriority="high"` only for the LCP image.
+- **Images:** descriptive `alt` (from the API, localised), explicit `width`/`height`, AVIF/WebP with `srcset` via `npm run images`, lazy below the fold, `fetchpriority="high"` only for an image that is the LCP element.
+  - The hero portrait is not the LCP element (the name is), so it is not prioritised over the font.
+  - Its `alt` is "Portrait of {name}" in each language.
 
 ---
 
@@ -149,10 +151,34 @@ Until the API is live (`VITE_USE_MOCK=true`), the build prerenders the mock data
 
 Rankings use field CWV (LCP, INP, CLS). Targets: Lighthouse ≥ 90 on mobile for Performance, Accessibility, Best Practices and SEO.
 
-- **LCP** is the hero name (text), present in the prerendered HTML, so it no longer waits for JS.
-- **CLS:** self-hosted fonts with `font-display: swap` and fallback metrics, reserved media dimensions, no layout-shifting banners.
-- **INP:** heavy visuals (service-mesh canvas, GSAP) are deferred and paused off-screen.
-- **JS budget:** the plan targets < 170 KB gzip initial JS. **Current (Phase 1): ~260 KB gzip**, mostly react-dom, motion, react-router 7, i18next, TanStack Query and axios. Reduction is a Phase 6 task (candidates: lighter router usage, the `motion` mini build for simple cases, deferring axios/i18n bundles).
+- **LCP** is the hero name (text), present in the prerendered HTML, so it does not wait for JS.
+  - The display font of the page's language is preloaded (`<link rel="preload" as="font">`, injected by `scripts/prerender.js`), so the name paints in its real face sooner.
+  - The canvas, WebGL and GSAP layers mount only after idle and are never LCP candidates.
+- **CLS:** layout never depends on JavaScript:
+  - Fonts: self-hosted with `font-display: swap`.
+  - Name: one line per row (`white-space: nowrap`) with a line-height tied to the font size, so a font swap cannot reflow it.
+  - Portrait: explicit `width`/`height`.
+  - Live values (clock, telemetry, uptime) fill slots that are already reserved.
+- **INP:** heavy visuals are deferred, written outside React (rAF + CSS variables), paused with the tab and governed by the device tier and an FPS guard.
+- **Hydration waterfall:** each prerendered page carries `modulepreload` for its own lazy page chunk (from the Vite manifest), so hydration does not wait for entry → page chunk.
+- **JS budget:** the plan targets < 170 KB gzip of initial JS. Measure it with `npm run size` after a build.
+
+  | | Phase 1 | Phase 2 |
+  | --- | --- | --- |
+  | Home page, initial + page chunk (gzip) | 204.4 KB | 201.1 KB |
+  | Deferred (idle / interaction) | 17.6 KB | ~107 KB |
+
+  The hero did not grow the initial bundle: motion's animation features moved to an async chunk, and GSAP, the mesh, WebGL, the cursor and the intro all load deferred. The remaining gap to 170 KB is react-dom, react-router, i18next, TanStack Query and axios; it is Phase 6 work.
+
+### The boot intro and crawlers
+
+- The intro is **never** in the prerendered HTML.
+  - The pre-paint script sets `data-boot="play"` only for the first home-page view of a session, and a CSS cover hides the page until the app mounts.
+  - The content underneath is fully rendered, and without JavaScript nothing is covered.
+  - A CSS failsafe lifts the cover after 3.5 s if the app never starts.
+- Deep links (case studies, articles) and returning visitors never see it.
+- Googlebot renders with JavaScript, but it reads the DOM rather than the pixels, and the DOM is complete from the first byte.
+- `src/entry-server.test.jsx` asserts that the name, summary, actions and portrait `alt` are in the generated HTML, and that no intro or canvas markup is.
 
 ---
 
@@ -175,7 +201,7 @@ Rankings use field CWV (LCP, INP, CLS). Targets: Lighthouse ≥ 90 on mobile for
 | Phase | SEO work |
 | --- | --- |
 | 1 ✅ | SSG pipeline, `<Seo>` head manager, canonical/hreflang/OG/Twitter, Person + WebSite JSON-LD, sitemap, robots, real 404, hydration tests |
-| 2 | Hero LCP discipline (text LCP, canvas after idle), responsive images script, preloading of the hero image |
+| 2 ✅ | Hero LCP discipline (text LCP + display-font preload, canvas/WebGL/GSAP after idle), intro kept out of the HTML, page-chunk `modulepreload`, responsive AVIF/WebP pipeline (`npm run images`) |
 | 3 | Semantic section headings, about/experience content indexable in both languages |
 | 4 | Case-study JSON-LD + breadcrumbs, filter URLs canonicalised, per-project OG images |
 | 5 | BlogPosting + FAQPage JSON-LD, article TOC anchors, related-content links |

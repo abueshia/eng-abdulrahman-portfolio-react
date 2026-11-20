@@ -81,5 +81,95 @@
     "rights": "جميع الحقوق محفوظة.",
     "builtWith": "مبني بـ React · مدعوم بـ Laravel API",
     "version": "v{{version}} · commit {{commit}}"
+  },
+  "boot": {
+    "title": "abu-eisha / تسلسل الإقلاع",
+    "prompt": "abdulrahman@portfolio:~$",
+    "command": "php artisan engineer:profile --stack",
+    "skip": "تخطَّ المقدمة",
+    "lines": {
+      "modules": "Loading modules   [gateway] [auth] [mesh] [ui]",
+      "fonts": "Resolving fonts   display · body · mono",
+      "data": "Hydrating state   settings · lang={{locale}} · dir={{dir}}",
+      "portrait": "Decoding portrait gateway.avif",
+      "final": "Booting portfolio…"
+    }
+  },
+  "hero": {
+    "status": {
+      "localTime": "{{time}} بالتوقيت المحلي"
+    },
+    "cta": {
+      "explore": "استكشف دراسات الحالة",
+      "start": "ابدأ مشروعك",
+      "cv": "تحميل السيرة الذاتية",
+      "cvFormat": "(ملف PDF)"
+    },
+    "terminal": {
+      "label": "أمر الطرفية (اكتب help)",
+      "placeholder": "اكتب help"
+    },
+    "portraitAlt": "صورة {{name}}",
+    "monogram": "ع.أ",
+    "cue": "مرّر لإرسال الطلب",
+    "transmit": "GET / → 200 OK · forwarding → /{{station}}",
+    "marquee": {
+      "healthy": "healthy"
+    }
+  },
+  "terminal": {
+    "help": {
+      "title": "الأوامر المتاحة:",
+      "help": "عرض هذه القائمة",
+      "whoami": "من وراء هذا النظام",
+      "stack": "التقنيات المستخدمة",
+      "projects": "الأعمال المختارة ثم الانتقال إليها",
+      "contact": "كل طرق التواصل",
+      "hire": "افتح طلباً جديداً (201 Created)",
+      "cv": "تحميل السيرة الذاتية (PDF)",
+      "theme": "التبديل بين الفاتح والداكن",
+      "lang": "تغيير اللغة",
+      "clear": "مسح الشاشة",
+      "secret": "…وأمر artisan واحد غير موثّق."
+    },
+    "experience_zero": "في البداية",
+    "experience_one": "سنة من بناء برمجيات حقيقية",
+    "experience_two": "سنتان من بناء برمجيات حقيقية",
+    "experience_few": "+{{count}} سنوات من بناء برمجيات حقيقية",
+    "experience_many": "+{{count}} سنة من بناء برمجيات حقيقية",
+    "experience_other": "+{{count}} سنة من بناء برمجيات حقيقية",
+    "projects": "← فتح /projects",
+    "hire": "تم استلام الطلب. لنتحدث عمّا تبنيه.",
+    "cv": "جارٍ تحميل السيرة الذاتية…",
+    "theme": "تم تبديل المظهر.",
+    "lang": "جارٍ تغيير اللغة…",
+    "exit": "لا يوجد مخرج. جرّب hire --me.",
+    "notFound": "الأمر غير موجود: {{command}}. اكتب help.",
+    "sudo": "تم رفض الإذن: محاولة لطيفة.",
+    "artisan": "Artisan يستمع. ليست كل الأوامر موثّقة.",
+    "down": "التطبيق الآن في وضع الصيانة.",
+    "up": "التطبيق يعمل الآن.",
+    "alreadyUp": "التطبيق يعمل بالفعل."
+  },
+  "outage": {
+    "title": "الخدمة غير متاحة",
+    "subtitle": "php artisan down · نعود خلال لحظات"
+  },
+  "journey": {
+    "stations": {
+      "gateway": "البوابة",
+      "auth": "المصادقة",
+      "services": "الخدمات",
+      "queue": "الطابور",
+      "database": "قاعدة البيانات",
+      "response": "الاستجابة"
+    }
+  },
+  "sound": {
+    "on": "تشغيل أصوات الواجهة",
+    "off": "إيقاف أصوات الواجهة"
+  },
+  "cursor": {
+    "view": "عرض"
   }
 }

@@ -7,8 +7,9 @@ import { paths } from '@/config/routes';
 import { useProjects } from '@/features/projects/hooks/useProjects';
 import { useLocale } from '@/hooks/useLocale';
 import { useSettings } from '@/hooks/useSettings';
+import { Hero } from '@/features/hero/components/Hero';
+import { HeroFx } from '@/features/hero/components/HeroFx';
 import { buildHomeJsonLd } from '@/utils/structured-data';
-import { HeroPlaceholder } from './home/HeroPlaceholder';
 import { PlaceholderSection } from './home/PlaceholderSection';
 
 /** Section order and the phase in which each real section lands. */
@@ -56,7 +57,11 @@ function ProjectsProbe() {
   );
 }
 
-/** Home page: hero followed by every visible section, in order. */
+/**
+ * Home page: the journey. The hero is the Gateway; every visible section
+ * follows in order (each carries its journey station, see config/journey.js).
+ * `HeroFx` adds the client-only motion layers once the page is idle.
+ */
 export default function HomePage() {
   const { data } = useSettings();
   const { locale } = useLocale();
@@ -72,7 +77,8 @@ export default function HomePage() {
         type="profile"
         jsonLd={jsonLd}
       />
-      <HeroPlaceholder />
+      <Hero />
+      <HeroFx />
       {SECTIONS.map(({ id, phase }, i) => (
         <PlaceholderSection key={id} id={id} index={i + 1} phase={phase}>
           {id === 'projects' && <ProjectsProbe />}
