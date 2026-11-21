@@ -1,0 +1,92 @@
+{
+  "projects": {
+    "lead": "Stored work, read from the database one record at a time. Narrow the query; every row opens as a full case file.",
+    "filters": "Filter case files",
+    "type": "type",
+    "tech": "stack",
+    "all": "all",
+    "clear": "Clear filters",
+    "types": {
+      "saas": "SaaS",
+      "pos": "POS & Inventory",
+      "api": "API & Real-time"
+    },
+    "rows_one": "{{count}} row in set",
+    "rows_other": "{{count}} rows in set",
+    "empty": "Empty set: no case file matches this query.",
+    "sample": "Sample",
+    "sampleHint": "Sample project: illustrative content until real case studies are published.",
+    "role": "role",
+    "year": "year",
+    "metrics": "metrics",
+    "noData": "No data",
+    "open": "Open case file",
+    "swipe": "Swipe through the case files",
+    "counter": "{{current}} / {{total}}"
+  },
+  "caseStudy": {
+    "breadcrumb": "Breadcrumb",
+    "home": "Home",
+    "work": "Work",
+    "record": "record",
+    "role": "Role",
+    "year": "Year",
+    "duration": "Duration",
+    "type": "Type",
+    "client": "Client",
+    "request": "The request",
+    "response": "The response",
+    "problem": "Problem",
+    "solution": "Solution",
+    "architecture": "Architecture",
+    "architectureLead": "The system as the request travels through it. Each decision lights up the parts it shaped.",
+    "decisions": "Architectural decisions",
+    "diagramLabel": "Architecture diagram: {{title}}",
+    "flows": "Data flows",
+    "flow": "{{from}} to {{to}} ({{kind}})",
+    "kinds": {
+      "sync": "synchronous",
+      "async": "queued",
+      "realtime": "real-time"
+    },
+    "layers": {
+      "client": "client",
+      "edge": "edge",
+      "app": "domain",
+      "worker": "workers",
+      "data": "data",
+      "external": "external"
+    },
+    "stack": "Technologies",
+    "challenges": "Challenges",
+    "metrics": "Metrics",
+    "metricsNote": "Descriptive until real measurements exist. No invented numbers.",
+    "gallery": "Gallery",
+    "openImage": "Open image {{index}} of {{total}}: {{alt}}",
+    "lightbox": {
+      "label": "Image viewer",
+      "close": "Close",
+      "prev": "Previous image",
+      "next": "Next image",
+      "counter": "{{index}} / {{total}}"
+    },
+    "links": "Links",
+    "live": "Live site",
+    "source": "Source code",
+    "private": "Private: this project's code and deployment are not public.",
+    "related": "Related case files",
+    "next": "Next case",
+    "sampleNotice": "Sample case study: illustrative content until real projects are published. Search engines do not index it."
+  },
+  "services": {
+    "command": "php artisan route:list --path=services",
+    "lead": "Every service is an endpoint with a contract: what you send, what comes back. Open a route to read its response.",
+    "groups": "Service groups",
+    "count_one": "{{count}} route",
+    "count_other": "{{count}} routes",
+    "responseLabel": "Response of {{endpoint}}",
+    "cta": "Send this request",
+    "deliverables": "Deliverables",
+    "stack": "Tools and providers"
+  }
+}

@@ -21,7 +21,9 @@ describe('Axios mock adapter & resource services', () => {
 
   it('filters and paginates projects by type, technology and featured flag', async () => {
     const all = await projectsService.list({}, { lang: 'en' });
-    expect(all.data.length).toBeGreaterThanOrEqual(6);
+    expect(all.data).toHaveLength(3);
+    // Sample records say so: the UI badges them and keeps them out of the index.
+    expect(all.data.every((p) => p.is_sample === true)).toBe(true);
     expect(all.pagination).toMatchObject({
       current_page: 1,
       total: all.data.length,
@@ -40,12 +42,14 @@ describe('Axios mock adapter & resource services', () => {
     const page1 = await projectsService.list({ per_page: 2, page: 1 }, { lang: 'en' });
     expect(page1.data).toHaveLength(2);
     expect(page1.pagination?.per_page).toBe(2);
-    expect(page1.pagination?.last_page).toBeGreaterThanOrEqual(3);
+    expect(page1.pagination?.last_page).toBe(2);
   });
 
   it('returns a full case study with related_projects and rejects unknown slugs with 404', async () => {
-    const detail = await projectsService.show('sample-commerce-platform', { lang: 'en' });
-    expect(detail.data.title).toBe('Sample · Commerce Platform');
+    const detail = await projectsService.show('sample-saas-billing', { lang: 'en' });
+    expect(detail.data.title).toBe('Multi-tenant SaaS Subscription Platform');
+    expect(detail.data.architecture.nodes.length).toBeGreaterThan(0);
+    expect(detail.data.metrics.some((metric) => metric.value === null)).toBe(true);
     expect(detail.data.related_projects.length).toBeGreaterThan(0);
     expect(detail.data.technologies[0]).toHaveProperty('name');
 

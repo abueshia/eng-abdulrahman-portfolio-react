@@ -31,6 +31,12 @@ function CurtainRequest() {
  * during the exit. The key ignores the locale prefix: switching language
  * re-renders in place, no curtain. First load: no curtain (the boot intro
  * owns that moment). Reduced motion: instant swap.
+ *
+ * View Transitions: a navigation carrying `state.viewTransition` (case file →
+ * case study, see useCaseNavigation) is animated by the browser, which morphs
+ * the cover into the new header. The curtain steps aside: the leaving page
+ * exits instantly (AnimatePresence `custom` reaches the exiting child) and the
+ * new one arrives uncovered.
  */
 export function PageTransition() {
   const location = useLocation();
@@ -38,30 +44,41 @@ export function PageTransition() {
   const reduced = useReducedMotion();
   const { dir } = useLocale();
   const key = stripLocale(location.pathname);
+  const viewTransition = Boolean(location.state?.viewTransition);
 
   if (reduced) return outlet;
 
   const start = dir === 'rtl' ? 1 : 0;
+  const instant = { duration: 0 };
   const curtain = {
-    initial: { scaleX: 1, originX: 1 - start },
-    enter: {
-      scaleX: 0,
-      originX: 1 - start,
-      transition: { duration: 0.8, ease: EASE.shutter, delay: 0.08 },
-    },
-    exit: {
-      scaleX: [0, 1],
-      originX: start,
-      transition: { duration: 0.55, ease: EASE.inOutQuart },
-    },
+    initial: (/** @type {boolean} */ skip) =>
+      skip ? { scaleX: 0, transition: instant } : { scaleX: 1, originX: 1 - start },
+    enter: (/** @type {boolean} */ skip) =>
+      skip
+        ? { scaleX: 0, transition: instant }
+        : {
+            scaleX: 0,
+            originX: 1 - start,
+            transition: { duration: 0.8, ease: EASE.shutter, delay: 0.08 },
+          },
+    exit: (/** @type {boolean} */ skip) =>
+      skip
+        ? { scaleX: 0, transition: instant }
+        : { scaleX: [0, 1], originX: start, transition: { duration: 0.55, ease: EASE.inOutQuart } },
   };
 
   return (
-    <AnimatePresence mode="wait" initial={false} onExitComplete={() => emit(EVENTS.covered)}>
+    <AnimatePresence
+      mode="wait"
+      initial={false}
+      custom={viewTransition}
+      onExitComplete={() => emit(EVENTS.covered)}
+    >
       <m.div key={key} initial="initial" animate="enter" exit="exit">
         {outlet}
         <m.div
           className="curtain"
+          custom={viewTransition}
           variants={curtain}
           aria-hidden="true"
           onAnimationStart={(definition) => definition === 'exit' && sfx('whoosh')}

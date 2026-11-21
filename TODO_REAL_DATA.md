@@ -43,10 +43,14 @@ JSON-LD `sameAs` lists identity profiles only (GitHub, LinkedIn, Facebook). What
 
 ## ◌ Temporary mock until the API
 
-Clearly fictional sample content (`Sample ·` project titles, `sample-*` slugs, "Sample Company A/B/C", zeroed figures). It is replaced by Laravel content when the API is connected:
+Clearly fictional sample content (`sample-*` slugs, "Sample Company A/B/C", zeroed figures, `is_sample` projects). It is replaced by Laravel content when the API is connected:
 
-- `experiences.js`, `projects.js`, `stats.js` (only "4+ years" is real). The observability board shows the zeroed sample metrics as **"No data"** panels (no number, flat dashed series), so nothing fictional reads as a real figure.
-- `services.js`, `faqs.js`, `technologies.js`
+- `projects.js`: **3 sample case studies** (multi-tenant SaaS, inventory & POS, delivery/booking API), each with `is_sample: true`. No real clients or companies, no invented numbers: metrics are descriptive ("REST + WebSocket") or `null` ("No data"). The flag shows a "Sample / نموذجي" badge, makes the case study `noindex`, keeps it out of `sitemap.xml` and suppresses its CreativeWork JSON-LD. Real projects from the API simply omit the flag (or send `false`) and become indexable automatically.
+  - Screens: generated SVGs in `public/images/projects/<slug>/` (`npm run visuals`). Replace each `cover_image`, `preview_image` and `gallery[].image` path with a real screenshot (16:10, ≥ 1600 px wide; JPG/PNG/WebP covers also become the Open Graph image) and update the `alt` texts.
+  - Per real project, provide: title, summary (≤ 160 chars), problem, solution, role, technologies, challenges, architecture nodes/edges + decisions, metrics (only measured values), gallery, and `live_url` / `github_url` if public.
+- `experiences.js`, `stats.js` (only "4+ years" is real). The observability board shows the zeroed sample metrics as **"No data"** panels (no number, flat dashed series), so nothing fictional reads as a real figure.
+- `services.js`: the **real** list of 14 services in 5 groups (edit wording freely). It stays in a mock file only until `GET /services` serves it.
+- `faqs.js`, `technologies.js`
 - `credentials.js`, `testimonials.js`, `blogs.js`: **hidden** (`sections_visibility` = `false`), so they are absent from the navigation and prerendering until real content exists
 
-> Note: while `VITE_USE_MOCK=true`, the sample case studies are still prerendered and listed in `sitemap.xml`. Connect the API, or hide `projects`, before submitting the sitemap to Search Console.
+> Note: sample case studies are still prerendered (links work) but are `noindex` and **not** listed in `sitemap.xml`. The sitemap can be submitted as is; real projects appear in it as soon as the API serves them without `is_sample`.

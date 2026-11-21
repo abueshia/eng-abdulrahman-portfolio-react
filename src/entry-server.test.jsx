@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { getPrerenderRoutes, renderPage } from '@/entry-server';
 import { headToHtml } from '@/utils/head';
 
-const SLUG = 'sample-fleet-api';
+const SLUG = 'sample-delivery-dispatch';
+const TITLE = 'Delivery &amp; Booking API with Live Dispatch';
 
 describe('Prerendering (entry-server)', () => {
   it('renders a case study with its data, final <head> and no deferred boundaries', async () => {
@@ -14,15 +15,38 @@ describe('Prerendering (entry-server)', () => {
     expect(result.status).toBe(200);
     expect(result.locale).toBe('en');
     // Real content, not the loading fallback or an outlined Suspense segment.
-    expect(result.html).toMatch(/<h1[^>]*>Sample · Fleet API/);
+    expect(result.html).toContain(`>${TITLE}</h1>`);
     expect(result.html).not.toContain('<!--$?-->');
     expect(result.html).not.toContain('Loading');
 
-    expect(head).toContain('<title>Sample · Fleet API | Abdulrahman Abu Eisha</title>');
-    expect(head).toMatch(/rel="canonical" href="[^"]*\/en\/projects\/sample-fleet-api"/);
-    expect(head).toMatch(/hreflang="ar" href="[^"]*\/projects\/sample-fleet-api"/);
-    expect(head).toMatch(/hreflang="x-default" href="[^"]*\/projects\/sample-fleet-api"/);
-    expect(head).toContain('content="index, follow');
+    expect(head).toContain(`<title>${TITLE} | Abdulrahman Abu Eisha</title>`);
+    expect(head).toMatch(/rel="canonical" href="[^"]*\/en\/projects\/sample-delivery-dispatch"/);
+    expect(head).toMatch(/hreflang="ar" href="[^"]*\/projects\/sample-delivery-dispatch"/);
+    expect(head).toMatch(/hreflang="x-default" href="[^"]*\/projects\/sample-delivery-dispatch"/);
+  });
+
+  it('keeps sample case studies out of the index: noindex, no CreativeWork, but a real 200', async () => {
+    const result = await renderPage(`/en/projects/${SLUG}`);
+    const head = headToHtml(/** @type {any} */ (result.head));
+
+    expect(result.status).toBe(200);
+    expect(head).toContain('name="robots" content="noindex, follow"');
+    expect(head).not.toContain('application/ld+json');
+    // The badge and the notice say so on the page itself.
+    expect(result.html).toContain('sample-badge');
+    expect(result.html).toContain('Sample case study');
+  });
+
+  it('prerenders the whole case study: architecture, decisions, gallery and next case', async () => {
+    const { html } = await renderPage(`/en/projects/${SLUG}`);
+
+    expect(html).toContain('WebSocket Server'); // a diagram node, as SVG text
+    expect(html).toContain('Every status change is an event'); // a decision
+    expect(html).toContain('Courier app screens'); // gallery alt
+    expect(html).toContain('data-vt-cover'); // the View Transition target
+    expect(html).toContain('Next case');
+    expect(html).toContain('No data'); // a null metric never becomes a number
+    expect(html).not.toContain('data-fx="on"');
   });
 
   it('dehydrates the fetched queries so the client hydrates identical data', async () => {
@@ -38,7 +62,12 @@ describe('Prerendering (entry-server)', () => {
     const ld = head?.tags.find((tag) => tag.attrs.type === 'application/ld+json');
     const graph = JSON.parse(ld?.content ?? '{}')['@graph'];
 
-    expect(graph.map((node) => node['@type'])).toEqual(['ProfilePage', 'Person', 'WebSite']);
+    expect(graph.map((node) => node['@type'])).toEqual([
+      'ProfilePage',
+      'Person',
+      'WebSite',
+      'ProfessionalService',
+    ]);
     const [page, person] = graph;
     expect(page.mainEntity).toEqual({ '@id': person['@id'] });
     expect(person.name).toBe('Abdulrahman Abu Eisha');
@@ -50,6 +79,54 @@ describe('Prerendering (entry-server)', () => {
       'https://www.linkedin.com/in/eng-abdulrahman-abu-eisha/',
       'https://www.facebook.com/abdo.saad.35762241',
     ]);
+  });
+
+  it('describes the services as a ProfessionalService offer catalogue, grouped like the page', async () => {
+    const { head } = await renderPage('/en');
+    const ld = head?.tags.find((tag) => tag.attrs.type === 'application/ld+json');
+    const graph = JSON.parse(ld?.content ?? '{}')['@graph'];
+    const service = graph.find((node) => node['@type'] === 'ProfessionalService');
+    const groups = service.hasOfferCatalog.itemListElement;
+
+    expect(service.founder).toEqual({ '@id': graph[1]['@id'] });
+    expect(groups.map((group) => group.name)).toEqual([
+      'Backend & Integrations',
+      'Frontend',
+      'Growth: SEO & GEO',
+      'Infra & AI',
+      'Support',
+    ]);
+    const offers = groups.flatMap((group) => group.itemListElement);
+    expect(offers).toHaveLength(14);
+    expect(offers[0].itemOffered).toMatchObject({
+      '@type': 'Service',
+      name: 'REST API Design & Development',
+    });
+  });
+
+  it('prerenders every case file and every service contract as real text', async () => {
+    const { html, queryState } = await renderPage('/en');
+    const keys = /** @type {any} */ (queryState).queries.map((q) => q.queryKey[0]);
+
+    expect(keys).toEqual(expect.arrayContaining(['projects', 'services']));
+    for (const title of [
+      'Multi-tenant SaaS Subscription Platform',
+      'Inventory &amp; Point-of-Sale System',
+      TITLE,
+    ]) {
+      expect(html).toContain(title);
+    }
+    expect(html).toContain('sample-badge');
+    expect(html).toContain('Single DB · tenant_id scoping'); // a descriptive metric
+    // Services: endpoints, titles, deliverables (closed contracts included).
+    expect(html).toContain('/services/payment-integration');
+    expect(html).toContain('Paymob');
+    expect(html).toContain('GEO: Generative Engine Optimization');
+    expect(html).toContain('An llms.txt file and machine-readable page structure');
+    expect(html).toContain('200 OK');
+    // Journey: the endpoints station is a route stop; credentials stay hidden.
+    expect(html).toContain('data-station="endpoints"');
+    expect(html).not.toContain('id="credentials"');
   });
 
   it('prerenders the full hero: the intro and motion layers never hide content', async () => {
@@ -117,6 +194,10 @@ describe('Prerendering (entry-server)', () => {
 
     expect(locales).toEqual(['ar', 'en']);
     expect(routePaths).toEqual(expect.arrayContaining(['/', `/projects/${SLUG}`]));
+    // Sample case studies are generated (links work) but never listed in the sitemap.
+    const sample = routes.find((route) => route.path === `/projects/${SLUG}`);
+    expect(sample?.sitemap).toBe(false);
+    expect(routes.find((route) => route.path === '/')?.sitemap).not.toBe(false);
     // sections_visibility.blog = false → no blog pages and no sitemap entries.
     expect(routePaths.some((p) => p.startsWith('/blog'))).toBe(false);
   });

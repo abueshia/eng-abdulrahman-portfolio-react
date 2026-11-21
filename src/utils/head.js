@@ -22,6 +22,7 @@
  * @typedef {Object} HeadData
  * @property {string} title
  * @property {HeadTag[]} tags
+ * @property {number} [status] HTTP status for the prerendered page (not a tag).
  */
 
 export const MANAGED_ATTR = 'data-seo';

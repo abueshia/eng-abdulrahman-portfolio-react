@@ -11,6 +11,7 @@ import {
   experiences,
   faqs,
   projects,
+  serviceGroups,
   services,
   settings,
   stats,
@@ -42,14 +43,29 @@ const expandTechs = (slugs) =>
 const projectSummary = (p) => ({
   id: p.id,
   slug: p.slug,
+  is_sample: p.is_sample,
   title: p.title,
   summary: p.summary,
   type: p.type,
   year: p.year,
+  role: p.role,
   is_featured: p.is_featured,
   cover_image: p.cover_image,
+  cover_alt: p.cover_alt,
+  preview_image: p.preview_image,
+  metrics: p.metrics,
   technologies: expandTechs(p.technologies),
+  published_at: p.published_at,
+  updated_at: p.updated_at,
 });
+
+const groupBySlug = new Map(serviceGroups.map((group) => [group.slug, group]));
+
+/** Services in display order, each with its eager-loaded group (ServiceResource). */
+const servicesWithGroups = () =>
+  services
+    .map((service) => ({ ...service, group: groupBySlug.get(service.group) ?? null }))
+    .sort((a, b) => (a.group?.sort ?? 99) - (b.group?.sort ?? 99) || a.id - b.id);
 
 const blogSummary = (b) => ({
   id: b.id,
@@ -118,7 +134,7 @@ export const routes = [
           {
             stats,
             featured_projects: projects.filter((p) => p.is_featured).map(projectSummary),
-            services,
+            services: servicesWithGroups(),
             testimonials,
             latest_blogs: blogs.slice(0, 3).map(blogSummary),
           },
@@ -180,7 +196,11 @@ export const routes = [
     pattern: '/credentials',
     handler: ({ lang }) => ok(localize(credentials, lang)),
   },
-  { method: 'get', pattern: '/services', handler: ({ lang }) => ok(localize(services, lang)) },
+  {
+    method: 'get',
+    pattern: '/services',
+    handler: ({ lang }) => ok(localize(servicesWithGroups(), lang)),
+  },
   {
     method: 'get',
     pattern: '/testimonials',

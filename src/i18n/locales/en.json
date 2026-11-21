@@ -159,7 +159,8 @@
       "services": "Services",
       "queue": "Queue",
       "database": "Database",
-      "response": "Response"
+      "response": "Response",
+      "endpoints": "Endpoints"
     }
   },
   "sound": {

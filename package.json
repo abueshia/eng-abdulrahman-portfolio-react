@@ -15,7 +15,8 @@
     "format:check": "prettier --check .",
     "data:todo": "node scripts/real-data-report.js",
     "images": "node scripts/images.js",
-    "size": "node scripts/bundle-report.js"
+    "size": "node scripts/bundle-report.js",
+    "visuals": "node scripts/project-visuals.js"
   },
   "dependencies": {
     "@fontsource-variable/alexandria": "^5.3.0",

@@ -104,9 +104,9 @@ export async function renderPage(url) {
   // Drop the cache: its garbage-collection timers would keep Node alive.
   queryClient.clear();
 
-  // The only noindex page is "not found", so it doubles as the status signal.
-  const robots = head?.tags.find((tag) => tag.attrs.name === 'robots')?.attrs.content ?? '';
-  return { html, head, locale, queryState, status: robots.startsWith('noindex') ? 404 : 200 };
+  // <Seo status> is the signal (noindex alone is not: sample case studies are
+  // noindex but real 200 pages).
+  return { html, head, locale, queryState, status: head?.status ?? 200 };
 }
 
 /**
@@ -131,6 +131,8 @@ async function fetchAll(list) {
  * @typedef {Object} PrerenderRoute
  * @property {string} path      Locale-agnostic path ("/blog/my-post").
  * @property {string} [lastmod] ISO date for the sitemap.
+ * @property {boolean} [sitemap] False for pages that are generated but not
+ *   listed (noindex sample case studies).
  */
 
 /**
@@ -155,6 +157,8 @@ export async function getPrerenderRoutes() {
       ...projects.map((project) => ({
         path: paths.project(project.slug),
         lastmod: project.updated_at ?? project.published_at,
+        // Samples are prerendered (deep links work) but noindex: never listed.
+        sitemap: !project.is_sample,
       })),
       ...posts.map((post) => ({
         path: paths.post(post.slug),

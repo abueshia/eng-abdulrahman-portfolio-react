@@ -164,19 +164,22 @@ await writeFile(join(distDir, '404.html'), buildDocument(notFound, '/404', '/404
 
 // sitemap.xml with hreflang alternates (one <url> per locale variant).
 const buildDate = new Date().toISOString().slice(0, 10);
-const entries = routes.flatMap((route) =>
-  locales.map((locale) => {
-    const alternates = [
-      ...locales.map(
-        (lng) =>
-          `    <xhtml:link rel="alternate" hreflang="${lng}" href="${xml(env.siteUrl + localizePath(lng, route.path))}"/>`,
-      ),
-      `    <xhtml:link rel="alternate" hreflang="x-default" href="${xml(env.siteUrl + localizePath(DEFAULT_LOCALE, route.path))}"/>`,
-    ].join('\n');
-    const lastmod = (route.lastmod ?? buildDate).slice(0, 10);
-    return `  <url>\n    <loc>${xml(env.siteUrl + localizePath(locale, route.path))}</loc>\n    <lastmod>${lastmod}</lastmod>\n${alternates}\n  </url>`;
-  }),
-);
+// Generated-but-noindex pages (sample case studies) are left out.
+const entries = routes
+  .filter((route) => route.sitemap !== false)
+  .flatMap((route) =>
+    locales.map((locale) => {
+      const alternates = [
+        ...locales.map(
+          (lng) =>
+            `    <xhtml:link rel="alternate" hreflang="${lng}" href="${xml(env.siteUrl + localizePath(lng, route.path))}"/>`,
+        ),
+        `    <xhtml:link rel="alternate" hreflang="x-default" href="${xml(env.siteUrl + localizePath(DEFAULT_LOCALE, route.path))}"/>`,
+      ].join('\n');
+      const lastmod = (route.lastmod ?? buildDate).slice(0, 10);
+      return `  <url>\n    <loc>${xml(env.siteUrl + localizePath(locale, route.path))}</loc>\n    <lastmod>${lastmod}</lastmod>\n${alternates}\n  </url>`;
+    }),
+  );
 await writeFile(
   join(distDir, 'sitemap.xml'),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${entries.join('\n')}\n</urlset>\n`,

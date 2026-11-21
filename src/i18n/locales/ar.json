@@ -163,7 +163,8 @@
       "services": "الخدمات",
       "queue": "الطابور",
       "database": "قاعدة البيانات",
-      "response": "الاستجابة"
+      "response": "الاستجابة",
+      "endpoints": "نقاط النهاية"
     }
   },
   "sound": {

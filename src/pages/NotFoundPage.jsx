@@ -13,7 +13,7 @@ export default function NotFoundPage() {
 
   return (
     <div className="container-fluid grid min-h-[80svh] place-items-center pt-[var(--nav-height)]">
-      <Seo title={t('meta.notFoundTitle')} noIndex />
+      <Seo title={t('meta.notFoundTitle')} noIndex status={404} />
       <div className="flex w-full max-w-2xl flex-col gap-8">
         <pre
           dir="ltr"

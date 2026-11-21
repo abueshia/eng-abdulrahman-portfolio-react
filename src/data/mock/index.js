@@ -7,7 +7,7 @@ export { technologies, technologyCategories } from './technologies';
 export { projects } from './projects';
 export { experiences } from './experiences';
 export { credentials } from './credentials';
-export { services } from './services';
+export { services, serviceGroups } from './services';
 export { testimonials } from './testimonials';
 export { blogs, blogCategories } from './blogs';
 export { faqs } from './faqs';

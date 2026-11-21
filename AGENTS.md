@@ -9,7 +9,7 @@
 ## 1) الهوية البصرية ونظام التصميم (Ember × Ion)
 
 - **الفلسفة البصرية:** ثقافة الـ Terminal، هندسة النظم، والمعمارية النظيفة بأسلوب سينمائي فاخر على مستوى استوديوهات Awwwards (بعيداً عن القوالب الجاهزة أو التدرجات البنفسجية المبتذلة).
-- **الفكرة المركزية "The Visitor Is The Request" (إلزامية):** الموقع كله رحلة طلب HTTP داخل نظام حي، والتمرير هو حركة الطلب بين المحطات: Gateway (Hero) ← Observability (Stats) ← Auth (About) ← Services (Skills) ← Queue (Experience) ← Database (Projects) ← Response 201 (Contact).
+- **الفكرة المركزية "The Visitor Is The Request" (إلزامية):** الموقع كله رحلة طلب HTTP داخل نظام حي، والتمرير هو حركة الطلب بين المحطات: Gateway (Hero) ← Observability (Stats) ← Auth (About) ← Services (Skills) ← Queue (Experience) ← Database (Projects) ← Endpoints (Services) ← Response 201 (Contact).
   - **Observability محطة "tap" (`tap: true`):** المراقبة تشاهد الطلب وهو يمر ولا توجّهه. تظهر في الـ Route Trace بعلامة مفرغة متقطعة، ولها hub جانبي في الـ mesh، لكن التوجيه يتخطاها (`nextForwardStation`)، فسطر الـ Hero يبقى `forwarding → /auth`.
   - المحطات معرّفة في `src/config/journey.js`، ومواضعها تُقاس من الـ DOM (`data-station-anchor`)، فالقسم المخفي يسقط من المسار تلقائياً.
   - الأقسام الواقعة بين محطتين "في الطريق" وتأخذ محطة ما قبلها.
@@ -47,13 +47,15 @@ src/
   app/            App.jsx · router.jsx (routes + createAppRouter) · query-client.js · prerender-state.js · RouteError.jsx · providers/{AppProviders.jsx, motion-features.js}
   assets/         ملفات مولّدة يستوردها التطبيق (portrait/: صور AVIF/WebP + portrait.json · textures/grain.png)
   components/
-    ui/           مكوّنات واجهة ذرية قابلة لإعادة الاستخدام (Button, LocalizedLink, Logo, Magnetic, SectionHeading, Seo, ErrorState...)
+    ui/           مكوّنات واجهة ذرية قابلة لإعادة الاستخدام (Button, LocalizedLink, Logo, Magnetic, SectionHeading, Seo, ErrorState, LineIcon...)
     layout/       غلاف التطبيق والطبقات العامة (RootLayout, Navbar, MobileMenu, Footer, PageTransition, ScrollManager, SmoothScroll, Section, SectionFx, ThemeToggle, LocaleSwitch, SoundToggle, BackgroundLayer, AmbientField, RouteTrace, Cursor, GlobalFx)
   features/       مجلد لكل ميزة يحتوي على components/ و hooks/ و lib/ و fx/ (وحدات GSAP الكسولة)
     stats/        StatsSection (لوحة Observability) + lib/metrics (odometer وsparkline صادقة) + fx/StatsDirector
     about/        AboutSection (بوابة AUTH وREADME وبطاقة الكود) + lib/profile-code (كلاس PHP من البيانات) + fx/AboutDirector
     skills/       SkillsSection (التبويبات + الـ constellation) + lib/constellation + fx/SkillsDirector
     experience/   ExperienceSection (git log --graph) + lib/git-log + fx/ExperienceDirector
+    projects/     ProjectsSection (Case Files) + QueryConsole + CaseFile + CaseStudy + ArchitectureDiagram + Gallery (lightbox) + SampleBadge · hooks/{useProjects, useCaseNavigation (View Transitions), useFlip} · lib/{filters, architecture} · fx/{ProjectsDirector, CaseStudyDirector}
+    services/     ServicesSection (API Contracts, route:list) + lib/contract + fx/ServicesDirector
     intro/        BootSequence + boot-store (مراحل الـ Intro ومهام الجاهزية الحقيقية)
     hero/         Hero ومكوّناته + fx/HeroDirector + lib/{mesh/graph, mesh/renderer, terminal, telemetry, portrait}
     journey/      journey-store (تتبع موضع الطلب على مسار المحطات)
@@ -63,12 +65,12 @@ src/
   context/        سياقات React (ThemeContext, LocaleContext, lenis-context, head-context)
   services/api/   عميل axios (client.js, http.js, endpoints.js, errors.js) + خدمات الموارد (*.service.js) + محول البيانات الوهمية (mock/adapter.js, handlers.js, response.js)
   data/mock/      بيانات وهمية ثنائية اللغة ({ ar, en }) تحاكي استجابات Laravel تماماً
-  i18n/           إعداد i18next وملفات الترجمة locales/{ar,en}.json
-  styles/         tokens.css · globals.css · fx.css (الطبقات العامة) · hero.css · sections.css (أقسام المرحلة 3) · fonts.js · index.css
+  i18n/           إعداد i18next وملفات الترجمة locales/{ar,en}.json · work.js + locales/work.{ar,en}.json (نصوص Projects/CaseStudy/Services، تُشحن مع الـ chunks الكسولة)
+  styles/         tokens.css · globals.css · fx.css (الطبقات العامة) · hero.css · sections.css (أقسام المرحلة 3) · work.css (Projects وCase Study وServices) · fonts.js · index.css
   utils/          cn.js · storage.js · motion.js · head.js (إدارة <head>) · structured-data.js (JSON-LD)
   config/         env.js · routes.js · navigation.js · journey.js (محطات الرحلة)
   test/           setup.js · renderWithProviders.jsx
-scripts/          prerender.js (الصفحات الثابتة + sitemap + robots + resource hints) · images.js (sharp) · bundle-report.js · real-data-report.js
+scripts/          prerender.js (الصفحات الثابتة + sitemap + robots + resource hints) · images.js (sharp) · bundle-report.js · real-data-report.js · project-visuals.js (شاشات المشاريع النموذجية SVG)
 ```
 
 ---
@@ -92,7 +94,8 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
    ```
    وتفك الدالة `unwrap()` هذا الغلاف وتحوّل أي خطأ (بما فيه `422` و`404`) إلى كائن `ApiError` موحد.
 4. **اللغة في الطلبات:** كل طلب يمرر `?lang=ar|en` وترويسة `Accept-Language`، ومفتاح التخزين المؤقت في TanStack Query يتضمن اللغة النشطة دائماً.
-5. **إظهار/إخفاء الأقسام:** يعتمد كل قسم في الصفحة الرئيسية على `<Section id="...">` الذي يقرأ `settings.sections_visibility[id]`. والقسم المخفي يُحذف أيضاً من التنقل (`useNavItems`)، وصفحات المدونة تعرض 404 ولا تُولَّد مسبقاً ولا تدخل الـ sitemap.
+5. **المشاريع النموذجية (`is_sample`):** أي مشروع يحمل `is_sample: true` يظهر بشارة "Sample / نموذجي"، وصفحته `noindex, follow` (تُولَّد مسبقاً لكن لا تدخل الـ sitemap)، ولا يأخذ JSON-LD من نوع CreativeWork. المقاييس وصفية فقط أو `null` (تظهر "No data")، ولا أرقام مخترعة. الشاشات SVG مولّدة بـ `npm run visuals`، واستبدالها بلقطات حقيقية = تغيير المسار فقط. الحقول الكاملة موثقة في رأس `src/data/mock/projects.js` وفي `SEO.md` §7.
+6. **إظهار/إخفاء الأقسام:** يعتمد كل قسم في الصفحة الرئيسية على `<Section id="...">` الذي يقرأ `settings.sections_visibility[id]`. والقسم المخفي يُحذف أيضاً من التنقل (`useNavItems`)، وصفحات المدونة تعرض 404 ولا تُولَّد مسبقاً ولا تدخل الـ sitemap.
 
 ---
 
@@ -106,12 +109,13 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 4. **`<Seo>` واحد لكل صفحة:** هو المصدر الوحيد للـ `<title>` والوصف والـ canonical والـ hreflang والـ Open Graph والـ JSON-LD (عبر الخاصية `jsonLd`). تُبنى الوسوم بدوال نقية في `src/utils/head.js`. لا تُستخدم `react-helmet-async`، ولا يُكتب أي وسم `<head>` يدوياً.
 5. **حالة الثيم:** القيمة على `<html data-theme>` هي المصدر، وتُقرأ عبر `useSyncExternalStore` (القيمة على الخادم `dark`). يُمنع الكتابة فوق `data-theme` أثناء الـ hydration.
 6. **التحقق:** `src/entry-server.test.jsx` يختبر مخرجات التوليد، و`src/app/hydration.test.jsx` يفشل عند أي hydration mismatch. وأي ميزة جديدة لا تُعتبر منتهية قبل نجاح `npm run build`.
-7. **النشر:** المحتوى يُثبَّت وقت البناء، فأي نشر من Laravel يجب أن يستدعي Vercel Deploy Hook لإعادة البناء.
-8. **الـ Intro والطبقات العميلة لا تدخل الـ HTML المولّد أبداً:** تُركَّب بعد الـ hydration فقط (`useHydrated` / `useIdleReady`).
+7. **حالة الصفحة (`status`):** الـ prerender يأخذ الحالة من `<Seo status>` (صفحة 404 فقط تمرر `status={404}`)، وليس من `noindex`. لذلك صفحة نموذجية `noindex` تبقى صفحة 200 حقيقية.
+8. **النشر:** المحتوى يُثبَّت وقت البناء، فأي نشر من Laravel يجب أن يستدعي Vercel Deploy Hook لإعادة البناء.
+9. **الـ Intro والطبقات العميلة لا تدخل الـ HTML المولّد أبداً:** تُركَّب بعد الـ hydration فقط (`useHydrated` / `useIdleReady`).
    - الاسم والعنوان ونص الـ Hero والصورة كلها في الـ HTML، ويختبر ذلك `entry-server.test.jsx`.
    - الـ LCP هو نص الاسم: يُرسم مع أول رسم تحت غطاء الـ Intro، ولا يُخفى بـ `opacity` قبل ذلك.
    - أي قيمة تعتمد على المتصفح (الوقت، اللغة الزمنية، قياسات الأداء) تُملأ بعد التركيب في مكان محجوز مسبقاً، فلا يحدث hydration mismatch ولا layout shift.
-9. **Resource hints:** `scripts/prerender.js` يقرأ manifest الـ Vite ويضيف:
+10. **Resource hints:** `scripts/prerender.js` يقرأ manifest الـ Vite ويضيف:
    - `modulepreload` لـ chunk الصفحة، فلا ينتظر الـ hydration سلسلة طلبات.
    - `preload` لخط العرض الخاص بلغة الصفحة (خط الاسم).
 
@@ -203,7 +207,7 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
   - `PageTransition`: ستارة Ember مع `GET /path`.
   - `SoundToggle`: صوت اختياري مطفأ افتراضياً، مولَّد بالـ Web Audio بدون ملفات.
   - `GlobalFx`: المحمّل الكسول.
-- **ممنوع CSS داخل الـ chunks الكسولة:** كل الأنماط في `src/styles/` (`fx.css` و`hero.css`)، حتى تظهر الصفحات المولّدة مسبقاً مكتملة التنسيق.
+- **ممنوع CSS داخل الـ chunks الكسولة:** كل الأنماط في `src/styles/` (`fx.css` و`hero.css` و`sections.css` و`work.css`)، حتى تظهر الصفحات المولّدة مسبقاً مكتملة التنسيق.
 - **`VITE_FX=off`** يعطل كل الطبقات العميلة، ويُستخدم في الاختبارات. المحتوى لا يعتمد عليه أبداً.
 
 ---
@@ -221,6 +225,9 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 - **ترتيب الـ refresh:** كل ScrollTrigger في قسم يأخذ `sectionTrigger(order)`، فتُحسب الأقسام الأعلى أولاً.
 - **ممنوع `pin` في الأقسام:** المشاهد الطويلة تُبنى بـ CSS `position: sticky` داخل غلاف طويل يُفعَّل بـ `[data-fx='on']` (يضعه الـ director)، وتُحرَّك بالـ scrub.
 - **الحالة الافتراضية لكل عنصر هي حالته النهائية المقروءة.** الـ director يضيف حالات "قبل" فقط. بدون JS أو مع تقليل الحركة يظهر كل المحتوى.
+- **نصوص الميزات الكسولة:** نصوص الأقسام الجديدة الكبيرة تُوضع في bundle منفصل يُسجَّل عند استيراد الـ chunk (مثل `src/i18n/work.js`)، لا في `ar.json`/`en.json` الأساسيين اللذين يدخلان الحزمة الأولية.
+- **الأيقونات في الـ chunks الكسولة:** `react-icons/lu` وحدة واحدة موجودة في الحزمة الأولية (الـ Navbar)، فأي أيقونة جديدة منها تكبر الـ JS الأولي. الأيقونات الجديدة في الميزات الكسولة تستخدم `LineIcon`.
+- **FLIP:** ممنوع تحميل `domMax` من motion (يعيد تقسيم نواة motion خارج الـ entry فيكبر الـ JS الأولي). دخول وخروج العناصر بـ AnimatePresence (motion)، وانزلاق العناصر الباقية بـ `useFlip` (WAAPI على `transform`).
 - **في الموبايل:** أي grid فيه محتوى عرضه `max-content` (كود، شريط تبويبات قابل للتمرير) يأخذ `minmax(0, 1fr)`، حتى لا يتسع عرض الصفحة.
 
 ---
@@ -261,6 +268,21 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 - **البيانات الحقيقية:** البريد والهاتف وواتساب والموقع (القاهرة، حدائق الأهرام) والمنطقة الزمنية `Africa/Cairo` وGitHub وLinkedIn وFacebook، وحذف X نهائياً، وCV في `public/cv/Abdulrahman_Saad_Backend_Engineer_CV.pdf`. والـ `sameAs` في JSON-LD يضم الحسابات فقط (بدون واتساب).
 - إخفاء `credentials` و`testimonials` و`blog` لحين وجود محتوى حقيقي، وتحويل بيانات الخبرات والمشاريع والإحصائيات إلى نماذج واضحة (`Sample ·` و`sample-*` و`Sample Company A/B/C` وأرقام صفرية، ما عدا سنوات الخبرة 4).
 - `npm run data:todo` أصبح يفرّق بين «ناقص ضروري قبل النشر» (يفشل الأمر) و«mock مؤقت لحين الـ API» (للعلم فقط)، ويتحقق من صيغة الصور وأبعادها.
+
+### المرحلة 4 — Projects وServices (مكتملة، بانتظار المراجعة البصرية)
+- **Projects ← DATABASE ("Cinematic Case Files"):**
+  - قائمة بعرض الشاشة وكروت متناوبة الاتجاه، وكل مشروع `<article>` كامل في الـ HTML (رقم الصف، المفتاح، النوع، السنة، الدور، التقنيات، المقاييس).
+  - hover بالماوس فقط: كشف clip-path من موضع المؤشر لشاشة ثانية مع قراءة SQL للمقاييس، والمؤشر يصير قرص "View/عرض".
+  - الفلترة بالنوع والتقنية في الـ URL (`?type=&tech=`)، تُطبَّق بعد الـ hydration فقط، وسطر الـ SQL يُعاد كتابته حسب الفلتر، والنتيجة تُعلَن بـ `aria-live`. الدخول والخروج بـ AnimatePresence والانزلاق بـ `useFlip`.
+  - الـ director: كل سجل "يُقرأ من القرص" (خط مسح وclip-path مع التمرير)، وparallax للصورة والرقم الضخم، ومؤشر الاستعلام (نقطة Ember) على عمود الفهرس.
+  - الموبايل: deck أفقي بالسحب (scroll-snap) مع عدّاد وشريط تقدم.
+- **Case Study:** الغلاف يتمدد ليصير رأس الصفحة بـ View Transitions (`useCaseNavigation`، والستارة تتنحى عبر `state.viewTransition`)، ثم Request/Response، ثم مخطط معماري SVG مبني من البيانات (`lib/architecture`) مع قرارات ADR تضيء أجزاءه مع القراءة، ثم التقنيات، والتحديات كـ incidents محلولة، والمقاييس الوصفية، ومعرض بـ lightbox (`<dialog>`، الأسهم تتبع اتجاه القراءة، Home/End، Esc، وإرجاع التركيز)، والروابط، والمشاريع ذات الصلة، و"Next case →" ضخم يمتلئ مع التمرير.
+- **Services ← ENDPOINTS ("API Contracts"):** 14 خدمة في 5 مجموعات بأسلوب `php artisan route:list`. كل خدمة `<details>` أصلي (يعمل بدون JS)، وفتحه يكشف `200 OK` وجسم JSON مبني من عناصر حقيقية (القيم نص، والترقيم مخفي عن قارئ الشاشة). spotlight على الحدود يتبع الماوس، وانجراف ذاتي على اللمس. الـ director: خط مسح يسجّل المسارات (الـ method يضيء) ورسم الـ leaders، وفهرس المجموعات يعلّم المجموعة الحالية.
+- **البيانات:** 3 مشاريع نموذجية (SaaS متعدد المستأجرين، مخزون ونقاط بيع، API توصيل لحظي) بعلم `is_sample`، وشاشات SVG مولّدة بـ `npm run visuals`. الخدمات بمجموعاتها من `GET /services` (`group` كائن).
+- **الرحلة:** محطة `endpoints` جديدة على قسم Services، مع hub في الـ mesh ومشهد إضاءة، وتظهر في الـ Route Trace والـ Navbar تلقائياً.
+- **SEO:** `ProfessionalService` + `OfferCatalog` بالخدمات في JSON-LD الرئيسية، و`CreativeWork`/`SoftwareSourceCode` + `BreadcrumbList` للمشاريع الحقيقية فقط. المشاريع النموذجية `noindex` وخارج الـ sitemap. `<Seo status>` هو مصدر حالة الـ prerender.
+- **الأداء:** الأقسام والصفحة والـ directors كلها كسولة. الـ JS الأولي 192.4 ← 192.9 KB (الزيادة: محطة الرحلة ومنطق الستارة)، والنصوص الجديدة في bundle كسول، والـ SVG packets في المخطط تتوقف خارج الشاشة.
+- **اختبارات جديدة:** architecture، filters، contract، structured-data (المشاريع)، lightbox بالكيبورد (LTR وRTL)، مخرجات التوليد (noindex للنماذج، الخدمات والمشاريع نصاً، الـ sitemap)، وhydration رابط مفلتر.
 
 ### المرحلة 3 — Stats وAbout وSkills وExperience (مكتملة، بانتظار المراجعة البصرية)
 - **Stats ← Observability (محطة tap):**

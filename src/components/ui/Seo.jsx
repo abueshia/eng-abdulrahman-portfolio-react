@@ -23,10 +23,19 @@ const OG_LOCALES = { ar: 'ar_AR', en: 'en_US' };
  * @param {string} [props.description]
  * @param {string} [props.image]        Absolute or root-relative OG image.
  * @param {'website' | 'article' | 'profile'} [props.type='website']
- * @param {boolean} [props.noIndex=false]
+ * @param {boolean} [props.noIndex=false] Keep the page out of the index (links are still followed).
+ * @param {number} [props.status=200]  HTTP status the prerenderer serves the page with (404 page: 404, also `nofollow`).
  * @param {object | object[]} [props.jsonLd] Schema.org structured data.
  */
-export function Seo({ title, description, image, type = 'website', noIndex = false, jsonLd }) {
+export function Seo({
+  title,
+  description,
+  image,
+  type = 'website',
+  noIndex = false,
+  status = 200,
+  jsonLd,
+}) {
   const { t } = useTranslation();
   const { locale } = useLocale();
   const { pathname } = useLocation();
@@ -48,14 +57,18 @@ export function Seo({ title, description, image, type = 'website', noIndex = fal
     const link = (/** @type {Record<string, string>} */ attrs) => ({ tag: 'link', attrs });
     const structured = jsonLd ? [jsonLd].flat() : [];
 
+    const robots = !noIndex
+      ? 'index, follow, max-image-preview:large'
+      : status === 404
+        ? 'noindex, nofollow'
+        : 'noindex, follow';
+
     return {
       title: resolvedTitle,
+      status,
       tags: /** @type {import('@/utils/head').HeadTag[]} */ ([
         meta({ name: 'description', content: desc }),
-        meta({
-          name: 'robots',
-          content: noIndex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large',
-        }),
+        meta({ name: 'robots', content: robots }),
         link({ rel: 'canonical', href: canonical }),
         ...SUPPORTED_LOCALES.map((lng) =>
           link({ rel: 'alternate', hreflang: lng, href: absolute(localizePath(lng, basePath)) }),
@@ -86,7 +99,7 @@ export function Seo({ title, description, image, type = 'website', noIndex = fal
         })),
       ]),
     };
-  }, [locale, basePath, image, jsonLd, resolvedTitle, desc, siteName, type, noIndex]);
+  }, [locale, basePath, image, jsonLd, resolvedTitle, desc, siteName, type, noIndex, status]);
 
   // Server: hand the tags to the prerenderer (effects never run there).
   collector?.collect(head);

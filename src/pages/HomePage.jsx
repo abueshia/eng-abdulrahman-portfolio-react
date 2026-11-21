@@ -1,10 +1,8 @@
 import { lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { LocalizedLink } from '@/components/ui/LocalizedLink';
 import { Seo } from '@/components/ui/Seo';
-import { paths } from '@/config/routes';
-import { useProjects } from '@/features/projects/hooks/useProjects';
+import { useServices } from '@/features/services/hooks/useServices';
 import { useLocale } from '@/hooks/useLocale';
 import { useSettings } from '@/hooks/useSettings';
 import { Hero } from '@/features/hero/components/Hero';
@@ -23,6 +21,8 @@ const SECTION_COMPONENTS = {
   about: lazy(() => import('@/features/about/components/AboutSection')),
   skills: lazy(() => import('@/features/skills/components/SkillsSection')),
   experience: lazy(() => import('@/features/experience/components/ExperienceSection')),
+  projects: lazy(() => import('@/features/projects/components/ProjectsSection')),
+  services: lazy(() => import('@/features/services/components/ServicesSection')),
 };
 
 /** Section order and the phase in which each real section lands. */
@@ -40,36 +40,6 @@ const SECTIONS = [
   { id: 'contact', phase: 5 },
 ];
 
-/** Temporary data-layer probe rendered inside the projects placeholder. */
-function ProjectsProbe() {
-  const { t } = useTranslation();
-  const { data, isPending, isError } = useProjects();
-  if (isPending) return <p className="font-mono text-sm text-ink-dim">{t('common.loading')}</p>;
-  if (isError) return <p className="text-danger">{t('common.error')}</p>;
-
-  return (
-    <div className="flex flex-col gap-4">
-      <p className="font-mono text-xs text-signal">
-        {t('sections.itemsLoaded', { count: data.pagination?.total ?? data.data.length })}
-      </p>
-      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {data.data.map((project) => (
-          <li key={project.slug}>
-            <LocalizedLink
-              to={paths.project(project.slug)}
-              className="flex h-full flex-col gap-2 rounded-lg border border-line bg-surface p-5 transition-colors hover:border-ember"
-            >
-              <span className="font-mono text-xs text-ink-dim">{project.year}</span>
-              <span className="font-display text-xl font-semibold text-ink">{project.title}</span>
-              <span className="text-sm text-ink-muted">{project.summary}</span>
-            </LocalizedLink>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 /**
  * Home page: the journey. The hero is the Gateway; every visible section
  * follows in order (each carries its journey station, see config/journey.js).
@@ -80,7 +50,13 @@ export default function HomePage() {
   const { locale } = useLocale();
   const seo = data?.data?.seo;
   const general = data?.data?.general;
-  const jsonLd = useMemo(() => buildHomeJsonLd(general, locale), [general, locale]);
+  const { t } = useTranslation();
+  const { data: services } = useServices();
+  const catalogName = t('sections.services');
+  const jsonLd = useMemo(
+    () => buildHomeJsonLd(general, locale, { services: services?.data ?? [], catalogName }),
+    [general, locale, services, catalogName],
+  );
 
   return (
     <>
@@ -101,11 +77,7 @@ export default function HomePage() {
             </Suspense>
           );
         }
-        return (
-          <PlaceholderSection key={id} id={id} index={i + 1} phase={phase}>
-            {id === 'projects' && <ProjectsProbe />}
-          </PlaceholderSection>
-        );
+        return <PlaceholderSection key={id} id={id} index={i + 1} phase={phase} />;
       })}
     </>
   );

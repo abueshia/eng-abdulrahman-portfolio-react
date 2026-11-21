@@ -3,13 +3,14 @@
  * through a live system, and scrolling moves it from station to station:
  *
  *   Gateway (hero) → [Observability (stats)] → Auth (about) → Services
- *   (skills) → Queue (experience) → Database (projects) → Response 201 (contact)
+ *   (skills) → Queue (experience) → Database (projects) → Endpoints
+ *   (services) → Response 201 (contact)
  *
  * Observability is a *tap*: monitoring watches the request go by without
  * routing it, so it is a stop on the route trace but never a forwarding
  * target (the hero still forwards the request to /auth).
  *
- * Sections between stations (services, faq…) are "in transit": they
+ * Sections between stations (credentials, faq…) are "in transit": they
  * inherit the previous station. A hidden section simply removes its station
  * from the route (the journey is measured from the DOM, not assumed).
  *
@@ -100,9 +101,21 @@ export const STATIONS = Object.freeze([
     },
   },
   {
+    // The services, published as API contracts: the request reaches the
+    // public surface it was routed to, right before it turns into a response.
+    id: 'endpoints',
+    section: SECTION_IDS.services,
+    code: '07',
+    scene: {
+      ember: { x: 88, y: 24, s: 0.9, a: 0.55 },
+      ion: { x: 8, y: 78, s: 1.05, a: 0.55 },
+      grid: 1.25,
+    },
+  },
+  {
     id: 'response',
     section: SECTION_IDS.contact,
-    code: '07',
+    code: '08',
     scene: {
       ember: { x: 82, y: 92, s: 0.6, a: 0.22 },
       ion: { x: 18, y: 30, s: 1.4, a: 0.9 },

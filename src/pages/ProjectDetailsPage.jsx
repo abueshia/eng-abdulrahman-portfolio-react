@@ -1,66 +1,72 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LuArrowLeft } from 'react-icons/lu';
 import { useParams } from 'react-router-dom';
 
+import '@/i18n/work';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { LocalizedLink } from '@/components/ui/LocalizedLink';
 import { Seo } from '@/components/ui/Seo';
-import { paths } from '@/config/routes';
-import { useProject } from '@/features/projects/hooks/useProjects';
+import { CaseStudy } from '@/features/projects/components/CaseStudy';
+import { useProject, useProjects } from '@/features/projects/hooks/useProjects';
+import { useLocale } from '@/hooks/useLocale';
+import { buildProjectJsonLd } from '@/utils/structured-data';
 import NotFoundPage from './NotFoundPage';
 
+/** Open Graph needs a raster image; SVG covers (generated samples) fall back to the default. */
+const isRaster = (/** @type {string | undefined} */ src) =>
+  Boolean(src && /\.(jpe?g|png|webp)(\?.*)?$/i.test(src));
+
 /**
- * Case study page (foundation version: data wiring + layout skeleton).
- * The cinematic case-study experience lands in phase 4.
+ * Case study page (`/projects/:slug`).
+ *
+ * SEO: one `<Seo>` with the project's title, summary and cover. Sample
+ * projects (`is_sample`) are `noindex` (still generated, so links work, but
+ * never listed in the sitemap) and carry no CreativeWork JSON-LD; real ones
+ * get CreativeWork/SoftwareSourceCode + BreadcrumbList.
  */
 export default function ProjectDetailsPage() {
   const { slug } = useParams();
   const { t } = useTranslation();
+  const { locale } = useLocale();
   const { data, isPending, isError, error, refetch } = useProject(slug);
-
-  if (isError && error?.isNotFound) return <NotFoundPage />;
+  const { data: list } = useProjects();
   const project = data?.data;
 
+  const next = useMemo(() => {
+    const items = list?.data ?? [];
+    const index = items.findIndex((item) => item.slug === slug);
+    return index === -1 ? items[0] : items[(index + 1) % items.length];
+  }, [list, slug]);
+
+  const homeLabel = t('caseStudy.home');
+  const workLabel = t('caseStudy.work');
+  const jsonLd = useMemo(
+    () => buildProjectJsonLd(project, locale, { home: homeLabel, work: workLabel }),
+    [project, locale, homeLabel, workLabel],
+  );
+
+  if (isError && error?.isNotFound) return <NotFoundPage />;
+
   return (
-    <article className="container-fluid flex flex-col gap-10 pt-[calc(var(--nav-height)+4rem)] pb-24">
+    <>
       <Seo
         title={project?.title}
         description={project?.summary}
-        image={project?.cover_image}
+        image={isRaster(project?.cover_image) ? project.cover_image : undefined}
         type="article"
+        noIndex={Boolean(project?.is_sample)}
+        jsonLd={jsonLd}
       />
-      <LocalizedLink
-        to={paths.projects()}
-        className="inline-flex items-center gap-2 self-start font-mono text-xs text-ink-muted transition-colors hover:text-ink"
-      >
-        <LuArrowLeft aria-hidden="true" className="size-4 rtl:-scale-x-100" />
-        {t('project.backToWork')}
-      </LocalizedLink>
-
-      {isPending && <p className="font-mono text-sm text-ink-dim">{t('common.loading')}</p>}
-      {isError && <ErrorState onRetry={refetch} />}
-
-      {project && (
-        <header className="flex max-w-4xl flex-col gap-6">
-          <p className="font-mono text-xs text-ember" dir="ltr">
-            /projects/{project.slug}
-          </p>
-          <h1 className="font-display text-display-lg font-bold tracking-tight text-balance">
-            {project.title}
-          </h1>
-          <p className="text-xl text-pretty text-ink-muted">{project.summary}</p>
-          <ul className="flex flex-wrap gap-2">
-            {project.technologies.map((tech) => (
-              <li
-                key={tech.slug}
-                className="rounded-full border border-line px-3 py-1 font-mono text-xs text-ink-muted"
-              >
-                {tech.name}
-              </li>
-            ))}
-          </ul>
-        </header>
+      {isPending && (
+        <p className="container-fluid pt-[calc(var(--nav-height)+4rem)] font-mono text-sm text-ink-dim">
+          {t('common.loading')}
+        </p>
       )}
-    </article>
+      {isError && (
+        <div className="container-fluid pt-[calc(var(--nav-height)+4rem)]">
+          <ErrorState onRetry={refetch} />
+        </div>
+      )}
+      {project && <CaseStudy project={project} next={next} />}
+    </>
   );
 }

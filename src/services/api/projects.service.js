@@ -4,7 +4,7 @@ import { requestConfig, unwrap } from './client';
 
 /**
  * @typedef {Object} ProjectListParams
- * @property {string} [type]        Filter by project type (web_app, api, ecommerce, dashboard).
+ * @property {string} [type]        Filter by project type (saas, pos, api).
  * @property {string} [technology]  Filter by technology slug.
  * @property {boolean} [featured]
  * @property {number} [page]

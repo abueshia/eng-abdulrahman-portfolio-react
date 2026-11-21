@@ -21,11 +21,15 @@ const COMPANY_ROLE_EN = 'CEO';
  * The home page is the owner's profile, so it is a `ProfilePage` whose
  * `mainEntity` is the Person. The Person carries both titles (engineer and
  * company role) and `worksFor` the company they run.
+ * When the services catalogue is passed, a `ProfessionalService` founded by
+ * the Person carries it as an `OfferCatalog` (one sub-catalogue per group),
+ * mirroring the services section that is visible on the page.
  * @param {any} general `settings.general` from GET /settings.
  * @param {'ar' | 'en'} locale
+ * @param {{ services?: any[], catalogName?: string }} [extra]
  * @returns {object | undefined}
  */
-export function buildHomeJsonLd(general, locale) {
+export function buildHomeJsonLd(general, locale, { services = [], catalogName } = {}) {
   if (!general) return undefined;
   const url = `${env.siteUrl}${localizePath(locale, '/')}`;
   const personId = `${env.siteUrl}/#person`;
@@ -73,6 +77,98 @@ export function buildHomeJsonLd(general, locale) {
         name: general.site_name,
         inLanguage: locale,
         publisher: { '@id': personId },
+      },
+      ...(services.length > 0
+        ? [buildServicesNode({ general, url, personId, services, catalogName })]
+        : []),
+    ],
+  };
+}
+
+/**
+ * ProfessionalService node with the offer catalogue, grouped like the page.
+ * @param {{ general: any, url: string, personId: string, services: any[], catalogName?: string }} input
+ */
+function buildServicesNode({ general, url, personId, services, catalogName }) {
+  /** @type {Map<string, { name: string, items: any[] }>} */
+  const groups = new Map();
+  for (const service of services) {
+    const key = service.group?.slug ?? 'other';
+    if (!groups.has(key)) groups.set(key, { name: service.group?.name ?? key, items: [] });
+    groups.get(key)?.items.push({
+      '@type': 'Offer',
+      itemOffered: {
+        '@type': 'Service',
+        name: service.title,
+        description: service.description,
+        ...(service.group?.name ? { serviceType: service.group.name } : {}),
+        provider: { '@id': personId },
+      },
+    });
+  }
+  return {
+    '@type': 'ProfessionalService',
+    '@id': `${env.siteUrl}/#services`,
+    name: general.site_name,
+    url: `${url}#services`,
+    ...(general.avatar ? { image: new URL(general.avatar, `${env.siteUrl}/`).href } : {}),
+    ...(general.location ? { address: general.location } : {}),
+    founder: { '@id': personId },
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: catalogName ?? general.site_name,
+      itemListElement: [...groups.values()].map((group) => ({
+        '@type': 'OfferCatalog',
+        name: group.name,
+        itemListElement: group.items,
+      })),
+    },
+  };
+}
+
+/**
+ * Case-study structured data: `CreativeWork` (or `SoftwareSourceCode` when
+ * the code is public) authored by the Person, plus a `BreadcrumbList`.
+ *
+ * Sample projects (`is_sample`) get none: their pages are noindex, and a
+ * sample must never be described to search engines as real work.
+ * @param {any} project Full project from GET /projects/{slug}.
+ * @param {'ar' | 'en'} locale
+ * @param {{ home: string, work: string }} labels Breadcrumb names (localised).
+ * @returns {object | undefined}
+ */
+export function buildProjectJsonLd(project, locale, labels) {
+  if (!project || project.is_sample) return undefined;
+  const home = `${env.siteUrl}${localizePath(locale, '/')}`;
+  const url = `${env.siteUrl}${localizePath(locale, `/projects/${project.slug}`)}`;
+  const code = isAbsoluteUrl(project.github_url);
+  const image = project.cover_image ? new URL(project.cover_image, `${env.siteUrl}/`).href : null;
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': code ? 'SoftwareSourceCode' : 'CreativeWork',
+        '@id': `${url}#work`,
+        name: project.title,
+        description: project.summary,
+        url,
+        inLanguage: locale,
+        ...(image ? { image } : {}),
+        ...(project.published_at ? { datePublished: project.published_at } : {}),
+        ...(project.updated_at ? { dateModified: project.updated_at } : {}),
+        author: { '@id': `${env.siteUrl}/#person` },
+        keywords: (project.technologies ?? []).map((tech) => tech.name),
+        ...(code ? { codeRepository: project.github_url } : {}),
+        ...(isAbsoluteUrl(project.live_url) ? { sameAs: [project.live_url] } : {}),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: labels.home, item: home },
+          { '@type': 'ListItem', position: 2, name: labels.work, item: `${home}#projects` },
+          { '@type': 'ListItem', position: 3, name: project.title, item: url },
+        ],
       },
     ],
   };
