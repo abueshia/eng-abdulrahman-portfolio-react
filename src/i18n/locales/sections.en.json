@@ -17,7 +17,98 @@
     "slide": "Review {{index}} of {{total}}",
     "prev": "Previous review",
     "next": "Next review",
-    "goTo": "Go to review {{index}}"
+    "goTo": "Go to review {{index}}",
+    "rated": "Rated {{value}} out of 5",
+    "avatarAlt": "Photo of {{name}}",
+    "write": {
+      "hint": "Worked with me? Leave a review. It is published only after moderation.",
+      "cta": "Write a review",
+      "command": "gh pr review --comment",
+      "title": "Write a review",
+      "lead": "Every review is checked before it appears here. Nothing is published instantly.",
+      "close": "Close",
+      "fields": {
+        "name": "Name",
+        "role": "Job title",
+        "company": "Company (optional)",
+        "rating": "Rating",
+        "message": "Your review",
+        "messagePlaceholder": "What did we build, and how was working together?",
+        "counter": "{{count}} / {{max}} characters",
+        "photo": "Photo (optional)",
+        "photoChoose": "Choose a photo",
+        "photoDrop": "or drag and drop it here",
+        "photoHint": "JPG, PNG or WebP, under 5 MB. Cropped to a square and resized in your browser; camera and location data are removed.",
+        "photoPreview": "Your photo",
+        "photoRemove": "Remove photo",
+        "photoProcessing": "Preparing the photo…",
+        "avatarDefault": "Generated avatar: {{initials}}",
+        "consent": "I agree to the publication of my name, job title and review (and my photo, if I uploaded one) on this website after moderation.",
+        "hp": "Leave this field empty"
+      },
+      "ratingNone": "Choose from 1 to 5 stars",
+      "ratingStar_one": "{{count}} star",
+      "ratingStar_other": "{{count}} stars",
+      "ratingLabels": {
+        "1": "Poor",
+        "2": "Fair",
+        "3": "Good",
+        "4": "Very good",
+        "5": "Excellent"
+      },
+      "submit": "Submit review",
+      "sending": "Submitting…",
+      "retry": "Retry",
+      "duplicate": "This exact review was just sent.",
+      "invalid": "422 — Some fields need attention.",
+      "success": {
+        "title": "Thank you! Your review arrived.",
+        "body": "It will appear here after moderation, not right away."
+      },
+      "mock": "Mock mode: not delivered. The API is not connected yet, so this review reached no one.",
+      "failure": {
+        "status": "500 — Retry",
+        "body": "The review was not sent. Try again in a moment."
+      },
+      "done": "Close",
+      "relay": {
+        "greeting": "Hello, I'm {{name}}. Here is my review for your website:",
+        "role": "Job title",
+        "rating": "Rating {{value}}/5:",
+        "subject": "Review from {{name}}",
+        "photoNote": "Your photo is not sent this way, only the text.",
+        "whatsapp": {
+          "note": "Submitting opens WhatsApp with your review pre-filled; you send it from there.",
+          "submit": "Send via WhatsApp",
+          "title": "Your review is ready in WhatsApp.",
+          "body": "Press send there and it reaches me. It will appear here after moderation.",
+          "open": "Didn't open? Open WhatsApp"
+        },
+        "email": {
+          "note": "Submitting opens your mail app with your review pre-filled; you send it from there.",
+          "submit": "Send by email",
+          "title": "Your review is ready in your mail app.",
+          "body": "Press send there and it reaches me. It will appear here after moderation.",
+          "open": "Didn't open? Open email"
+        }
+      },
+      "errors": {
+        "nameMin": "Please enter your name (at least 2 characters).",
+        "nameMax": "The name is too long (60 characters at most).",
+        "roleMin": "Please enter your job title (at least 2 characters).",
+        "roleMax": "The job title is too long (80 characters at most).",
+        "companyMax": "The company name is too long (80 characters at most).",
+        "ratingRequired": "Please choose a rating from 1 to 5 stars.",
+        "messageMin": "Tell a little more (at least 20 characters).",
+        "messageMax": "The review is too long (600 characters at most).",
+        "consentRequired": "Please agree to the publication to send your review.",
+        "html": "HTML is not allowed here.",
+        "photoType": "Only JPG, PNG or WebP images are accepted.",
+        "photoSize": "The image must be smaller than 5 MB.",
+        "photoRead": "This image could not be read. Try another one.",
+        "server": "The server rejected this value."
+      }
+    }
   },
   "faq": {
     "command": "man faq",

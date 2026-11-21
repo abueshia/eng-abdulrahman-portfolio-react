@@ -23,6 +23,21 @@ function delay(ms, signal) {
 }
 
 /**
+ * Request body as a plain object: JSON strings are parsed, and multipart
+ * `FormData` becomes `{ field: value }` (files stay `Blob`/`File`).
+ * @param {unknown} data
+ * @returns {Record<string, any>}
+ */
+function parseBody(data) {
+  if (typeof data === 'string') return JSON.parse(data || '{}');
+  const form = /** @type {any} */ (data);
+  if (form && typeof form.append === 'function' && typeof form.entries === 'function') {
+    return Object.fromEntries(form.entries());
+  }
+  return /** @type {Record<string, any>} */ (data ?? {});
+}
+
+/**
  * Axios adapter that serves requests from in-memory mock data.
  *
  * Why an adapter (and not `if (useMock)` in every service): the whole HTTP
@@ -40,8 +55,7 @@ export async function mockAdapter(config) {
   const requested = query.lang ?? headerLang;
   const lang = isSupportedLocale(requested) ? requested : DEFAULT_LOCALE;
   const method = (config.method ?? 'get').toLowerCase();
-  const body =
-    typeof config.data === 'string' ? JSON.parse(config.data || '{}') : (config.data ?? {});
+  const body = parseBody(config.data);
 
   const match = matchRoute(method, url.pathname.replace(/^\/api\/v\d+/, '') || '/');
   const result = match

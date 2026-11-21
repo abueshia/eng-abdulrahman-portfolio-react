@@ -35,6 +35,7 @@ Only `VITE_*` variables reach the browser bundle: never put secrets in them. Set
 | `VITE_USE_MOCK` | `true` | `true`: requests are answered by the mock adapter (`src/services/api/mock`). `false`: requests go to `VITE_API_URL`. |
 | `VITE_SITE_URL` | `https://eng-abdulrahman-abu-eisha.vercel.app` | Canonical production origin, no trailing slash. Used for canonical, hreflang, Open Graph, JSON-LD, `sitemap.xml`, `robots.txt` and `llms.txt`. Always the production domain, even for local builds. |
 | `VITE_CONTACT_RELAY` | `true` in production builds | Only matters while `VITE_USE_MOCK` is not `false`. The contact form then opens WhatsApp (or the mail app) with the message pre-filled instead of posting to a mock. Set `false` to disable. |
+| `VITE_REVIEW_RELAY` | `true` in production builds | Same rule for the "Write a review" form: while `VITE_USE_MOCK` is not `false`, submitting opens WhatsApp (or the mail app) with the review pre-filled. The photo is not sent that way, and the form says so. Set `false` to disable (then `data:todo` blocks). |
 | `VITE_MOCK_LATENCY` | `350` | Simulated latency of the mock adapter (ms). |
 | `VITE_FX` | `on` | `off` disables every client-only visual layer (intro, canvas, WebGL, GSAP, custom cursor). Content never depends on it. The test suite uses `off`. |
 
@@ -96,12 +97,78 @@ Components never call axios or import mock data. They use hooks, which call the 
 
 1. Implement the endpoints the mock serves, with the same envelope:
    `{ code, success, message, data, pagination? }`. Errors use the same envelope; `422` carries `errors: { field: [message] }`.
-   Endpoints: `GET /settings`, `/home`, `/projects`, `/projects/{slug}`, `/technologies`, `/experiences`, `/credentials`, `/services`, `/testimonials`, `/faqs`, `/stats`, and `POST /contact`.
+   Endpoints: `GET /settings`, `/home`, `/projects`, `/projects/{slug}`, `/technologies`, `/experiences`, `/credentials`, `/services`, `/testimonials`, `/faqs`, `/stats`, `POST /contact` and `POST /testimonials` (see the testimonials contract below).
    The fields each one must return (including the SEO contract) are listed in `SEO.md` §7. The mock handlers in `src/services/api/mock/handlers.js` and the data in `src/data/mock/` are the reference responses.
 2. Every request carries `?lang=ar|en` and `Accept-Language`. Return localized fields for that language.
-3. Set `VITE_API_URL` and `VITE_USE_MOCK=false` in Vercel and rebuild. The contact form then posts to `POST /contact` (the WhatsApp relay switches off by itself).
+3. Set `VITE_API_URL` and `VITE_USE_MOCK=false` in Vercel and rebuild. The contact form then posts to `POST /contact` and the review form to `POST /testimonials` (both WhatsApp relays switch off by themselves).
 4. Replace the sample content (`is_sample: true` on projects and testimonials) with real records, or hide those sections through `settings.sections_visibility`. `npm run data:todo` must report nothing blocking.
 5. Add the Vercel Deploy Hook call to the backend's publish events.
+
+## Testimonials API contract
+
+Visitors can submit a review from the Testimonials section ("Write a review"). A submission is **never published directly**: it is stored as `pending`, the owner moderates it, and only `approved` reviews are listed (and prerendered, after the Deploy Hook rebuild).
+
+### Endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/testimonials?lang=ar\|en` | Approved reviews only, localized. Pending and rejected records must never appear here (the client also drops any record whose `status` is not `approved`). |
+| `POST` | `/testimonials` | A visitor submission, `multipart/form-data`. Creates a `pending` record. |
+
+### `GET /testimonials` item
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `id` | int | |
+| `name` | string \| null | Plain text. |
+| `role` | string | Job title, plain text. |
+| `company` | string \| null | |
+| `quote` | string | The review text (`message` on submission), plain text. |
+| `rating` | int 1-5 | Shown as stars on the card. Never emitted as structured data. |
+| `avatar` | string \| null | Absolute `https://` or root-relative URL of the moderated, re-encoded photo. Without it the card shows a generated monogram. |
+| `status` | `approved` | Always `approved` in this listing. |
+| `is_sample` | bool | Only for placeholder records. |
+| `scope`, `checks[]` | optional | Display extras. |
+
+### `POST /testimonials` request
+
+| Field | Rules (Laravel) |
+| --- | --- |
+| `name` | `required\|string\|min:2\|max:60`, plain text (reject markup) |
+| `role` | `required\|string\|min:2\|max:80`, plain text |
+| `company` | `nullable\|string\|max:80`, plain text |
+| `rating` | `required\|integer\|between:1,5` |
+| `message` | `required\|string\|min:20\|max:600`, plain text |
+| `avatar` | `nullable\|file\|mimes:jpg,jpeg,png,webp\|max:5120` (kilobytes) plus `dimensions:max_width=4096,max_height=4096`. The browser already sends a 256×256 WebP (JPEG fallback) with EXIF stripped, but the server must not trust it: decode, re-encode (e.g. Intervention Image) to drop metadata, store under a random name outside the web root or on a private disk, and expose only after approval. |
+| `consent` | `accepted` (the client sends `"1"`). Store the consent timestamp and wording version with the record. |
+| `hp` | Honeypot. When non-empty: answer `201` with the normal body and store nothing. |
+
+The request also carries `?lang=` and `Accept-Language`; messages in the response should be in that language.
+
+### Responses
+
+- `201 Created`: `{ "code": 201, "success": true, "message": "…", "data": { "id": 123, "status": "pending" } }`. Never return the record as published.
+- `422`: `{ "code": 422, "success": false, "message": "The given data was invalid.", "data": null, "errors": { "rating": ["…"], "avatar": ["…"] } }`. The form shows each message on its field (including `avatar`).
+- `429`: rate limited. Any status other than 201 and 422 shows "500 — Retry".
+
+### Moderation states
+
+| `status` | Meaning | Listed by `GET`? |
+| --- | --- | --- |
+| `pending` | New submission, waiting for the owner. | No |
+| `approved` | Published. Approving (or editing) one triggers the Vercel Deploy Hook. | Yes |
+| `rejected` | Kept for audit or deleted; the photo is deleted. | No |
+
+### Abuse protection (required in Laravel)
+
+- **Rate limiting:** `RateLimiter::for('testimonials')`: e.g. 3 submissions per hour and 10 per day per IP, applied with `throttle:testimonials` on the route. Answer `429` with `Retry-After`.
+- **Honeypot** (`hp`) as above, plus a minimum fill time (e.g. reject submissions faster than 3 s after the form was opened, if a signed timestamp is added later).
+- **Duplicates:** reject the same `name` + `message` hash within 24 hours (`422` on `message`).
+- **Content:** strip or reject HTML on every field; escape on output; limit links in `message` (e.g. none, or flag for review).
+- **Files:** validate MIME by content, not by extension; enforce the size and dimension limits; re-encode; never serve the original upload.
+- Optionally add Cloudflare Turnstile or similar if spam gets through; the client needs one extra field for it.
+
+While the API is not connected, production builds relay the review to WhatsApp (`VITE_REVIEW_RELAY`, photo not included), and development builds answer from the mock adapter with the same contract and a visible "Mock mode: not delivered" notice. The mock never stores submissions.
 
 ## License
 

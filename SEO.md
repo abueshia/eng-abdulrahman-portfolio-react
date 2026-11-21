@@ -73,7 +73,7 @@ Content rules that keep sections indexable:
 - Projects: every case file is an `<article>` with its title (an `<h3>` link to the case study), summary, role, stack and metrics. Filters (`?type=…&tech=…`) apply after hydration only, and the prerendered list is always the full one.
 - Services: every service is a native `<details>` (works without JavaScript, opens on find-in-page). Closed contracts are still in the HTML.
 - FAQ: native `<details name="faq">`; every answer is in the HTML.
-- Testimonials: every review is text in a native scroll-snap row; embla (lazy) only enhances it.
+- Testimonials: every review is text in a native scroll-snap row; embla (lazy) only enhances it. The star rating is an SVG image named "Rated 4 out of 5" (text, not markup), the avatar a photo with `alt` or a decorative generated monogram. The "Write a review" button is a real `<button>` in the HTML; the review form dialog is a lazy chunk that is never prerendered (tested: no `<dialog>` in the generated HTML). Only `approved` records are listed, so a visitor submission never reaches the HTML before moderation and a rebuild.
 - Contact: the whole form, the live request preview and the direct channels are prerendered.
 - No browser-dependent values in markup:
   - Dates are formatted by hand (`2024·03`), never with `Intl`.
@@ -131,7 +131,7 @@ Passed to `<Seo jsonLd={…}>`. Builders live in `src/utils/structured-data.js` 
 | Home | `ProfessionalService` (founded by the Person, `address` Cairo/EG, `areaServed`) with `hasOfferCatalog`: one `OfferCatalog` per service group, each service an `Offer` → `Service` (name, description, `serviceType`, provider → Person) | ✅ |
 | Home | `FAQPage` (every visible question with its `acceptedAnswer`), only while the FAQ section is visible | ✅ (13 questions) |
 | Case study | `CreativeWork` (or `SoftwareSourceCode` with `codeRepository` when `github_url` is public) authored by the Person + `BreadcrumbList`. **Real projects only**: `is_sample` projects get none. | ✅ |
-| Testimonials | None on purpose: self-serving reviews are ignored by Google, and samples must never be marked up. No `Review`, no `AggregateRating` anywhere (tested). | — |
+| Testimonials | None on purpose: self-serving reviews are ignored by Google (and against its review snippet guidelines), and samples must never be marked up. Cards show star ratings, but there is no `Review`, no `AggregateRating`, no `reviewRating`/`ratingValue` anywhere, ever (tested on the JSON-LD graph and on the whole HTML). | — |
 
 `Person` fields:
 
@@ -182,7 +182,8 @@ The backend must provide, per locale:
 | `GET /settings` | `general.owner_name`, `general.site_name`, `general.job_title`, `general.avatar`, `general.socials[].url` (absolute), `general.alternate_names[]`, `general.address{locality, country, country_code}` (city level only), `general.area_served[]`, `general.company{name, role, url?}`, `general.years_of_experience`, `seo.meta_title` (≤ 60 chars), `seo.meta_description` (≈ 155 chars), `seo.og_image`, `hero.summary` |
 | `GET /projects`, `/projects/:slug` | stable `slug`, `title`, `summary` (≤ 160 chars), `cover_image` (absolute or root-relative) + `cover_alt`, `published_at`, `updated_at`, `is_sample` (boolean). Summary items also carry `type`, `year`, `role`, `preview_image`, `metrics[]`, `technologies[]`. The full record adds `problem`, `solution`, `challenges[{title, body}]`, `architecture{nodes[{id,label,layer,note}], edges[{from,to,kind,label}]}`, `decisions[{title, body, nodes[]}]`, `metrics[{label, value \| null}]`, `gallery[{image, alt}]`, `duration`, `client`, `live_url`, `github_url`, `related_projects[]` |
 | `GET /services` | flat list sorted by group then id: `slug`, `method`, `title`, `description`, `deliverables[]`, `stack[]`, `group{slug, name, sort}` |
-| `GET /testimonials` | `name`, `role`, `company`, `quote`, `scope`, `checks[]`, `avatar`, `is_sample` |
+| `GET /testimonials` | **Approved records only:** `name`, `role`, `company`, `quote`, `rating` (1-5), `avatar` (https or root-relative), `status` (`approved`), `scope`, `checks[]`, `is_sample` |
+| `POST /testimonials` | `multipart/form-data` `{ name, role, company?, rating, message, avatar?, consent, hp }` → `201` with `data.status = "pending"` (never published directly), `422` with `errors{field: [message]}`. Full contract, moderation and spam rules: `README.md` → "Testimonials API contract". Approving a review triggers the Deploy Hook (§8) |
 | `GET /faqs` | `question`, `answer` (plain text: it is copied verbatim into `FAQPage` and `llms.txt`) |
 | `POST /contact` | body `{ name, email, phone?, type, message, website? }` (`website` = honeypot: answer 201, store nothing). 201 on success, 422 with `errors{field: [message]}` (shown on the fields), anything else is "500 — Retry". Escape all input server-side; the client already refuses HTML |
 | Listings | Pagination (`pagination.last_page`) so the prerenderer can enumerate every item |
@@ -199,7 +200,7 @@ Content is baked in at build time, so publishing must trigger a rebuild:
 2. Laravel calls it (queued job) whenever a project, setting, service, FAQ or testimonial is created, updated, published or deleted.
 3. Vercel rebuilds (about 1 minute). New URLs appear in the regenerated `sitemap.xml`.
 
-Until the API is live (`VITE_USE_MOCK=true`), the build prerenders the mock data, and the contact form relays to WhatsApp in production (`VITE_CONTACT_RELAY`).
+Until the API is live (`VITE_USE_MOCK=true`), the build prerenders the mock data, and in production the contact form (`VITE_CONTACT_RELAY`) and the "Write a review" form (`VITE_REVIEW_RELAY`, photo not sent) relay to WhatsApp.
 
 ---
 
@@ -228,6 +229,8 @@ Rankings use field CWV (LCP, INP, CLS). Targets: LCP < 2.5 s, CLS < 0.1, INP < 2
   | --- | --- | --- | --- | --- |
   | Home page initial JS: entry + modulepreload, after `npm run build` (gzip) | 203.0 KB | 204.7 KB | 204.1 KB | **169.4 KB** |
   | Initial CSS (gzip) | 28.9 KB | 34.7 KB | 37.3 KB | 37.4 KB |
+
+  Visitor reviews ("Write a review", after phase 6): initial JS 169.4 → 167.8 KB, initial CSS 37.4 → 38.8 KB. The feature adds nothing to the initial JS: the form dialog (react-hook-form + zod, ≈ 5.2 KB gzip) and `POST /testimonials` (`testimonials-submit.js`) are lazy chunks. The 1.6 KB drop is the bundler regrouping the initial chunks (fewer, better-compressed files), not a saving from this feature.
 
   Phase 6 removed ≈ 35 KB from the first load without dropping features:
   - axios (≈ 21 KB) now loads on the first real request. A prerendered page hydrates from embedded data and usually never fetches.

@@ -107,6 +107,59 @@ function validateContact(body) {
   return errors;
 }
 
+const HTML = /<\/?[a-z!][^>]*>/i;
+const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+
+/** Approved testimonials only: pending and rejected records are never listed. */
+const approvedTestimonials = () => testimonials.filter((item) => item.status === 'approved');
+
+/**
+ * Server-side rules mirrored from the Laravel StoreTestimonialRequest
+ * (see the README "Testimonials API contract").
+ * @param {Record<string, any>} body Multipart fields; `avatar` is a Blob/File.
+ */
+function validateTestimonial(body) {
+  /** @type {Record<string, string[]>} */
+  const errors = {};
+  const text = (/** @type {string} */ field) => String(body[field] ?? '').trim();
+  /** @type {Array<[string, number, number, boolean]>} field, min, max, required */
+  const rules = [
+    ['name', 2, 60, true],
+    ['role', 2, 80, true],
+    ['company', 0, 80, false],
+    ['message', 20, 600, true],
+  ];
+  for (const [field, min, max, required] of rules) {
+    const value = text(field);
+    if (!value) {
+      if (required) errors[field] = [`The ${field} field is required.`];
+      continue;
+    }
+    if (value.length < min)
+      errors[field] = [`The ${field} field must be at least ${min} characters.`];
+    else if (value.length > max) {
+      errors[field] = [`The ${field} field must not be greater than ${max} characters.`];
+    } else if (HTML.test(value)) errors[field] = [`The ${field} field must be plain text.`];
+  }
+  const rating = Number(body.rating);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    errors.rating = ['The rating field must be between 1 and 5.'];
+  }
+  if (!['1', 'true', 'on', 'yes', true, 1].includes(body.consent)) {
+    errors.consent = ['The consent field must be accepted.'];
+  }
+  const avatar = body.avatar;
+  if (avatar !== undefined && avatar !== null && avatar !== '') {
+    if (typeof avatar !== 'object' || !AVATAR_TYPES.includes(avatar.type)) {
+      errors.avatar = ['The avatar field must be a file of type: jpg, png, webp.'];
+    } else if (avatar.size >= AVATAR_MAX_BYTES) {
+      errors.avatar = ['The avatar field must not be greater than 5120 kilobytes.'];
+    }
+  }
+  return errors;
+}
+
 /** @type {Array<{ method: string, pattern: string, handler: (ctx: MockContext) => { status: number, body: any } }>} */
 export const routes = [
   { method: 'get', pattern: '/settings', handler: ({ lang }) => ok(localize(settings, lang)) },
@@ -120,7 +173,7 @@ export const routes = [
             stats,
             featured_projects: projects.filter((p) => p.is_featured).map(projectSummary),
             services: servicesWithGroups(),
-            testimonials,
+            testimonials: approvedTestimonials(),
           },
           lang,
         ),
@@ -188,7 +241,24 @@ export const routes = [
   {
     method: 'get',
     pattern: '/testimonials',
-    handler: ({ lang }) => ok(localize(testimonials, lang)),
+    handler: ({ lang }) => ok(localize(approvedTestimonials(), lang)),
+  },
+  {
+    method: 'post',
+    pattern: '/testimonials',
+    // Same contract as Laravel: validate, create as `pending`, answer 201.
+    // Nothing is stored (the list above never changes), like a moderation queue.
+    handler: ({ body, lang }) => {
+      const message =
+        lang === 'ar'
+          ? 'وصل رأيك، وسيظهر بعد المراجعة.'
+          : 'Your review was received and will appear after moderation.';
+      // Honeypot: bots fill hidden fields. Pretend success, store nothing.
+      if (body.hp) return ok({ id: 0, status: 'pending' }, { code: 201, message });
+      const errors = validateTestimonial(body);
+      if (Object.keys(errors).length) return fail(422, 'The given data was invalid.', errors);
+      return ok({ id: Date.now(), status: 'pending' }, { code: 201, message });
+    },
   },
   { method: 'get', pattern: '/faqs', handler: ({ lang }) => ok(localize(faqs, lang)) },
   { method: 'get', pattern: '/stats', handler: ({ lang }) => ok(localize(stats, lang)) },

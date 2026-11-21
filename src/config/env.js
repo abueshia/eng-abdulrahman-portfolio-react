@@ -11,6 +11,9 @@
  *                                  the contact form then opens WhatsApp (or email) with the
  *                                  message pre-filled instead of a mock that reaches no one.
  *                                  Override with VITE_CONTACT_RELAY=true|false.
+ * @property {boolean} reviewRelay  Same rule for the "Write a review" form: a production build on
+ *                                  the mock adapter opens WhatsApp (or email) with the review
+ *                                  pre-filled (the photo is not sent). VITE_REVIEW_RELAY=true|false.
  * @property {number}  mockLatency  Simulated network latency (ms) for the mock adapter.
  * @property {string}  siteUrl      Public canonical origin (canonical, hreflang, OG, sitemap).
  * @property {string}  appVersion   Injected at build time from package.json.
@@ -40,6 +43,7 @@ export const env = Object.freeze({
   apiUrl: raw.VITE_API_URL || 'http://localhost:8000/api/v1',
   useMock,
   contactRelay: useMock && parseBool(raw.VITE_CONTACT_RELAY, Boolean(raw.PROD)),
+  reviewRelay: useMock && parseBool(raw.VITE_REVIEW_RELAY, Boolean(raw.PROD)),
   // No artificial latency while prerendering: it would only slow the build.
   mockLatency: raw.SSR ? 0 : Number(raw.VITE_MOCK_LATENCY ?? 350),
   // Canonical URLs must always name the production origin, even in local

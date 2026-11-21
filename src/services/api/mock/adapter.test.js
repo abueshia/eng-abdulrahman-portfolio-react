@@ -6,6 +6,7 @@ import {
   projectsService,
   settingsService,
   technologiesService,
+  testimonialsService,
 } from '@/services/api';
 
 describe('Axios mock adapter & resource services', () => {
@@ -92,5 +93,44 @@ describe('Axios mock adapter & resource services', () => {
     });
     expect(valid.code).toBe(201);
     expect(valid.data).toHaveProperty('id');
+  });
+
+  it('accepts POST /testimonials as multipart, validates it (422) and never publishes it', async () => {
+    const before = await testimonialsService.list({ lang: 'en' });
+    expect(before.data.every((item) => item.status === 'approved')).toBe(true);
+
+    await expect(
+      testimonialsService.submit({
+        name: 'A',
+        role: '',
+        rating: 9,
+        message: 'short <b>x</b>',
+        consent: false,
+        hp: '',
+        avatar: new Blob(['gif'], { type: 'image/gif' }),
+      }),
+    ).rejects.toSatisfy(
+      (err) =>
+        err instanceof ApiError &&
+        err.isValidation &&
+        ['name', 'role', 'rating', 'message', 'consent', 'avatar'].every((f) => err.errors[f]),
+    );
+
+    const created = await testimonialsService.submit({
+      name: 'Visitor Reviewer',
+      role: 'Operations lead',
+      company: 'Sample Co',
+      rating: 5,
+      message: 'A calm, well organised project from start to finish.',
+      consent: true,
+      hp: '',
+      avatar: new Blob(['webp'], { type: 'image/webp' }),
+    });
+    expect(created.code).toBe(201);
+    expect(created.data).toMatchObject({ status: 'pending' });
+
+    const after = await testimonialsService.list({ lang: 'en' });
+    expect(after.data).toHaveLength(before.data.length);
+    expect(after.data.some((item) => item.name === 'Visitor Reviewer')).toBe(false);
   });
 });

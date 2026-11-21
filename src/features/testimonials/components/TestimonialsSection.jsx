@@ -1,4 +1,4 @@
-import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import '@/i18n/sections';
@@ -12,8 +12,21 @@ import { SampleBadge } from '@/features/projects/components/SampleBadge';
 import { useLocale } from '@/hooks/useLocale';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useTestimonials } from '../hooks/useTestimonials';
+import { isApproved, plainText, safeAvatarUrl } from '../lib/avatar';
+import { Avatar } from './Avatar';
+import { Stars } from './Stars';
 
 const CarouselEngine = lazy(() => import('./CarouselEngine'));
+// The review form (react-hook-form + zod) is its own chunk: preloaded when
+// the trigger nears the viewport or is hovered/focused, never prerendered.
+const loadReviewModal = () => import('./ReviewModal');
+const ReviewModal = lazy(loadReviewModal);
+
+/** Rating as an integer 1..5, or 0 when absent or invalid. */
+const ratingOf = (/** @type {unknown} */ value) => {
+  const n = Math.round(Number(value));
+  return n >= 1 && n <= 5 ? n : 0;
+};
 const TestimonialsDirector = lazy(() => import('../fx/TestimonialsDirector'));
 
 /**
@@ -21,10 +34,15 @@ const TestimonialsDirector = lazy(() => import('../fx/TestimonialsDirector'));
  * pull-request review that approved the work.
  *
  * - The PR header aggregates the real data: approvals count and, when the
- *   records carry them, the checks the reviews passed. No names, photos,
- *   logos, stars or ratings: a review is its role and its words. Sample
- *   records say so (badge on the section and on every card). The director runs the checks
- *   with the scroll and flips the state to "Approved" once they all pass.
+ *   records carry them, the checks the reviews passed. Each card shows the
+ *   reviewer's photo (or a generated monogram), the star rating (as an
+ *   image with a text label, never as structured data) and the words. Only
+ *   approved records render. Sample records say so (badge on the section
+ *   and on every card). The director runs the checks with the scroll and
+ *   flips the state to "Approved" once they all pass.
+ * - "Write a review" (GitHub "Review changes" style) closes the section: a
+ *   real button in the HTML that opens the lazy review form dialog. New
+ *   reviews are pending until approved, so they never appear here at once.
  * - The reviews are a carousel. Prerendered as a native scroll-snap row
  *   (swipe works with no JS, every review is text in the HTML); near the
  *   viewport, embla takes over (lazy chunk) with autoplay that stops on
@@ -35,8 +53,11 @@ export default function TestimonialsSection() {
   const { dir } = useLocale();
   const reduced = useReducedMotion();
   const { data } = useTestimonials();
-  const items = useMemo(() => data?.data ?? [], [data]);
+  const items = useMemo(() => (data?.data ?? []).filter(isApproved), [data]);
   const viewportRef = useRef(/** @type {HTMLDivElement | null} */ (null));
+  const ctaRef = useRef(/** @type {HTMLButtonElement | null} */ (null));
+  const restoreFocus = useRef(false);
+  const [writing, setWriting] = useState(false);
   const [api, setApi] = useState(
     /** @type {import('embla-carousel').EmblaCarouselType | null} */ (null),
   );
@@ -72,6 +93,36 @@ export default function TestimonialsSection() {
       viewport.removeEventListener('scroll', onScroll);
     };
   }, [api]);
+
+  // Preload the review form when its trigger nears the viewport.
+  useEffect(() => {
+    const cta = ctaRef.current;
+    if (!cta || typeof IntersectionObserver === 'undefined') return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          observer.disconnect();
+          loadReviewModal();
+        }
+      },
+      { rootMargin: '200px 0px' },
+    );
+    observer.observe(cta);
+    return () => observer.disconnect();
+  }, []);
+
+  // Focus goes back to the trigger once the dialog has closed (after its
+  // cleanup, so the page is no longer inert).
+  useEffect(() => {
+    if (!writing && restoreFocus.current) {
+      restoreFocus.current = false;
+      ctaRef.current?.focus();
+    }
+  }, [writing]);
+  const closeWriting = useCallback(() => {
+    restoreFocus.current = true;
+    setWriting(false);
+  }, []);
 
   const goTo = useCallback(
     (/** @type {number} */ index) => {
@@ -177,8 +228,15 @@ export default function TestimonialsSection() {
                   >
                     <article className="review__card">
                       <header className="review__head">
+                        <Avatar
+                          name={plainText(item.name || item.role)}
+                          src={safeAvatarUrl(item.avatar)}
+                          alt={t('testimonials.avatarAlt', {
+                            name: plainText(item.name || item.role),
+                          })}
+                        />
                         <p className="review__who">
-                          <b className="review__name">{item.name || item.role}</b>{' '}
+                          <b className="review__name">{plainText(item.name || item.role)}</b>{' '}
                           <span className="review__verb">
                             <LineIcon name="check" /> {t('testimonials.approved')}
                           </span>
@@ -187,19 +245,25 @@ export default function TestimonialsSection() {
                       </header>
                       {item.name && item.role && (
                         <p className="review__role">
-                          {item.role}
-                          {item.company && <> · {item.company}</>}
+                          {plainText(item.role)}
+                          {item.company && <> · {plainText(item.company)}</>}
                         </p>
                       )}
+                      {ratingOf(item.rating) > 0 && (
+                        <Stars
+                          value={ratingOf(item.rating)}
+                          label={t('testimonials.rated', { value: ratingOf(item.rating) })}
+                        />
+                      )}
                       <blockquote className="review__quote">
-                        <p>{item.quote}</p>
+                        <p>{plainText(item.quote)}</p>
                       </blockquote>
                       {(item.scope || item.checks?.length > 0) && (
                         <footer className="review__foot">
                           {item.scope && (
                             <p className="review__scope">
                               <span className="review__scope-key">{t('testimonials.scope')}:</span>{' '}
-                              {item.scope}
+                              {plainText(item.scope)}
                             </p>
                           )}
                           {item.checks?.length > 0 && (
@@ -253,8 +317,30 @@ export default function TestimonialsSection() {
               </div>
             )}
           </div>
+
+          <div className="pr__foot">
+            <p className="pr__foot-hint">{t('testimonials.write.hint')}</p>
+            <button
+              ref={ctaRef}
+              type="button"
+              className="review-cta"
+              aria-haspopup="dialog"
+              onClick={() => setWriting(true)}
+              onPointerEnter={loadReviewModal}
+              onFocus={loadReviewModal}
+            >
+              <LineIcon name="pen" />
+              <span>{t('testimonials.write.cta')}</span>
+              <span className="review-cta__caret" aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </div>
+      {writing && (
+        <Suspense fallback={null}>
+          <ReviewModal onClose={closeWriting} />
+        </Suspense>
+      )}
       <SectionFx target="testimonials">
         <CarouselEngine viewportRef={viewportRef} onApi={setApi} />
         <TestimonialsDirector />

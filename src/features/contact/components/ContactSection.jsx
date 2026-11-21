@@ -21,26 +21,11 @@ import {
   requestPreview,
   toPayload,
 } from '../lib/schema';
-import { relayMessage, relayTarget } from '../lib/relay';
+import { openRelay, relayMessage, relayTarget } from '../lib/relay';
 
 const ContactDirector = lazy(() => import('../fx/ContactDirector'));
 
 /** @typedef {'idle' | 'sending' | 'success' | 'relayed' | 'invalid' | 'failure' | 'duplicate'} Phase */
-
-/**
- * Opens the relay URL. A blocked pop-up falls back to navigating there
- * (wa.me hands over to the app; mailto: never leaves the page).
- * @param {{ channel: 'whatsapp' | 'email', url: string }} target
- */
-function openRelay(target) {
-  if (target.channel === 'email') {
-    window.location.href = target.url;
-    return;
-  }
-  const opened = window.open(target.url, '_blank');
-  if (opened) opened.opener = null;
-  else window.location.assign(target.url);
-}
 
 const SWAP = {
   initial: { clipPath: 'inset(0% 0% 100% 0%)' },

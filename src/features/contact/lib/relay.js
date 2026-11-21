@@ -5,7 +5,8 @@
  * (or, without a WhatsApp number, the visitor's mail app) with a message
  * pre-filled from the form fields. The visitor sends it themselves.
  *
- * Pure helpers; the decision lives in `env.contactRelay`.
+ * Pure helpers (plus `openRelay`, called from event handlers); the decision
+ * lives in `env.contactRelay`. The review form reuses them (`env.reviewRelay`).
  */
 
 /**
@@ -66,4 +67,20 @@ export function relayTarget({ whatsapp, email, subject }, message) {
     return { channel: 'email', url: `mailto:${email}?${query}` };
   }
   return null;
+}
+
+/**
+ * Opens the relay URL. A blocked pop-up falls back to navigating there
+ * (wa.me hands over to the app; mailto: never leaves the page).
+ * Event handlers only (touches `window`).
+ * @param {{ channel: 'whatsapp' | 'email', url: string }} target
+ */
+export function openRelay(target) {
+  if (target.channel === 'email') {
+    window.location.href = target.url;
+    return;
+  }
+  const opened = window.open(target.url, '_blank');
+  if (opened) opened.opener = null;
+  else window.location.assign(target.url);
 }

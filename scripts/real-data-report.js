@@ -214,6 +214,50 @@ if (!liveApi && !hidden.includes('contact')) {
   }
 }
 
+/*
+ * The "Write a review" form (testimonials) follows the same rule, and the
+ * three states are reported apart, because they mean different things:
+ *  - API connected (VITE_USE_MOCK=false): POST /testimonials stores the review
+ *    as pending for moderation. Nothing to report.
+ *  - Relay (default for production on the mock adapter): the review opens in
+ *    WhatsApp (or email) pre-filled; the photo is not sent. Recommended only.
+ *  - Pure mock (VITE_REVIEW_RELAY=false without the API): a "sent" review
+ *    reaches nobody. Blocking.
+ */
+const reviewRelayOff = envValues('VITE_REVIEW_RELAY').some(isFalse);
+/** @type {'api' | 'relay' | 'mock' | 'hidden'} */
+const reviewMode = hidden.includes('testimonials')
+  ? 'hidden'
+  : liveApi
+    ? 'api'
+    : reviewRelayOff
+      ? 'mock'
+      : 'relay';
+if (reviewMode === 'mock') {
+  required.push(
+    'review form  pure mock: VITE_USE_MOCK is not "false" and VITE_REVIEW_RELAY=false, so a submitted ' +
+      'review reaches nobody. Connect the Laravel API (POST /testimonials) or re-enable the relay',
+  );
+} else if (reviewMode === 'relay') {
+  recommended.push(
+    'review form  relay mode: the API is not connected, so in production "Write a review" opens WhatsApp ' +
+      '(or email) with the review pre-filled and the photo is NOT sent. Connect POST /testimonials (phase 7)',
+  );
+}
+const contactMode = hidden.includes('contact')
+  ? 'hidden'
+  : liveApi
+    ? 'api'
+    : relayOff
+      ? 'mock'
+      : 'relay';
+const MODE_LABEL = {
+  api: 'API connected',
+  relay: 'relay (WhatsApp/email)',
+  mock: 'pure mock (blocking)',
+  hidden: 'section hidden',
+};
+
 /* -------------------------------------------------------------- report */
 
 const list = (items) => (items.length ? items.map((item) => `  • ${item}`).join('\n') : '  (none)');
@@ -222,6 +266,9 @@ console.log(`\n✗ REQUIRED BEFORE PUBLISHING (${required.length})\n${list(requi
 console.log(`\n◇ RECOMMENDED, NOT BLOCKING (${recommended.length})\n${list(recommended)}`);
 console.log(`\n◌ TEMPORARY MOCK UNTIL THE API (${mocks.length} files)\n${list(mocks)}`);
 console.log(`\nℹ Hidden sections (settings.sections_visibility): ${hidden.join(', ') || 'none'}`);
+console.log(
+  `ℹ Forms in production: contact → ${MODE_LABEL[contactMode]}; reviews → ${MODE_LABEL[reviewMode]}`,
+);
 console.log(
   required.length
     ? `\n${required.length} item(s) block publishing.`

@@ -47,6 +47,8 @@ After phase 6, only three kinds of work are left: real content, the domain decis
 3. **API (phase 7):**
    - [ ] Laravel endpoints with the documented envelope and SEO fields (`SEO.md` §7, `README.md`), then `VITE_USE_MOCK=false` + `VITE_API_URL` in Vercel.
    - [ ] `POST /contact` live. Until then the form runs in **relay mode** in production: it says up front that sending opens WhatsApp, then opens `wa.me/201028292449` with the message pre-filled (mail app if no WhatsApp number). `npm run data:todo` lists this as *recommended*. With `VITE_CONTACT_RELAY=false` and no API, it becomes *blocking* (a pure mock reaches nobody).
+   - [ ] `POST /testimonials` live (contract and spam protection in `README.md` → "Testimonials API contract"). Until then "Write a review" also runs in **relay mode** in production: it opens WhatsApp with the name, job title, stars and text pre-filled and says up front that the photo is not sent. `npm run data:todo` reports the review form separately: *recommended* in relay mode, *blocking* with `VITE_REVIEW_RELAY=false` and no API, nothing once the API is connected (`ℹ Forms in production: …` line).
+   - [ ] Moderation in the Laravel admin: submissions arrive as `pending`; approving one publishes it (and must call the Deploy Hook).
    - [ ] Vercel Deploy Hook called by the backend on every publish (`SEO.md` §8).
 
 ### ✗ Required before publishing (`npm run data:todo` exit 1)
@@ -68,7 +70,7 @@ Clearly fictional sample content (`sample-*` slugs, "Sample Company A/B/C", zero
   - Per real project, provide: title, summary (≤ 160 chars), problem, solution, role, technologies, challenges, architecture nodes/edges + decisions, metrics (only measured values), gallery, and `live_url` / `github_url` if public.
 - `experiences.js`, `stats.js` (only "4+ years" is real). The observability board shows the zeroed sample metrics as **"No data"** panels (no number, flat dashed series), so nothing fictional reads as a real figure.
 - `services.js`: the **real** list of 14 services in 5 groups (edit wording freely). It stays in a mock file only until `GET /services` serves it.
-- `testimonials.js`: **4 sample reviews** (`is_sample: true`): owner-provided wording, a sample role only ("Sample client, …"), no names, photos, logos, stars or ratings, and no Review/AggregateRating JSON-LD. The badge shows on the section and on every card. Real ones need the client's role, the quote and permission to publish (name and company optional).
+- `testimonials.js`: **4 sample reviews** (`is_sample: true`, `status: 'approved'`): owner-provided wording, a sample role only ("Sample client, …"), a simple descriptive star rating (5, 5, 4, 5), no names, photos or logos (the card shows a generated monogram), and no Review/AggregateRating JSON-LD. The badge shows on the section and on every card. Real ones come from the visitor form after moderation (`approved`), or from the admin: the client's role, the quote, a 1-5 rating and permission to publish (name, company and photo optional).
 - `faqs.js`: the owner's FAQ, 13 honest general answers (no prices, durations or ranking promises). Phase 6 added five that match real searches (freelance Laravel developer in Cairo, back end vs Full-Stack, remote work, Paymob/Fawry, Laravel REST APIs). Edit freely.
 - `technologies.js`
 - `credentials.js`: **hidden** (`sections_visibility.credentials = false`), so it is absent from the navigation and prerendering until real content exists

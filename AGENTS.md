@@ -57,7 +57,7 @@ src/
     experience/   ExperienceSection (git log --graph) + lib/git-log + fx/ExperienceDirector
     projects/     ProjectsSection (Case Files) + QueryConsole + CaseFile + CaseStudy + ArchitectureDiagram + Gallery (lightbox) + SampleBadge · hooks/{useProjects, useCaseNavigation (View Transitions), useFlip} · lib/{filters, architecture} · fx/{ProjectsDirector, CaseStudyDirector}
     services/     ServicesSection (API Contracts, route:list) + lib/contract + fx/ServicesDirector
-    testimonials/ TestimonialsSection (Code Review) + CarouselEngine (embla كسول) + fx/TestimonialsDirector
+    testimonials/ TestimonialsSection (Code Review) + CarouselEngine (embla كسول) + ReviewModal (نموذج "اكتب مراجعتك"، chunk كسول) + Avatar + Stars · lib/{review-schema, avatar, avatar-image (canvas), review-relay} + fx/TestimonialsDirector
     faq/          FaqSection (man faq، `<details name>`) + fx/FaqDirector
     contact/      ContactSection (HTTP Request Builder: react-hook-form + zod) + lib/{schema, relay (واتساب/بريد حين لا يوجد API في الإنتاج)} + fx/ContactDirector
     intro/        BootSequence + boot-store (مراحل الـ Intro ومهام الجاهزية الحقيقية)
@@ -100,7 +100,8 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 4. **اللغة في الطلبات:** كل طلب يمرر `?lang=ar|en` وترويسة `Accept-Language`، ومفتاح التخزين المؤقت في TanStack Query يتضمن اللغة النشطة دائماً.
 5. **المحتوى النموذجي (`is_sample`):** ينطبق على المشاريع والتوصيات. أي سجل يحمل `is_sample: true` يظهر بشارة "نموذجي / Sample"، ولا يأخذ JSON-LD (CreativeWork / Review)، وصفحته (إن وُجدت) `noindex, follow` وخارج الـ sitemap. ممنوع أسماء أشخاص أو شركات حقيقية أو اقتباسات تبدو حقيقية. و`npm run data:todo` يفشل إذا كان قسم ظاهر يعرض محتوى نموذجياً، أو إذا كان نموذج التواصل mock خالصاً (`VITE_CONTACT_RELAY=false` بدون API). وضع الـ relay (واتساب) يظهر كـ "موصى به" فقط.
    - **تفاصيل المشاريع:** أي مشروع يحمل `is_sample: true` يظهر بشارة "Sample / نموذجي"، وصفحته `noindex, follow` (تُولَّد مسبقاً لكن لا تدخل الـ sitemap)، ولا يأخذ JSON-LD من نوع CreativeWork. المقاييس وصفية فقط أو `null` (تظهر "No data")، ولا أرقام مخترعة. الشاشات SVG مولّدة بـ `npm run visuals`، واستبدالها بلقطات حقيقية = تغيير المسار فقط. الحقول الكاملة موثقة في رأس `src/data/mock/projects.js` وفي `SEO.md` §7.
-6. **إظهار/إخفاء الأقسام:** يعتمد كل قسم في الصفحة الرئيسية على `<Section id="...">` الذي يقرأ `settings.sections_visibility[id]`. والقسم المخفي يُحذف أيضاً من التنقل (`useNavItems`) ومن الـ FAQPage ومن `llms.txt`.
+6. **مراجعات الزوار (`POST /testimonials`):** الإرسال `multipart/form-data` عبر `testimonialsService.submit()`، والاستجابة `201` بحالة `pending` دائماً. القائمة (`GET /testimonials`) تعرض `approved` فقط، والواجهة تُسقط أي سجل حالته غير ذلك. ممنوع إظهار مراجعة جديدة فوراً. في الإنتاج بدون API يتحول الإرسال إلى واتساب (`VITE_REVIEW_RELAY`) والصورة لا تُرسل، وفي الـ dev يظهر "Mock mode: not delivered". العقد الكامل في README.
+7. **إظهار/إخفاء الأقسام:** يعتمد كل قسم في الصفحة الرئيسية على `<Section id="...">` الذي يقرأ `settings.sections_visibility[id]`. والقسم المخفي يُحذف أيضاً من التنقل (`useNavItems`) ومن الـ FAQPage ومن `llms.txt`.
 
 ---
 
@@ -264,6 +265,19 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 ---
 
 ## 9) سجل التغييرات (Changelog)
+
+### تعديل — مراجعات الزوار في Testimonials
+- **الزر:** "اكتب مراجعتك / Write a review" في آخر صندوق الـ PR بأسلوب "Review changes" في GitHub (Ember)، وهو `<button>` حقيقي في الـ HTML المولّد مع `aria-haspopup="dialog"`.
+- **الـ modal (`ReviewModal`):** chunk كسول (react-hook-form + zod داخله) يُحمَّل عند اقتراب الزر من الشاشة أو المرور/التركيز عليه أو الضغط، ولا يدخل الـ HTML المولّد أبداً.
+  - `<dialog>` أصلي بـ `showModal` (الصفحة خلفه inert)، و`aria-labelledby` و`aria-describedby` و`aria-modal`. Esc والضغط على الخلفية يغلقان، والتركيز يرجع للزر بعد الإغلاق. قفل التمرير بـ `html:has(.rv-dialog[open])` وإيقاف Lenis. على الموبايل bottom sheet بارتفاع 94dvh.
+  - الحقول: الاسم (2-60)، المسمى (2-80)، الشركة (اختياري ≤ 80)، النجوم 1-5 (radios أصلية، الأسهم تتبع اتجاه القراءة، Home/End، وتسمية نصية متغيرة)، النص (20-600) بعدّاد، الصورة (اختيار أو سحب وإفلات، JPG/PNG/WebP أقل من 5MB، قص مربع 256×256 بـ canvas وإعادة ترميز WebP/JPEG تحذف EXIF، معاينة دائرية وزر إزالة)، وأفاتار مولّد من حرفين بتدرج Ember/Ion يتحدث مع الكتابة، وموافقة إجبارية، وhoneypot (`hp`).
+  - الحالات: شريط تقدم، ثم شاشة شكر (يظهر بعد المراجعة وليس فوراً)، أو أخطاء 422 على حقولها (والصورة)، أو "500 — Retry". لا إرسال مزدوج، ورفض HTML في كل الحقول، وتعقيم النص في العرض أيضاً (`plainText`).
+  - StrictMode: الـ object URL للمعاينة يُنشأ داخل effect ويُلغى (`revokeObjectURL`) عند التغيير والإغلاق، ونتيجة معالجة الصورة تُتجاهل بعد الإغلاق.
+- **الكروت:** النجوم SVG كصورة مسماة ("Rated 4 out of 5")، والأفاتار صورة بـ `alt` أو monogram زخرفي. التوصيات النموذجية الأربع أخذت تقييمات بسيطة وبقيت بشارة "نموذجي". ممنوع JSON-LD من نوع Review أو AggregateRating، والاختبار يفحص الـ graph والـ HTML كله.
+- **الـ API والـ mock:** `testimonialsService.submit()` و`POST /testimonials` في الـ mock adapter بنفس التحقق والـ latency ورسائل 422، بدون تخزين. الـ adapter يقرأ `FormData`. وأُضيف `env.reviewRelay` (`VITE_REVIEW_RELAY`).
+- **data:todo:** حالة نموذج المراجعات مستقلة: API متصل، أو relay (موصى به)، أو mock خالص (مانع)، مع سطر `ℹ Forms in production`.
+- **الأداء:** الـ JS الأولي 169.4 ← 167.8 KB (الميزة لا تضيف شيئاً للحزمة الأولية: الـ modal و`testimonials-submit.js` كسولان، والنقص من إعادة تجميع الـ chunks). الـ CSS الأولي 37.4 ← 38.8 KB (راجع `SEO.md` §9).
+- **الإتاحة:** axe (WCAG 2.2 AA + best practices) على الـ modal: صفر مخالفات في الثيمين واللغتين، ديسكتوب وموبايل، فارغاً ومع الأخطاء.
 
 ### المرحلة 1 — الأساس والمعمارية وطبقة البيانات (مكتملة)
 - إعداد Tailwind CSS v4.3 عبر `@theme inline` ومتغيرات CSS للثيمين (`dark` افتراضي و`light` "Paper & Ink") مع سكربت pre-paint في `index.html` لمنع وميض الثيم والاتجاه.

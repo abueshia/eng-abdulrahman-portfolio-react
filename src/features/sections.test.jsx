@@ -122,6 +122,13 @@ describe('Testimonials (review)', () => {
     expect(slides).toHaveLength(4);
     slides.forEach((slide) => expect(slide).toHaveAttribute('aria-roledescription', 'slide'));
     expect(screen.getAllByText('Sample').length).toBeGreaterThan(0);
+    // Stars are one named image per card; the monogram is decorative.
+    slides.forEach((slide) =>
+      expect(
+        within(slide).getByRole('img', { name: /^Rated [1-5] out of 5$/ }),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.getByRole('button', { name: 'Write a review' })).toBeInTheDocument();
   });
 });
 

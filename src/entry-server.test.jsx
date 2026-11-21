@@ -98,7 +98,9 @@ describe('Prerendering (entry-server)', () => {
       { '@type': 'Place', name: 'Arab world' },
     ]);
     expect(person.knowsAbout).toEqual(expect.arrayContaining(['Laravel', 'PHP', 'React']));
-    expect(JSON.stringify(graph)).not.toMatch(/"@type":"(Review|AggregateRating)"|Hadayek|حدائق/);
+    expect(JSON.stringify(graph)).not.toMatch(
+      /"@type":"(Review|AggregateRating)"|ratingValue|reviewRating|aggregateRating|Hadayek|حدائق/,
+    );
   });
 
   it('gives every generated page a complete, valid head (title, description, canonical, hreflang, JSON-LD)', async () => {
@@ -278,9 +280,17 @@ describe('Prerendering (entry-server)', () => {
     expect(html).toContain('Sample client, digital product founder');
     expect(html).toContain('Sample client, technical lead');
     expect(html).toContain('which made it easy for our team to build on afterwards.');
-    // No names, photos, ratings or Review markup for samples.
-    expect(html).not.toContain('review__avatar');
-    expect(html).not.toContain('AggregateRating');
+    // Ratings are visible stars with a text label, avatars are generated
+    // monograms (no photos for samples), and there is no Review markup at all.
+    expect(html).toContain('aria-label="Rated 5 out of 5"');
+    expect(html).toContain('class="avatar"');
+    expect(html).not.toContain('avatar--photo');
+    expect(html).not.toMatch(/"@type":\s*"(Review|AggregateRating)"/);
+    expect(html).not.toMatch(/ratingValue|reviewRating|aggregateRating/i);
+    // "Write a review" is a real button in the HTML; the form dialog is not prerendered.
+    expect(html).toMatch(/<button[^>]*class="review-cta"[^>]*>[\s\S]*?Write a review/);
+    expect(html).not.toContain('<dialog');
+    expect(html).not.toContain('review-name');
     expect(html).toContain('approved these changes');
     // No blog: the section and every link to it are gone.
     expect(html).not.toContain('id="blog"');
