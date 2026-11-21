@@ -2,6 +2,7 @@ import { lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Seo } from '@/components/ui/Seo';
+import { useFaqs } from '@/features/faq/hooks/useFaqs';
 import { useServices } from '@/features/services/hooks/useServices';
 import { useLocale } from '@/hooks/useLocale';
 import { useSettings } from '@/hooks/useSettings';
@@ -23,6 +24,10 @@ const SECTION_COMPONENTS = {
   experience: lazy(() => import('@/features/experience/components/ExperienceSection')),
   projects: lazy(() => import('@/features/projects/components/ProjectsSection')),
   services: lazy(() => import('@/features/services/components/ServicesSection')),
+  testimonials: lazy(() => import('@/features/testimonials/components/TestimonialsSection')),
+  blog: lazy(() => import('@/features/blog/components/BlogSection')),
+  faq: lazy(() => import('@/features/faq/components/FaqSection')),
+  contact: lazy(() => import('@/features/contact/components/ContactSection')),
 };
 
 /** Section order and the phase in which each real section lands. */
@@ -52,10 +57,17 @@ export default function HomePage() {
   const general = data?.data?.general;
   const { t } = useTranslation();
   const { data: services } = useServices();
+  const { data: faqs } = useFaqs();
+  const faqVisible = data?.data?.sections_visibility?.faq !== false;
   const catalogName = t('sections.services');
   const jsonLd = useMemo(
-    () => buildHomeJsonLd(general, locale, { services: services?.data ?? [], catalogName }),
-    [general, locale, services, catalogName],
+    () =>
+      buildHomeJsonLd(general, locale, {
+        services: services?.data ?? [],
+        catalogName,
+        faqs: faqVisible ? (faqs?.data ?? []) : [],
+      }),
+    [general, locale, services, catalogName, faqs, faqVisible],
   );
 
   return (

@@ -1,0 +1,112 @@
+{
+  "testimonials": {
+    "command": "gh pr view --reviews",
+    "lead": "Reviews of the work, read like pull-request reviews: what was checked, and who approved it.",
+    "pr": "Pull request",
+    "prTitle": "feat: deliver the system that was requested",
+    "approved": "approved these changes",
+    "reviewers_one": "{{count}} reviewer approved",
+    "reviewers_other": "{{count}} reviewers approved",
+    "checksPassed": "All checks have passed",
+    "checks_one": "{{count}} successful check",
+    "checks_other": "{{count}} successful checks",
+    "pending": "Review requested",
+    "status": "Approved",
+    "scope": "reviewed",
+    "carousel": "Reviews",
+    "slide": "Review {{index}} of {{total}}",
+    "prev": "Previous review",
+    "next": "Next review",
+    "goTo": "Go to review {{index}}"
+  },
+  "blog": {
+    "copy": "Copy",
+    "copied": "Copied",
+    "changelog": "CHANGELOG.md",
+    "lead": "Notes the system wrote about itself: patterns, trade-offs and lessons, versioned like a changelog.",
+    "all": "All notes",
+    "filter": "Filter by category",
+    "allCategories": "All",
+    "published": "Published",
+    "toc": "On this page",
+    "progress": "Reading progress",
+    "related": "Related notes",
+    "back": "All notes",
+    "empty": "No notes in this category yet.",
+    "count_one": "{{count}} entry",
+    "count_other": "{{count}} entries",
+    "sampleNotice": "Sample article: illustrative content until real articles are published. Search engines do not index it."
+  },
+  "faq": {
+    "command": "man faq",
+    "header": "FAQ(1)",
+    "manual": "General Commands Manual",
+    "lead": "Read the manual before you build the request: how the work runs, from the first message to after launch.",
+    "name": "NAME",
+    "nameText": "faq — answers to the questions asked before a project starts",
+    "synopsis": "SYNOPSIS",
+    "description": "DESCRIPTION",
+    "pager": "Manual page faq(1)"
+  },
+  "contact": {
+    "command": "curl -X POST /contact",
+    "cta": "The request has crossed {{count}} stations. One step left: you write it.",
+    "route": "Route so far",
+    "builder": "Request builder",
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone (optional)",
+      "type": "Project type",
+      "typePlaceholder": "Choose a type",
+      "message": "Message",
+      "messagePlaceholder": "What are you building, and what does it need?",
+      "website": "Leave this field empty"
+    },
+    "submit": "Send request",
+    "sending": "Sending…",
+    "retry": "Retry",
+    "again": "Build another request",
+    "preview": "Live request preview",
+    "previewHint": "This is the exact request the form will send.",
+    "awaiting": "awaiting request…",
+    "success": {
+      "status": "201 Created",
+      "title": "Request received.",
+      "body": "Thank you. Your message is in, and the reply will come by email."
+    },
+    "mock": "Mock mode: not delivered. The API is not connected yet, so this message reached no one. Please use a direct channel below.",
+    "failure": {
+      "status": "500 — Retry",
+      "body": "The request failed and nothing was sent. Try again, or use a direct channel."
+    },
+    "invalid": "422 — Some fields need attention.",
+    "duplicate": "This exact request was just sent.",
+    "errors": {
+      "nameMin": "Please enter your name (at least 2 characters).",
+      "nameMax": "The name is too long.",
+      "emailInvalid": "Please enter a valid email address.",
+      "phoneInvalid": "Please enter a valid phone number, or leave it empty.",
+      "typeInvalid": "Please choose a project type.",
+      "messageMin": "Tell me a little more (at least 10 characters).",
+      "messageMax": "The message is too long (2000 characters at most).",
+      "html": "HTML is not allowed here.",
+      "server": "The server rejected this value."
+    },
+    "direct": "Direct channels",
+    "email": "Email",
+    "whatsapp": "WhatsApp",
+    "phone": "Phone",
+    "socials": "ls ~/socials"
+  },
+  "footer": {
+    "signature": "Build signature",
+    "sitemap": "Sitemap",
+    "socials": "Elsewhere",
+    "localTime": "local time",
+    "faq": "FAQ",
+    "reviews": "Reviews",
+    "served": "Prerendered static build",
+    "home": "Home"
+  }
+}

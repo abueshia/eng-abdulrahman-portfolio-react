@@ -160,7 +160,11 @@
       "queue": "Queue",
       "database": "Database",
       "response": "Response",
-      "endpoints": "Endpoints"
+      "endpoints": "Endpoints",
+      "review": "Review",
+      "docs": "Docs",
+      "man": "Manual",
+      "request": "Request"
     }
   },
   "sound": {

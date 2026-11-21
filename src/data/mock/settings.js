@@ -65,10 +65,11 @@ export const settings = {
     experience: true,
     projects: true,
     services: true,
-    // Hidden until they hold real content (also excluded from nav + prerender).
+    // Hidden until it holds real content (also excluded from nav + prerender).
     credentials: false,
-    testimonials: false,
-    blog: false,
+    // Visible with clearly flagged sample content (`is_sample`) until real data exists.
+    testimonials: true,
+    blog: true,
     faq: true,
     contact: true,
   },

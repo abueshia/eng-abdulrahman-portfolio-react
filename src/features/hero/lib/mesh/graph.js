@@ -66,7 +66,17 @@ export const HUBS = Object.freeze([
     z: 0.84,
     services: ['routes', 'webhooks', 'openapi', 'payments', 'throttle'],
   },
-  { id: 'response', x: 0.2, y: 6.55, z: 1, services: ['json', 'client', 'cdn', 'browser'] },
+  { id: 'review', x: -0.75, y: 6.55, z: 0.78, services: ['approvals', 'checks', 'ci', 'diff'] },
+  { id: 'docs', x: 0.8, y: 7.65, z: 0.74, services: ['changelog', 'articles', 'search', 'rss'] },
+  { id: 'man', x: -0.6, y: 8.75, z: 0.7, services: ['manpage', 'help', 'usage'] },
+  {
+    id: 'request',
+    x: 0.7,
+    y: 9.85,
+    z: 0.9,
+    services: ['form', 'validate', 'honeypot', 'throttle'],
+  },
+  { id: 'response', x: 0, y: 10.95, z: 1, services: ['json', 'client', 'cdn', 'browser'] },
 ]);
 
 /** The three depth layers pods are scattered on. */

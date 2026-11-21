@@ -66,6 +66,14 @@ The client **hydrates** only if `__PRERENDER__.path` equals the current pathname
 - The case study is prerendered in full, including the architecture diagram (SVG text from the data, plus a visually hidden list of the data flows), the decisions, the gallery `alt`s and the next case. Request packets on the diagram are client-only.
 - Phase-4 UI strings live in `src/i18n/locales/work.{ar,en}.json`, registered by the chunks that use them (`src/i18n/work.js`), so the initial bundle does not carry them. Module evaluation precedes rendering, so prerender and hydration render the same text.
 
+**Testimonials, Blog, FAQ, Contact and the footer (phase 5)** follow the same model:
+
+- Testimonials: every review is text in a native scroll-snap row; embla (lazy) only enhances it.
+- FAQ: native `<details name="faq">`; every answer is in the HTML, closed ones included.
+- Contact: the whole form, the live request preview and the direct channels are prerendered; react-hook-form hydrates them.
+- The footer is a lazy chunk too (prerendered in full). Its local clock is a reserved `--:--` slot filled after hydration.
+- **Articles are processed at build time.** `useBlog` runs the article pipeline (`src/features/blog/lib/article.js`) inside the query: DOMPurify sanitises the API HTML (allow-list), headings get ids for the TOC, and Shiki highlights the code (php/js/jsx/bash/json/sql, JavaScript regex engine, dual theme through CSS variables). In Node the pipeline uses a jsdom window. The processed HTML is what gets dehydrated, so a prerendered article hydrates without loading DOMPurify or Shiki. Only a client-side navigation to an article runs it in the browser (lazy chunk). `jsdom` must be installed at build time.
+
 **Rule for new code:** anything that renders on a page must be renderable in Node. Media queries go through `useMediaQuery` (server snapshot), and canvas/GSAP/Lenis work belongs in effects. Run `npm run build` before considering a feature done.
 
 ---
@@ -116,8 +124,9 @@ Passed to `<Seo jsonLd={…}>`. Builders live in `src/utils/structured-data.js` 
 | Home | `Person` (name, `jobTitle` = [engineer title, "CEO, iCode Tech"], `worksFor` Organization, image, `sameAs` socials, knowsAbout) + `WebSite`, linked by `@id` | ✅ Phase 1, titles + `worksFor` Phase 3 |
 | Home | `ProfessionalService` (founded by the Person) with `hasOfferCatalog`: one `OfferCatalog` per service group, each service an `Offer` → `Service` (name, description, `serviceType`, provider → Person) | ✅ Phase 4 |
 | Case study | `CreativeWork` (or `SoftwareSourceCode` with `codeRepository` when `github_url` is public) authored by the Person + `BreadcrumbList` (Home → Work → project). **Real projects only**: `is_sample` projects get none. | ✅ Phase 4 |
-| Article | `BlogPosting` (headline, datePublished, dateModified, author → Person `@id`, image) + `BreadcrumbList` | Phase 5 |
-| FAQ section | `FAQPage` | Phase 5 |
+| Article | `BlogPosting` (headline, description, datePublished, dateModified, author/publisher → Person `@id`, image, articleSection, keywords, timeRequired) + `BreadcrumbList` (Home → Blog → post). **Real posts only**: `is_sample` posts get none. | ✅ Phase 5 |
+| Home | `FAQPage` (every visible question with its `acceptedAnswer`), emitted only while the FAQ section is visible | ✅ Phase 5 |
+| Testimonials | None on purpose: Google ignores self-serving reviews about one's own services, and samples must never be marked up | — |
 
 Rules: only absolute `https` URLs, so placeholder or non-URL values are filtered out. `sameAs` lists identity profiles only (GitHub, LinkedIn, Facebook), never contact channels like WhatsApp. Mark up only content that is visible on the page. Validate with the [Rich Results Test](https://search.google.com/test/rich-results) before every release.
 
@@ -126,6 +135,7 @@ Rules: only absolute `https` URLs, so placeholder or non-URL values are filtered
 ## 6. Crawling & indexing
 
 - **Hidden sections are not published:** with `sections_visibility.blog = false`, `/blog` and its posts are neither prerendered nor listed in the sitemap, they render the 404 page, and the nav link disappears.
+- **Visible but sample:** the blog is visible with sample posts (phase 5). Every post page is generated but `noindex` and unlisted, and `/blog` itself is `noindex` and unlisted while *all* posts are samples. The first real post flips both automatically.
 - **`sitemap.xml`** is generated from the same route list that is prerendered: every route × locale, with `xhtml:link` alternates and `lastmod` (from `updated_at` / `published_at`, else the build date). Routes flagged `sitemap: false` are generated but not listed: sample case studies (`is_sample: true`), which are also `noindex`.
 - **Sample projects:** until real case studies replace them, the samples are reachable (links work, pages are prerendered) but invisible to search engines. When the API returns a project without `is_sample`, it is indexed, listed and described with JSON-LD automatically.
 - **`robots.txt`:** allow all, plus the sitemap location.
@@ -146,7 +156,10 @@ The backend must provide, per locale:
 | `GET /settings` | `general.owner_name`, `general.job_title`, `general.avatar`, `general.socials[].url` (absolute), `seo.meta_title`, `seo.meta_description`, `seo.og_image` |
 | `GET /projects`, `/projects/:slug` | stable `slug`, `title`, `summary` (≤ 160 chars), `cover_image` (absolute or root-relative) + `cover_alt`, `published_at`, `updated_at`, `is_sample` (boolean). Summary items also carry `type`, `year`, `role`, `preview_image`, `metrics[]`, `technologies[]`. The full record adds `problem`, `solution`, `challenges[{title, body}]`, `architecture{nodes[{id,label,layer,note}], edges[{from,to,kind,label}]}`, `decisions[{title, body, nodes[]}]`, `metrics[{label, value \| null}]`, `gallery[{image, alt}]`, `duration`, `client`, `live_url`, `github_url`, `related_projects[]` |
 | `GET /services` | flat list sorted by group then id: `slug`, `method`, `title`, `description`, `deliverables[]`, `stack[]`, `group{slug, name, sort}` |
-| `GET /blogs`, `/blogs/:slug` | stable `slug`, `title`, `excerpt`, sanitised HTML `content`, `cover_image`, `published_at`, `updated_at`, `reading_time` |
+| `GET /blogs`, `/blogs/:slug` | stable `slug`, `title`, `excerpt`, HTML `content` (headings h2/h3, code as `<pre><code class="language-x" data-filename="…">`; the front end sanitises it again), `cover_image` + `cover_alt`, `category{slug,name}`, `tags[]`, `published_at`, `updated_at`, `reading_time`, `is_sample`. The full post adds `related_posts[]` |
+| `GET /testimonials` | `name`, `role`, `company`, `quote`, `scope`, `checks[]`, `avatar`, `is_sample` |
+| `GET /faqs` | `question`, `answer` (plain text: it is copied verbatim into `FAQPage`) |
+| `POST /contact` | body `{ name, email, phone?, type, message, website? }` (`website` = honeypot: answer 201, store nothing). 201 on success, 422 with `errors{field: [message]}` (shown on the fields), anything else is "500 — Retry". Escape all input server-side; the client already refuses HTML |
 | Listings | Pagination (`pagination.last_page`) so the prerenderer can enumerate every item |
 
 **Slug changes:** a slug must never change silently. If it must, the backend records the old slug and the frontend build emits a `308` redirect (`vercel.json` `redirects`, generated in phase 6).
@@ -181,16 +194,18 @@ Rankings use field CWV (LCP, INP, CLS). Targets: Lighthouse ≥ 90 on mobile for
 - **Hydration waterfall:** each prerendered page carries `modulepreload` for its own lazy page chunk (from the Vite manifest), so hydration does not wait for entry → page chunk.
 - **JS budget:** the plan targets < 170 KB gzip of initial JS. Measure it with `npm run size` after a build.
 
-  | | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
-  | --- | --- | --- | --- | --- |
-  | Initial JS: entry + modulepreload (gzip) | | | 192.4 KB | 192.9 KB |
-  | Home page, initial + page chunk (gzip) | 204.4 KB | 201.1 KB | 203.0 KB | 204.7 KB |
-  | Initial CSS (gzip) | | | 28.9 KB | 34.7 KB |
-  | Deferred (idle / interaction / route) | 17.6 KB | ~107 KB | 121.3 KB | 146.6 KB |
+  | | Phase 1 | Phase 2 | Phase 3 | Phase 4 | Phase 5 |
+  | --- | --- | --- | --- | --- | --- |
+  | Initial JS: entry + modulepreload (gzip) | | | 192.4 KB | 192.9 KB | 192.7 KB |
+  | Home page, initial + page chunk (gzip) | 204.4 KB | 201.1 KB | 203.0 KB | 204.7 KB | 205.0 KB |
+  | Initial CSS (gzip) | | | 28.9 KB | 34.7 KB | 38.9 KB |
+  | Deferred (idle / interaction / route) | 17.6 KB | ~107 KB | 121.3 KB | 146.6 KB | 383.8 KB |
 
   Measured on a client-only build (`npx vite build && npm run size`): after the full `npm run build`, `dist/index.html` is the prerendered home page, whose `modulepreload` for the page chunk makes "initial" equal "home".
 
   Phase 4 kept the initial JS flat (+0.5 KB: the new journey station, the curtain's View Transition branch, `<Seo status>`). Three things were done to get there: the phase-4 strings ship with their chunks, new icons are inline SVG (`LineIcon`) because `react-icons/lu` is one module that lives in the entry, and the filter FLIP is a small WAAPI hook instead of motion's `domMax`, whose separate chunk made the bundler split motion's core out of the entry (+1.2 KB). CSS grows because every section style is global by rule (prerendered pages must be styled before any chunk loads).
+
+  Phase 5 lowered the initial JS (the footer became a lazy chunk). The deferred total jumps because it now includes Shiki (core, JavaScript engine, six grammars, two themes), DOMPurify, embla, react-hook-form and zod. None of it loads up front: Shiki and DOMPurify load only on a client-side navigation to an article (prerendered articles ship finished HTML), embla near the testimonials, and the form libraries with the contact chunk.
 
   The hero did not grow the initial bundle: motion's animation features moved to an async chunk, and GSAP, the mesh, WebGL, the cursor and the intro all load deferred. The remaining gap to 170 KB is react-dom, react-router, i18next, TanStack Query and axios; it is Phase 6 work.
 
@@ -228,5 +243,5 @@ Rankings use field CWV (LCP, INP, CLS). Targets: Lighthouse ≥ 90 on mobile for
 | 2 ✅ | Hero LCP discipline (text LCP + display-font preload, canvas/WebGL/GSAP after idle), intro kept out of the HTML, page-chunk `modulepreload`, responsive AVIF/WebP pipeline (`npm run images`) |
 | 3 ✅ | Semantic section headings, about/experience content indexable in both languages |
 | 4 ✅ | Case-study JSON-LD + breadcrumbs (real projects only), samples noindex + out of the sitemap, `<Seo status>`, filter URLs canonicalised, services `ProfessionalService` / `OfferCatalog`. Per-project OG images move to phase 6 (needs raster covers). |
-| 5 | BlogPosting + FAQPage JSON-LD, article TOC anchors, related-content links |
+| 5 ✅ | BlogPosting (real posts only) + FAQPage JSON-LD, build-time article processing (sanitise + TOC anchors + Shiki), related posts, sample posts and the all-sample `/blog` kept noindex and out of the sitemap |
 | 6 | Lighthouse audit (real numbers), JS budget work, slug redirects, OG image generation, final Search Console checklist |

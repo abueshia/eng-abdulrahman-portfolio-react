@@ -70,14 +70,25 @@ const servicesWithGroups = () =>
 const blogSummary = (b) => ({
   id: b.id,
   slug: b.slug,
+  is_sample: b.is_sample,
   title: b.title,
   excerpt: b.excerpt,
   cover_image: b.cover_image,
+  cover_alt: b.cover_alt,
   category: categoryBySlug.get(b.category) ?? null,
   tags: b.tags,
   reading_time: b.reading_time,
   published_at: b.published_at,
+  updated_at: b.updated_at,
 });
+
+/** Related posts: same category first, then the most recent others. */
+const relatedPosts = (post, limit = 2) =>
+  blogs
+    .filter((b) => b.slug !== post.slug)
+    .sort((a, b) => Number(b.category === post.category) - Number(a.category === post.category))
+    .slice(0, limit)
+    .map(blogSummary);
 
 /** Related projects: shared type first, then most shared technologies. */
 function relatedProjects(project, limit = 3) {
@@ -227,7 +238,12 @@ export const routes = [
     handler: ({ lang, params }) => {
       const post = blogs.find((b) => b.slug === params.slug);
       if (!post) return fail(404, 'Post not found.');
-      return ok(localize({ ...blogSummary(post), content: post.content }, lang));
+      return ok(
+        localize(
+          { ...blogSummary(post), content: post.content, related_posts: relatedPosts(post) },
+          lang,
+        ),
+      );
     },
   },
   { method: 'get', pattern: '/faqs', handler: ({ lang }) => ok(localize(faqs, lang)) },

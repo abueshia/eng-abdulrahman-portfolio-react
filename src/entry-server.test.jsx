@@ -67,6 +67,7 @@ describe('Prerendering (entry-server)', () => {
       'Person',
       'WebSite',
       'ProfessionalService',
+      'FAQPage',
     ]);
     const [page, person] = graph;
     expect(page.mainEntity).toEqual({ '@id': person['@id'] });
@@ -188,6 +189,73 @@ describe('Prerendering (entry-server)', () => {
     expect(headToHtml(/** @type {any} */ (result.head))).toContain('noindex');
   });
 
+  it('emits a FAQPage with every visible question and answer', async () => {
+    const { head } = await renderPage('/en');
+    const ld = head?.tags.find((tag) => tag.attrs.type === 'application/ld+json');
+    const faq = JSON.parse(ld?.content ?? '{}')['@graph'].find((n) => n['@type'] === 'FAQPage');
+
+    expect(faq.mainEntity).toHaveLength(8);
+    expect(faq.mainEntity[0]).toMatchObject({
+      '@type': 'Question',
+      name: 'How do you usually work?',
+      acceptedAnswer: { '@type': 'Answer' },
+    });
+  });
+
+  it('prerenders the phase-5 sections and the footer as real text', async () => {
+    const { html, queryState } = await renderPage('/en');
+    const keys = /** @type {any} */ (queryState).queries.map((q) => q.queryKey[0]);
+
+    expect(keys).toEqual(expect.arrayContaining(['testimonials', 'blogs', 'faqs']));
+    // Testimonials: every review (sample-flagged) is text, carousel or not.
+    expect(html).toContain('Sample client A');
+    expect(html).toContain('Sample client D');
+    expect(html).toContain('approved these changes');
+    // Blog: the changelog on the home page links the notes.
+    expect(html).toContain('Idempotent Payment Webhooks');
+    // FAQ: every answer is in the HTML, including the closed ones.
+    expect(html).toContain('name="faq"');
+    expect(html).toContain('it does not guarantee them');
+    // Contact: the form, the live request preview and the real direct channels.
+    expect(html).toContain('id="contact-name"');
+    expect(html).toContain('POST /api/v1/contact?lang=en HTTP/1.1');
+    expect(html).toContain('mailto:');
+    expect(html).toContain('ls ~/socials');
+    expect(html).toContain('data-station="response"');
+    // Footer: build signature, company role, and no link to a hidden section.
+    expect(html).toContain('Build signature');
+    expect(html).toContain('CEO of iCode Tech');
+    expect(html).not.toContain('#credentials');
+  });
+
+  it('prerenders an article with sanitised, Shiki-highlighted HTML and its TOC', async () => {
+    const result = await renderPage('/en/blog/sample-idempotent-payment-webhooks');
+    const head = headToHtml(/** @type {any} */ (result.head));
+
+    expect(result.status).toBe(200);
+    expect(result.html).toContain('id="post-title"');
+    // Build-time highlighting: dual-theme token colours, file tab, copy button.
+    expect(result.html).toContain('--shiki-dark');
+    expect(result.html).toContain('app/Http/Controllers/PaymentWebhookController.php');
+    expect(result.html).toContain('data-copy');
+    // Headings got ids, and the TOC links to them.
+    expect(result.html).toMatch(/<h2 id="what-idempotency-means"/);
+    expect(result.html).toContain('href="#what-idempotency-means"');
+    // Sample: badge, noindex, and no BlogPosting JSON-LD.
+    expect(result.html).toContain('sample-badge');
+    expect(head).toContain('content="noindex, follow"');
+    expect(head).not.toContain('application/ld+json');
+  });
+
+  it('keeps the all-sample blog index out of the index but renders it', async () => {
+    const result = await renderPage('/en/blog');
+    const head = headToHtml(/** @type {any} */ (result.head));
+
+    expect(result.status).toBe(200);
+    expect(head).toContain('content="noindex, follow"');
+    expect(result.html).toContain('Laravel Queues That Recover From Failure');
+  });
+
   it('lists home and every project for generation, skipping the hidden blog', async () => {
     const { routes, locales } = await getPrerenderRoutes();
     const routePaths = routes.map((route) => route.path);
@@ -198,11 +266,16 @@ describe('Prerendering (entry-server)', () => {
     const sample = routes.find((route) => route.path === `/projects/${SLUG}`);
     expect(sample?.sitemap).toBe(false);
     expect(routes.find((route) => route.path === '/')?.sitemap).not.toBe(false);
-    // sections_visibility.blog = false → no blog pages and no sitemap entries.
-    expect(routePaths.some((p) => p.startsWith('/blog'))).toBe(false);
+    // The blog is visible: its index and posts are generated, but while they
+    // are samples none of them is listed in the sitemap.
+    const blogRoutes = routes.filter((route) => route.path.startsWith('/blog'));
+    expect(blogRoutes.map((route) => route.path)).toEqual(
+      expect.arrayContaining(['/blog', '/blog/sample-core-web-vitals-react']),
+    );
+    expect(blogRoutes.every((route) => route.sitemap === false)).toBe(true);
   });
 
-  it('renders the blog as 404 while the section is hidden', async () => {
-    expect((await renderPage('/en/blog')).status).toBe(404);
+  it('renders unknown articles as 404', async () => {
+    expect((await renderPage('/en/blog/does-not-exist')).status).toBe(404);
   });
 });

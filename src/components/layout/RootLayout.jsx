@@ -7,12 +7,13 @@ import { useBootPhase } from '@/features/intro/boot-store';
 import { trackJourney } from '@/features/journey/journey-store';
 import { useHydrated } from '@/hooks/useHydrated';
 import { BackgroundLayer } from './BackgroundLayer';
-import { Footer } from './Footer';
 import { GlobalFx } from './GlobalFx';
 import { Navbar } from './Navbar';
 import { PageTransition } from './PageTransition';
 import { ScrollManager } from './ScrollManager';
 
+// The footer is a lazy chunk: prerendered in full, hydrated when it arrives.
+const Footer = lazy(() => import('./Footer'));
 const BootSequence = lazy(() => import('@/features/intro/components/BootSequence'));
 
 /** Minimal, layout-stable fallback while a page chunk downloads. */
@@ -75,7 +76,9 @@ export function RootLayout() {
           <PageTransition />
         </Suspense>
       </main>
-      <Footer />
+      <Suspense fallback={null}>
+        <Footer />
+      </Suspense>
       <GlobalFx />
       <BootGate />
     </div>

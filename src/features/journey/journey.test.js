@@ -4,7 +4,7 @@ import { STATIONS, isStationAnchor, nextForwardStation, stationForSection } from
 import { resolveJourney } from './journey-store';
 
 describe('journey stations', () => {
-  it('follows the request: gateway → (observability tap) → auth → … → endpoints → response', () => {
+  it('follows the request: gateway → (observability tap) → auth → … → request → response', () => {
     expect(STATIONS.map((station) => `${station.section}:${station.id}`)).toEqual([
       'hero:gateway',
       'stats:observability',
@@ -13,6 +13,10 @@ describe('journey stations', () => {
       'experience:queue',
       'projects:database',
       'services:endpoints',
+      'testimonials:review',
+      'blog:docs',
+      'faq:man',
+      'contact:request',
       'contact:response',
     ]);
   });
@@ -21,8 +25,9 @@ describe('journey stations', () => {
     expect(stationForSection('stats')).toBe('observability');
     expect(stationForSection('services')).toBe('endpoints');
     expect(stationForSection('credentials')).toBe('endpoints');
-    expect(stationForSection('faq')).toBe('endpoints');
-    expect(stationForSection('contact')).toBe('response');
+    expect(stationForSection('faq')).toBe('man');
+    expect(stationForSection('contact')).toBe('request');
+    expect(isStationAnchor('contact')).toBe(true);
     expect(isStationAnchor('stats')).toBe(true);
     expect(isStationAnchor('services')).toBe(true);
     expect(isStationAnchor('credentials')).toBe(false);

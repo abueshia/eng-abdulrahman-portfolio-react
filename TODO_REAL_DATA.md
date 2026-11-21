@@ -34,6 +34,8 @@ JSON-LD `sameAs` lists identity profiles only (GitHub, LinkedIn, Facebook). What
 ## ✗ Required before publishing
 
 - [ ] Final domain: update `VITE_SITE_URL` (see `SEO.md` §10). Not detectable by the script.
+- [ ] **Visible sections serving samples** (`npm run data:todo` fails on these): `projects` (3 sample case studies), `testimonials` (4 sample reviews) and `blog` (3 sample articles). Replace them with real content from the API, or hide the section in `settings.sections_visibility`, before going live.
+- [ ] **Contact form on the mock adapter:** with `VITE_USE_MOCK` not `false`, a submitted message reaches nobody (the success panel says "Mock mode: not delivered"). Connect the Laravel `POST /contact` and set `VITE_USE_MOCK=false` in Vercel (or `.env.production`). The direct channels (email, WhatsApp, phone) work regardless.
 
 ## ◇ Recommended (not blocking)
 
@@ -50,7 +52,10 @@ Clearly fictional sample content (`sample-*` slugs, "Sample Company A/B/C", zero
   - Per real project, provide: title, summary (≤ 160 chars), problem, solution, role, technologies, challenges, architecture nodes/edges + decisions, metrics (only measured values), gallery, and `live_url` / `github_url` if public.
 - `experiences.js`, `stats.js` (only "4+ years" is real). The observability board shows the zeroed sample metrics as **"No data"** panels (no number, flat dashed series), so nothing fictional reads as a real figure.
 - `services.js`: the **real** list of 14 services in 5 groups (edit wording freely). It stays in a mock file only until `GET /services` serves it.
-- `faqs.js`, `technologies.js`
-- `credentials.js`, `testimonials.js`, `blogs.js`: **hidden** (`sections_visibility` = `false`), so they are absent from the navigation and prerendering until real content exists
+- `testimonials.js`: **4 sample reviews** (`is_sample: true`): "Sample client A–D", "Sample company", and quotes that say they are placeholders. Real ones need: name, role, company, quote, the area reviewed (`scope`) and the aspects approved (`checks`), with the person's permission to publish.
+- `blogs.js`: **3 sample articles** (`is_sample: true`): Idempotency in payment webhooks, Laravel queues, Core Web Vitals for React. Wording is general and has no invented figures, so they can become real posts once the owner reviews and publishes them (then drop the flag and the `sample-` slug prefix). Covers are generated SVGs in `public/images/blog/`.
+- `faqs.js`: the owner's FAQ, 8 honest general answers (no prices, durations or ranking promises). Edit freely.
+- `technologies.js`
+- `credentials.js`: **hidden** (`sections_visibility.credentials = false`), so it is absent from the navigation and prerendering until real content exists
 
 > Note: sample case studies are still prerendered (links work) but are `noindex` and **not** listed in `sitemap.xml`. The sitemap can be submitted as is; real projects appear in it as soon as the API serves them without `is_sample`.

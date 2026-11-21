@@ -4,7 +4,8 @@
  *
  *   Gateway (hero) → [Observability (stats)] → Auth (about) → Services
  *   (skills) → Queue (experience) → Database (projects) → Endpoints
- *   (services) → Response 201 (contact)
+ *   (services) → Review (testimonials) → Docs (blog) → Man (faq) → Request
+ *   builder (contact) → Response 201 (an inner anchor at the end of contact)
  *
  * Observability is a *tap*: monitoring watches the request go by without
  * routing it, so it is a stop on the route trace but never a forwarding
@@ -34,6 +35,8 @@ import { SECTION_IDS } from './routes';
  * @property {string} section  Home section id that hosts the station.
  * @property {string} code     Two-digit ordinal shown in the route trace.
  * @property {boolean} [tap]    Passive station (observes, never forwards).
+ * @property {boolean} [inner]  Anchored on an element inside its section (the section renders
+ *   the `data-station-anchor`), not on the section itself.
  * @property {{ ember: GlowScene, ion: GlowScene, grid: number }} scene
  */
 
@@ -113,9 +116,56 @@ export const STATIONS = Object.freeze([
     },
   },
   {
+    // Reviews of the work: the request reads what others approved.
+    id: 'review',
+    section: SECTION_IDS.testimonials,
+    code: '08',
+    scene: {
+      ember: { x: 12, y: 30, s: 0.85, a: 0.5 },
+      ion: { x: 84, y: 70, s: 1, a: 0.5 },
+      grid: 0.7,
+    },
+  },
+  {
+    // The changelog / docs: what the system has written about itself.
+    id: 'docs',
+    section: SECTION_IDS.blog,
+    code: '09',
+    scene: {
+      ember: { x: 70, y: 12, s: 0.8, a: 0.45 },
+      ion: { x: 22, y: 86, s: 0.9, a: 0.4 },
+      grid: 0.45,
+    },
+  },
+  {
+    // man faq: the manual, read before building the request.
+    id: 'man',
+    section: SECTION_IDS.faq,
+    code: '10',
+    scene: {
+      ember: { x: -8, y: 60, s: 0.7, a: 0.35 },
+      ion: { x: 64, y: 20, s: 0.95, a: 0.45 },
+      grid: 0.35,
+    },
+  },
+  {
+    // The visitor builds the request themselves (the contact form).
+    id: 'request',
+    section: SECTION_IDS.contact,
+    code: '11',
+    scene: {
+      ember: { x: 46, y: 50, s: 1.3, a: 0.8 },
+      ion: { x: 90, y: 10, s: 0.7, a: 0.35 },
+      grid: 1.1,
+    },
+  },
+  {
+    // Inner station: anchored on the response panel at the end of the contact
+    // section, not on a section of its own. The request has become the response.
     id: 'response',
     section: SECTION_IDS.contact,
-    code: '08',
+    inner: true,
+    code: '12',
     scene: {
       ember: { x: 82, y: 92, s: 0.6, a: 0.22 },
       ion: { x: 18, y: 30, s: 1.4, a: 0.9 },
@@ -124,7 +174,9 @@ export const STATIONS = Object.freeze([
   },
 ]);
 
-const BY_SECTION = new Map(STATIONS.map((station) => [station.section, station]));
+const BY_SECTION = new Map(
+  STATIONS.filter((station) => !station.inner).map((station) => [station.section, station]),
+);
 const BY_ID = new Map(STATIONS.map((station) => [station.id, station]));
 const SECTION_ORDER = Object.values(SECTION_IDS);
 

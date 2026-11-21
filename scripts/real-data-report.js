@@ -152,6 +152,51 @@ const settingsSource = readFileSync(join(root, 'src/data/mock/settings.js'), 'ut
 const visibilityBlock = settingsSource.match(/sections_visibility:\s*\{([\s\S]*?)\}/)?.[1] ?? '';
 const hidden = [...visibilityBlock.matchAll(/(\w+):\s*false/g)].map(([, key]) => key);
 
+/*
+ * Visible sections still serving samples block publishing: a sample must
+ * never go live on a section people can see (it is fine while hidden).
+ */
+const SAMPLE_SOURCES = {
+  projects: 'src/data/mock/projects.js',
+  testimonials: 'src/data/mock/testimonials.js',
+  blog: 'src/data/mock/blogs.js',
+};
+for (const [section, file] of Object.entries(SAMPLE_SOURCES)) {
+  if (hidden.includes(section) || !existsSync(join(root, file))) continue;
+  const samples = (
+    readFileSync(join(root, file), 'utf-8').match(/^\s+is_sample:\s*true,?\s*$/gm) ?? []
+  ).length;
+  if (samples > 0) {
+    required.push(
+      `${file}  section "${section}" is visible but serves ${samples} sample record(s) (is_sample: true); ` +
+        'replace them with real content from the API, or hide the section',
+    );
+  }
+}
+
+/*
+ * The contact form only delivers messages through the live API. With the mock
+ * adapter a "sent" message reaches nobody, so production must not run on it.
+ * Read from the env files and the current environment (CI/hosting sets it).
+ */
+const envFiles = ['.env', '.env.production', '.env.production.local', '.env.local'];
+const mockValues = [
+  process.env.VITE_USE_MOCK,
+  ...envFiles
+    .map((name) => join(root, name))
+    .filter(existsSync)
+    .map((file) => readFileSync(file, 'utf-8').match(/^\s*VITE_USE_MOCK\s*=\s*(\S+)/m)?.[1]),
+].filter((value) => value !== undefined);
+const liveApi = mockValues.some((value) =>
+  ['false', '0', 'no', 'off'].includes(String(value).toLowerCase()),
+);
+if (!liveApi && !hidden.includes('contact')) {
+  required.push(
+    'contact form  VITE_USE_MOCK is not "false" for production (.env.production or the host env): ' +
+      'messages would hit the mock adapter and reach nobody. Connect the Laravel API (POST /contact) first',
+  );
+}
+
 /* -------------------------------------------------------------- report */
 
 const list = (items) => (items.length ? items.map((item) => `  • ${item}`).join('\n') : '  (none)');

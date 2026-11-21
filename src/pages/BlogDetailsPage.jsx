@@ -1,15 +1,25 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 
+import '@/i18n/work';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Seo } from '@/components/ui/Seo';
+import { Article } from '@/features/blog/components/Article';
 import { useBlog } from '@/features/blog/hooks/useBlogs';
+import { useLocale } from '@/hooks/useLocale';
 import { useSectionVisible } from '@/hooks/useSettings';
+import { buildArticleJsonLd } from '@/utils/structured-data';
 import NotFoundPage from './NotFoundPage';
 
+/** Open Graph needs a raster image; SVG covers fall back to the default one. */
+const isRaster = (/** @type {string | undefined} */ src) =>
+  Boolean(src && /\.(jpe?g|png|webp)(\?.*)?$/i.test(src));
+
 /**
- * Article page (foundation version: data wiring + title).
- * Sanitised HTML rendering, Shiki highlighting and TOC land in phase 5.
+ * Article page (`/blog/:slug`). The HTML arrives processed (sanitised,
+ * highlighted, with heading ids) from the query. Sample posts are `noindex`,
+ * stay out of the sitemap and get no BlogPosting JSON-LD.
  */
 export default function BlogDetailsPage() {
   // A hidden blog (settings.sections_visibility.blog) has no public pages.
@@ -20,32 +30,39 @@ export default function BlogDetailsPage() {
 function BlogPost() {
   const { slug } = useParams();
   const { t } = useTranslation();
+  const { locale } = useLocale();
   const { data, isPending, isError, error, refetch } = useBlog(slug);
+  const post = data?.data;
+  const home = t('caseStudy.home');
+  const blog = t('nav.blog');
+  const jsonLd = useMemo(
+    () => buildArticleJsonLd(post, locale, { home, blog }),
+    [post, locale, home, blog],
+  );
 
   if (isError && error?.isNotFound) return <NotFoundPage />;
-  const post = data?.data;
 
   return (
-    <article className="container-fluid flex max-w-4xl flex-col gap-6 pt-[calc(var(--nav-height)+4rem)] pb-24">
+    <>
       <Seo
         title={post?.title}
         description={post?.excerpt}
-        image={post?.cover_image}
+        image={isRaster(post?.cover_image) ? post.cover_image : undefined}
         type="article"
+        noIndex={Boolean(post?.is_sample)}
+        jsonLd={jsonLd}
       />
-      {isPending && <p className="font-mono text-sm text-ink-dim">{t('common.loading')}</p>}
-      {isError && <ErrorState onRetry={refetch} />}
-      {post && (
-        <>
-          <p className="font-mono text-xs text-ink-dim">
-            {post.category?.name} · {t('common.minRead', { count: post.reading_time })}
-          </p>
-          <h1 className="font-display text-display-md font-bold tracking-tight text-balance">
-            {post.title}
-          </h1>
-          <p className="text-xl text-ink-muted">{post.excerpt}</p>
-        </>
+      {isPending && (
+        <p className="container-fluid pt-[calc(var(--nav-height)+4rem)] font-mono text-sm text-ink-dim">
+          {t('common.loading')}
+        </p>
       )}
-    </article>
+      {isError && (
+        <div className="container-fluid pt-[calc(var(--nav-height)+4rem)]">
+          <ErrorState onRetry={refetch} />
+        </div>
+      )}
+      {post && <Article post={post} />}
+    </>
   );
 }

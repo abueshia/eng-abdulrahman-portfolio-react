@@ -9,7 +9,8 @@
 ## 1) الهوية البصرية ونظام التصميم (Ember × Ion)
 
 - **الفلسفة البصرية:** ثقافة الـ Terminal، هندسة النظم، والمعمارية النظيفة بأسلوب سينمائي فاخر على مستوى استوديوهات Awwwards (بعيداً عن القوالب الجاهزة أو التدرجات البنفسجية المبتذلة).
-- **الفكرة المركزية "The Visitor Is The Request" (إلزامية):** الموقع كله رحلة طلب HTTP داخل نظام حي، والتمرير هو حركة الطلب بين المحطات: Gateway (Hero) ← Observability (Stats) ← Auth (About) ← Services (Skills) ← Queue (Experience) ← Database (Projects) ← Endpoints (Services) ← Response 201 (Contact).
+- **الفكرة المركزية "The Visitor Is The Request" (إلزامية):** الموقع كله رحلة طلب HTTP داخل نظام حي، والتمرير هو حركة الطلب بين المحطات: Gateway (Hero) ← Observability (Stats) ← Auth (About) ← Services (Skills) ← Queue (Experience) ← Database (Projects) ← Endpoints (Services) ← Review (Testimonials) ← Docs (Blog) ← Man (FAQ) ← Request Builder (Contact) ← Response 201 (داخل Contact عند قنوات الرد). الـ Footer هو "Build Signature": البناء الذي خدم الاستجابة، وليس محطة على المسار.
+  - **محطة داخلية (`inner: true`):** محطة `response` لا تملك قسماً؛ قسم Contact يرسم عنصر `data-station="response" data-station-anchor="true"` بنفسه (على قنوات الرد، وليس على عنصر sticky لأن موضعه يتغير مع التمرير).
   - **Observability محطة "tap" (`tap: true`):** المراقبة تشاهد الطلب وهو يمر ولا توجّهه. تظهر في الـ Route Trace بعلامة مفرغة متقطعة، ولها hub جانبي في الـ mesh، لكن التوجيه يتخطاها (`nextForwardStation`)، فسطر الـ Hero يبقى `forwarding → /auth`.
   - المحطات معرّفة في `src/config/journey.js`، ومواضعها تُقاس من الـ DOM (`data-station-anchor`)، فالقسم المخفي يسقط من المسار تلقائياً.
   - الأقسام الواقعة بين محطتين "في الطريق" وتأخذ محطة ما قبلها.
@@ -56,6 +57,10 @@ src/
     experience/   ExperienceSection (git log --graph) + lib/git-log + fx/ExperienceDirector
     projects/     ProjectsSection (Case Files) + QueryConsole + CaseFile + CaseStudy + ArchitectureDiagram + Gallery (lightbox) + SampleBadge · hooks/{useProjects, useCaseNavigation (View Transitions), useFlip} · lib/{filters, architecture} · fx/{ProjectsDirector, CaseStudyDirector}
     services/     ServicesSection (API Contracts, route:list) + lib/contract + fx/ServicesDirector
+    testimonials/ TestimonialsSection (Code Review) + CarouselEngine (embla كسول) + fx/TestimonialsDirector
+    blog/         BlogSection (Changelog) + BlogIndex (فهرس تحريري ومعاينة تتبع المؤشر) + Article (TOC وتقدم القراءة والنسخ) · lib/{article (DOMPurify + معرّفات العناوين + Shiki), highlighter} · fx/BlogDirector
+    faq/          FaqSection (man faq، `<details name>`) + fx/FaqDirector
+    contact/      ContactSection (HTTP Request Builder: react-hook-form + zod) + lib/schema + fx/ContactDirector
     intro/        BootSequence + boot-store (مراحل الـ Intro ومهام الجاهزية الحقيقية)
     hero/         Hero ومكوّناته + fx/HeroDirector + lib/{mesh/graph, mesh/renderer, terminal, telemetry, portrait}
     journey/      journey-store (تتبع موضع الطلب على مسار المحطات)
@@ -65,8 +70,8 @@ src/
   context/        سياقات React (ThemeContext, LocaleContext, lenis-context, head-context)
   services/api/   عميل axios (client.js, http.js, endpoints.js, errors.js) + خدمات الموارد (*.service.js) + محول البيانات الوهمية (mock/adapter.js, handlers.js, response.js)
   data/mock/      بيانات وهمية ثنائية اللغة ({ ar, en }) تحاكي استجابات Laravel تماماً
-  i18n/           إعداد i18next وملفات الترجمة locales/{ar,en}.json · work.js + locales/work.{ar,en}.json (نصوص Projects/CaseStudy/Services، تُشحن مع الـ chunks الكسولة)
-  styles/         tokens.css · globals.css · fx.css (الطبقات العامة) · hero.css · sections.css (أقسام المرحلة 3) · work.css (Projects وCase Study وServices) · fonts.js · index.css
+  i18n/           إعداد i18next وملفات الترجمة locales/{ar,en}.json · work.js + locales/work.{ar,en}.json (نصوص Projects/CaseStudy/Services) · sections.js + locales/sections.{ar,en}.json (نصوص Testimonials/Blog/FAQ/Contact/Footer)، وكلها تُشحن مع الـ chunks الكسولة
+  styles/         tokens.css · globals.css · fx.css (الطبقات العامة) · hero.css · sections.css (أقسام المرحلة 3) · work.css (Projects وCase Study وServices) · content.css (Testimonials وBlog والمقال وFAQ وContact وFooter) · fonts.js · index.css
   utils/          cn.js · storage.js · motion.js · head.js (إدارة <head>) · structured-data.js (JSON-LD)
   config/         env.js · routes.js · navigation.js · journey.js (محطات الرحلة)
   test/           setup.js · renderWithProviders.jsx
@@ -94,7 +99,8 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
    ```
    وتفك الدالة `unwrap()` هذا الغلاف وتحوّل أي خطأ (بما فيه `422` و`404`) إلى كائن `ApiError` موحد.
 4. **اللغة في الطلبات:** كل طلب يمرر `?lang=ar|en` وترويسة `Accept-Language`، ومفتاح التخزين المؤقت في TanStack Query يتضمن اللغة النشطة دائماً.
-5. **المشاريع النموذجية (`is_sample`):** أي مشروع يحمل `is_sample: true` يظهر بشارة "Sample / نموذجي"، وصفحته `noindex, follow` (تُولَّد مسبقاً لكن لا تدخل الـ sitemap)، ولا يأخذ JSON-LD من نوع CreativeWork. المقاييس وصفية فقط أو `null` (تظهر "No data")، ولا أرقام مخترعة. الشاشات SVG مولّدة بـ `npm run visuals`، واستبدالها بلقطات حقيقية = تغيير المسار فقط. الحقول الكاملة موثقة في رأس `src/data/mock/projects.js` وفي `SEO.md` §7.
+5. **المحتوى النموذجي (`is_sample`):** ينطبق على المشاريع والتوصيات والمقالات. أي سجل يحمل `is_sample: true` يظهر بشارة "نموذجي / Sample"، ولا يأخذ JSON-LD (CreativeWork / BlogPosting / Review)، وصفحته (إن وُجدت) `noindex, follow` وخارج الـ sitemap. صفحة `/blog` نفسها `noindex` وخارج الـ sitemap طالما كل المقالات نموذجية. ممنوع أسماء أشخاص أو شركات حقيقية أو اقتباسات تبدو حقيقية. و`npm run data:todo` يفشل إذا كان قسم ظاهر يعرض محتوى نموذجياً، أو إذا كان نموذج التواصل لا يزال على الـ mock.
+   - **تفاصيل المشاريع:** أي مشروع يحمل `is_sample: true` يظهر بشارة "Sample / نموذجي"، وصفحته `noindex, follow` (تُولَّد مسبقاً لكن لا تدخل الـ sitemap)، ولا يأخذ JSON-LD من نوع CreativeWork. المقاييس وصفية فقط أو `null` (تظهر "No data")، ولا أرقام مخترعة. الشاشات SVG مولّدة بـ `npm run visuals`، واستبدالها بلقطات حقيقية = تغيير المسار فقط. الحقول الكاملة موثقة في رأس `src/data/mock/projects.js` وفي `SEO.md` §7.
 6. **إظهار/إخفاء الأقسام:** يعتمد كل قسم في الصفحة الرئيسية على `<Section id="...">` الذي يقرأ `settings.sections_visibility[id]`. والقسم المخفي يُحذف أيضاً من التنقل (`useNavItems`)، وصفحات المدونة تعرض 404 ولا تُولَّد مسبقاً ولا تدخل الـ sitemap.
 
 ---
@@ -110,12 +116,13 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 5. **حالة الثيم:** القيمة على `<html data-theme>` هي المصدر، وتُقرأ عبر `useSyncExternalStore` (القيمة على الخادم `dark`). يُمنع الكتابة فوق `data-theme` أثناء الـ hydration.
 6. **التحقق:** `src/entry-server.test.jsx` يختبر مخرجات التوليد، و`src/app/hydration.test.jsx` يفشل عند أي hydration mismatch. وأي ميزة جديدة لا تُعتبر منتهية قبل نجاح `npm run build`.
 7. **حالة الصفحة (`status`):** الـ prerender يأخذ الحالة من `<Seo status>` (صفحة 404 فقط تمرر `status={404}`)، وليس من `noindex`. لذلك صفحة نموذجية `noindex` تبقى صفحة 200 حقيقية.
-8. **النشر:** المحتوى يُثبَّت وقت البناء، فأي نشر من Laravel يجب أن يستدعي Vercel Deploy Hook لإعادة البناء.
-9. **الـ Intro والطبقات العميلة لا تدخل الـ HTML المولّد أبداً:** تُركَّب بعد الـ hydration فقط (`useHydrated` / `useIdleReady`).
+8. **محتوى المقالات:** الـ HTML القادم من الـ API يمر داخل الـ query نفسه (`useBlog`) عبر `lib/article.js`: تعقيم DOMPurify بقائمة سماح، ومعرّفات للعناوين وTOC، وتلوين Shiki (fine-grained: php/js/jsx/bash/json/sql فقط، بمحرك JavaScript بدون WASM). وقت الـ prerender يعمل في Node بنافذة jsdom (يجب أن يكون `jsdom` مثبتاً وقت البناء)، فالـ HTML النهائي هو ما يُحقن في الصفحة، والعميل لا يحمّل DOMPurify أو Shiki لأي مقال مولّد مسبقاً. يُمنع عرض `content` خام بدون هذا المسار.
+9. **النشر:** المحتوى يُثبَّت وقت البناء، فأي نشر من Laravel يجب أن يستدعي Vercel Deploy Hook لإعادة البناء.
+10. **الـ Intro والطبقات العميلة لا تدخل الـ HTML المولّد أبداً:** تُركَّب بعد الـ hydration فقط (`useHydrated` / `useIdleReady`).
    - الاسم والعنوان ونص الـ Hero والصورة كلها في الـ HTML، ويختبر ذلك `entry-server.test.jsx`.
    - الـ LCP هو نص الاسم: يُرسم مع أول رسم تحت غطاء الـ Intro، ولا يُخفى بـ `opacity` قبل ذلك.
    - أي قيمة تعتمد على المتصفح (الوقت، اللغة الزمنية، قياسات الأداء) تُملأ بعد التركيب في مكان محجوز مسبقاً، فلا يحدث hydration mismatch ولا layout shift.
-10. **Resource hints:** `scripts/prerender.js` يقرأ manifest الـ Vite ويضيف:
+11. **Resource hints:** `scripts/prerender.js` يقرأ manifest الـ Vite ويضيف:
    - `modulepreload` لـ chunk الصفحة، فلا ينتظر الـ hydration سلسلة طلبات.
    - `preload` لخط العرض الخاص بلغة الصفحة (خط الاسم).
 
@@ -207,7 +214,7 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
   - `PageTransition`: ستارة Ember مع `GET /path`.
   - `SoundToggle`: صوت اختياري مطفأ افتراضياً، مولَّد بالـ Web Audio بدون ملفات.
   - `GlobalFx`: المحمّل الكسول.
-- **ممنوع CSS داخل الـ chunks الكسولة:** كل الأنماط في `src/styles/` (`fx.css` و`hero.css` و`sections.css` و`work.css`)، حتى تظهر الصفحات المولّدة مسبقاً مكتملة التنسيق.
+- **ممنوع CSS داخل الـ chunks الكسولة:** كل الأنماط في `src/styles/` (`fx.css` و`hero.css` و`sections.css` و`work.css` و`content.css`)، حتى تظهر الصفحات المولّدة مسبقاً مكتملة التنسيق.
 - **`VITE_FX=off`** يعطل كل الطبقات العميلة، ويُستخدم في الاختبارات. المحتوى لا يعتمد عليه أبداً.
 
 ---
@@ -227,6 +234,9 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 - **الحالة الافتراضية لكل عنصر هي حالته النهائية المقروءة.** الـ director يضيف حالات "قبل" فقط. بدون JS أو مع تقليل الحركة يظهر كل المحتوى.
 - **نصوص الميزات الكسولة:** نصوص الأقسام الجديدة الكبيرة تُوضع في bundle منفصل يُسجَّل عند استيراد الـ chunk (مثل `src/i18n/work.js`)، لا في `ar.json`/`en.json` الأساسيين اللذين يدخلان الحزمة الأولية.
 - **الأيقونات في الـ chunks الكسولة:** `react-icons/lu` وحدة واحدة موجودة في الحزمة الأولية (الـ Navbar)، فأي أيقونة جديدة منها تكبر الـ JS الأولي. الأيقونات الجديدة في الميزات الكسولة تستخدم `LineIcon`.
+- **Carousel وأي مكتبة تفاعل ثقيلة:** الـ markup المولّد مسبقاً يعمل وحده (مثلاً صف scroll-snap يُسحب بدون JS)، والمكتبة (embla) تُحمَّل كـ chunk كسول قرب الشاشة وتتسلم نفس العناصر بدون إعادة رسم، وتُدمَّر عند الـ unmount. التشغيل التلقائي يتوقف عند hover/focus وخارج الشاشة، ولا يعمل مع تقليل الحركة.
+- **Accordion:** `<details>` أصلي (يعمل بدون JS، ويعلن حالته لقارئ الشاشة، ويفتح مع البحث في الصفحة). "واحد مفتوح فقط" عبر `name` مع معالج `toggle` احتياطي، والارتفاع يتحرك بـ CSS (`::details-content` و`interpolate-size`) حيث يدعمه المتصفح.
+- **الـ Footer كسول:** chunk منفصل داخل `<Suspense>` في `RootLayout`، مولّد مسبقاً بالكامل. أي قيمة تعتمد على "الآن" (الساعة المحلية) تُقرأ عبر `useSyncExternalStore` بقيمة خادم `null`.
 - **FLIP:** ممنوع تحميل `domMax` من motion (يعيد تقسيم نواة motion خارج الـ entry فيكبر الـ JS الأولي). دخول وخروج العناصر بـ AnimatePresence (motion)، وانزلاق العناصر الباقية بـ `useFlip` (WAAPI على `transform`).
 - **في الموبايل:** أي grid فيه محتوى عرضه `max-content` (كود، شريط تبويبات قابل للتمرير) يأخذ `minmax(0, 1fr)`، حتى لا يتسع عرض الصفحة.
 
@@ -268,6 +278,19 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 - **البيانات الحقيقية:** البريد والهاتف وواتساب والموقع (القاهرة، حدائق الأهرام) والمنطقة الزمنية `Africa/Cairo` وGitHub وLinkedIn وFacebook، وحذف X نهائياً، وCV في `public/cv/Abdulrahman_Saad_Backend_Engineer_CV.pdf`. والـ `sameAs` في JSON-LD يضم الحسابات فقط (بدون واتساب).
 - إخفاء `credentials` و`testimonials` و`blog` لحين وجود محتوى حقيقي، وتحويل بيانات الخبرات والمشاريع والإحصائيات إلى نماذج واضحة (`Sample ·` و`sample-*` و`Sample Company A/B/C` وأرقام صفرية، ما عدا سنوات الخبرة 4).
 - `npm run data:todo` أصبح يفرّق بين «ناقص ضروري قبل النشر» (يفشل الأمر) و«mock مؤقت لحين الـ API» (للعلم فقط)، ويتحقق من صيغة الصور وأبعادها.
+
+### المرحلة 5 — Testimonials وBlog وFAQ وContact وFooter (مكتملة، بانتظار المراجعة البصرية)
+- **الرحلة:** محطات جديدة `review` (Testimonials) و`docs` (Blog) و`man` (FAQ) و`request` (Contact)، و`response` أصبحت محطة داخلية على قنوات الرد في نهاية Contact. hubs جديدة في الـ mesh ومشاهد إضاءة، والـ Navbar والـ Route Trace يتبعانها تلقائياً.
+- **الإظهار:** `testimonials` و`blog` ظاهران بمحتوى نموذجي معلَّم (`is_sample`)، و`credentials` مخفي.
+- **Testimonials ← REVIEW ("Code Review"):** كل توصية مراجعة Pull Request (✓ approved these changes) برأس PR يجمع المراجعين والفحوصات من البيانات. الـ director يشغّل الفحوصات مع التمرير ويقلب الحالة إلى Approved. carousel: صف scroll-snap مولّد مسبقاً، ثم embla كسول مع autoplay يتوقف عند hover/focus وخارج الشاشة.
+- **Blog ← DOCS ("Changelog"):** فهرس تحريري بعناوين ضخمة تمتلئ بالحبر مع التمرير، ومعاينة صورة تتبع المؤشر (ديسكتوب وماوس فقط)، وفلتر بالتصنيف في الـ URL. صفحة المقال: 68ch، TOC ثابت يعلّم العنوان الحالي، شريط تقدم القراءة، وقت القراءة، كود Shiki بتبويب اسم الملف وزر نسخ، ومقالات ذات صلة. 3 مقالات نموذجية (Idempotency في الدفع، Queues في Laravel، Core Web Vitals) بغلافات SVG من `npm run visuals`.
+- **FAQ ← MAN ("man faq"):** صفحة man (NAME / SYNOPSIS / DESCRIPTION) و8 أسئلة صادقة بدون أسعار أو مدد أو وعود بالترتيب، و`<details name="faq">`، وسطر pager بأسلوب `less` يتحدث مع التمرير.
+- **Contact ← REQUEST BUILDER ثم RESPONSE 201:** عنوان حركي بالكلمات، والمسار الذي قطعه الطلب، ثم نموذج (react-hook-form + zod، والأخطاء مفاتيح i18n) بجانبه معاينة حية لـ `POST /contact`. الزر يصير شريط تقدم، ثم `201 Created` أو `500 — Retry` أو أخطاء 422 على الحقول. honeypot، ومنع إرسال نفس الطلب مرتين، ورفض HTML. في وضع الـ mock يظهر "Mock mode: not delivered" بوضوح. القنوات المباشرة (بريد، واتساب، هاتف) و`ls ~/socials` من settings الحقيقية.
+- **Footer ← BUILD SIGNATURE:** اسم ضخم بحدود فقط يمتلئ عند الوصول إليه، وخريطة موقع للأقسام الظاهرة فقط، والساعة المحلية (Africa/Cairo)، والسوشيال، و`v{version} · commit {hash}`، وCEO of iCode Tech. أصبح chunk كسولاً.
+- **SEO:** `FAQPage` في JSON-LD الرئيسية، و`BlogPosting` + `BreadcrumbList` للمقالات الحقيقية فقط، وبدون Review JSON-LD (توصيات ذاتية ونماذج). المقالات النموذجية وصفحة `/blog` (وكل مقالاتها نماذج) `noindex` وخارج الـ sitemap.
+- **data:todo:** أي قسم ظاهر بمحتوى `is_sample`، ونموذج التواصل على الـ mock في الإنتاج، أصبحا ضمن "Required before publishing".
+- **الأداء:** الـ JS الأولي 192.9 ← 192.7 KB (الـ Footer الكسول عوّض الزيادة). Shiki وDOMPurify وembla وreact-hook-form وzod كلها في chunks كسولة، وShiki لا يُحمَّل في المتصفح لأي مقال مولّد مسبقاً.
+- **اختبارات جديدة:** مسار المقال (التعقيم، المعرّفات، Shiki)، مخطط التواصل، تدفق النموذج (201 وملاحظة الـ mock و422 و500)، الـ FAQ (سؤال واحد مفتوح)، مخرجات التوليد (الأقسام والـ footer والمقال وFAQPage وصفحة /blog)، وhydration مقال مولّد.
 
 ### المرحلة 4 — Projects وServices (مكتملة، بانتظار المراجعة البصرية)
 - **Projects ← DATABASE ("Cinematic Case Files"):**

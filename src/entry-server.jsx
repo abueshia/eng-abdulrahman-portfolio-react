@@ -132,7 +132,8 @@ async function fetchAll(list) {
  * @property {string} path      Locale-agnostic path ("/blog/my-post").
  * @property {string} [lastmod] ISO date for the sitemap.
  * @property {boolean} [sitemap] False for pages that are generated but not
- *   listed (noindex sample case studies).
+ *   listed (noindex samples: case studies, posts, and the blog index while
+ *   every post is a sample).
  */
 
 /**
@@ -153,7 +154,10 @@ export async function getPrerenderRoutes() {
     locales: SUPPORTED_LOCALES,
     routes: [
       { path: paths.home() },
-      ...(blogVisible ? [{ path: paths.blog() }] : []),
+      // The index is listed only once at least one post is real.
+      ...(blogVisible
+        ? [{ path: paths.blog(), sitemap: posts.some((post) => !post.is_sample) }]
+        : []),
       ...projects.map((project) => ({
         path: paths.project(project.slug),
         lastmod: project.updated_at ?? project.published_at,
@@ -163,6 +167,7 @@ export async function getPrerenderRoutes() {
       ...posts.map((post) => ({
         path: paths.post(post.slug),
         lastmod: post.updated_at ?? post.published_at,
+        sitemap: !post.is_sample,
       })),
     ],
   };

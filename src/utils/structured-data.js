@@ -26,10 +26,12 @@ const COMPANY_ROLE_EN = 'CEO';
  * mirroring the services section that is visible on the page.
  * @param {any} general `settings.general` from GET /settings.
  * @param {'ar' | 'en'} locale
- * @param {{ services?: any[], catalogName?: string }} [extra]
+ * When the FAQ is passed (and visible), a `FAQPage` lists every question
+ * with its accepted answer, exactly as the FAQ section shows them.
+ * @param {{ services?: any[], catalogName?: string, faqs?: any[] }} [extra]
  * @returns {object | undefined}
  */
-export function buildHomeJsonLd(general, locale, { services = [], catalogName } = {}) {
+export function buildHomeJsonLd(general, locale, { services = [], catalogName, faqs = [] } = {}) {
   if (!general) return undefined;
   const url = `${env.siteUrl}${localizePath(locale, '/')}`;
   const personId = `${env.siteUrl}/#person`;
@@ -80,6 +82,22 @@ export function buildHomeJsonLd(general, locale, { services = [], catalogName } 
       },
       ...(services.length > 0
         ? [buildServicesNode({ general, url, personId, services, catalogName })]
+        : []),
+      ...(faqs.length > 0
+        ? [
+            {
+              '@type': 'FAQPage',
+              '@id': `${url}#faq`,
+              url: `${url}#faq`,
+              inLanguage: locale,
+              isPartOf: { '@id': `${env.siteUrl}/#website` },
+              mainEntity: faqs.map((faq) => ({
+                '@type': 'Question',
+                name: faq.question,
+                acceptedAnswer: { '@type': 'Answer', text: faq.answer },
+              })),
+            },
+          ]
         : []),
     ],
   };
@@ -168,6 +186,54 @@ export function buildProjectJsonLd(project, locale, labels) {
           { '@type': 'ListItem', position: 1, name: labels.home, item: home },
           { '@type': 'ListItem', position: 2, name: labels.work, item: `${home}#projects` },
           { '@type': 'ListItem', position: 3, name: project.title, item: url },
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * Article structured data: `BlogPosting` authored by the Person, plus a
+ * `BreadcrumbList` (Home → Blog → post). Sample posts (`is_sample`) get
+ * none: their pages are noindex and a sample is never described as real.
+ * @param {any} post Full post from GET /blogs/{slug}.
+ * @param {'ar' | 'en'} locale
+ * @param {{ home: string, blog: string }} labels Breadcrumb names (localised).
+ * @returns {object | undefined}
+ */
+export function buildArticleJsonLd(post, locale, labels) {
+  if (!post || post.is_sample) return undefined;
+  const home = `${env.siteUrl}${localizePath(locale, '/')}`;
+  const blog = `${env.siteUrl}${localizePath(locale, '/blog')}`;
+  const url = `${env.siteUrl}${localizePath(locale, `/blog/${post.slug}`)}`;
+  const image = post.cover_image ? new URL(post.cover_image, `${env.siteUrl}/`).href : null;
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'BlogPosting',
+        '@id': `${url}#article`,
+        headline: post.title,
+        description: post.excerpt,
+        url,
+        mainEntityOfPage: url,
+        inLanguage: locale,
+        ...(image ? { image } : {}),
+        ...(post.published_at ? { datePublished: post.published_at } : {}),
+        dateModified: post.updated_at ?? post.published_at,
+        author: { '@id': `${env.siteUrl}/#person` },
+        publisher: { '@id': `${env.siteUrl}/#person` },
+        ...(post.category?.name ? { articleSection: post.category.name } : {}),
+        ...(post.tags?.length ? { keywords: post.tags } : {}),
+        ...(post.reading_time ? { timeRequired: `PT${post.reading_time}M` } : {}),
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: labels.home, item: home },
+          { '@type': 'ListItem', position: 2, name: labels.blog, item: blog },
+          { '@type': 'ListItem', position: 3, name: post.title, item: url },
         ],
       },
     ],
