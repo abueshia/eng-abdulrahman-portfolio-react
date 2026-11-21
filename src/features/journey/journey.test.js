@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { STATIONS, isStationAnchor, stationForSection } from '@/config/journey';
+import { STATIONS, isStationAnchor, nextForwardStation, stationForSection } from '@/config/journey';
 import { resolveJourney } from './journey-store';
 
 describe('journey stations', () => {
-  it('follows the request: gateway → auth → services → queue → database → response', () => {
+  it('follows the request: gateway → (observability tap) → auth → … → response', () => {
     expect(STATIONS.map((station) => `${station.section}:${station.id}`)).toEqual([
       'hero:gateway',
+      'stats:observability',
       'about:auth',
       'skills:services',
       'experience:queue',
@@ -16,12 +17,22 @@ describe('journey stations', () => {
   });
 
   it('puts sections between stations "in transit" on the previous station', () => {
-    expect(stationForSection('stats')).toBe('gateway');
+    expect(stationForSection('stats')).toBe('observability');
     expect(stationForSection('services')).toBe('database');
     expect(stationForSection('faq')).toBe('database');
     expect(stationForSection('contact')).toBe('response');
-    expect(isStationAnchor('stats')).toBe(false);
+    expect(isStationAnchor('stats')).toBe(true);
+    expect(isStationAnchor('services')).toBe(false);
     expect(isStationAnchor('about')).toBe(true);
+  });
+});
+
+describe('nextForwardStation', () => {
+  it('skips the observability tap: the gateway forwards to auth', () => {
+    const stops = STATIONS.map(({ id }) => ({ id }));
+    expect(nextForwardStation(stops, 'gateway')).toBe('auth');
+    expect(nextForwardStation(stops, 'auth')).toBe('services');
+    expect(nextForwardStation([{ id: 'gateway' }], 'gateway')).toBeUndefined();
   });
 });
 

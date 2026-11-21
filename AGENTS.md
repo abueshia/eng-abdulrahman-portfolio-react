@@ -9,7 +9,8 @@
 ## 1) الهوية البصرية ونظام التصميم (Ember × Ion)
 
 - **الفلسفة البصرية:** ثقافة الـ Terminal، هندسة النظم، والمعمارية النظيفة بأسلوب سينمائي فاخر على مستوى استوديوهات Awwwards (بعيداً عن القوالب الجاهزة أو التدرجات البنفسجية المبتذلة).
-- **الفكرة المركزية "The Visitor Is The Request" (إلزامية):** الموقع كله رحلة طلب HTTP داخل نظام حي، والتمرير هو حركة الطلب بين المحطات: Gateway (Hero) ← Auth (About) ← Services (Skills) ← Queue (Experience) ← Database (Projects) ← Response 201 (Contact).
+- **الفكرة المركزية "The Visitor Is The Request" (إلزامية):** الموقع كله رحلة طلب HTTP داخل نظام حي، والتمرير هو حركة الطلب بين المحطات: Gateway (Hero) ← Observability (Stats) ← Auth (About) ← Services (Skills) ← Queue (Experience) ← Database (Projects) ← Response 201 (Contact).
+  - **Observability محطة "tap" (`tap: true`):** المراقبة تشاهد الطلب وهو يمر ولا توجّهه. تظهر في الـ Route Trace بعلامة مفرغة متقطعة، ولها hub جانبي في الـ mesh، لكن التوجيه يتخطاها (`nextForwardStation`)، فسطر الـ Hero يبقى `forwarding → /auth`.
   - المحطات معرّفة في `src/config/journey.js`، ومواضعها تُقاس من الـ DOM (`data-station-anchor`)، فالقسم المخفي يسقط من المسار تلقائياً.
   - الأقسام الواقعة بين محطتين "في الطريق" وتأخذ محطة ما قبلها.
   - نقطة Ember هي الطلب: تسافر مع الزائر في الـ Service Mesh وفي الـ Route Trace، وتتحول إلى Ion عند محطة الاستجابة.
@@ -18,7 +19,8 @@
 - **اللوحة اللونية (Design Tokens في `src/styles/tokens.css`):**
   - **Dark Mode (الافتراضي):** خلفيات عميقة بدرجة near-black باردة (`--bg-0: #07080b`, `--bg-1: #0c0e13`, `--surface: #12151c`) مع لون تمييز **Ember** (`--accent: #ff5a36` يمثل الباك إند والطلبات) ولون ثانوي **Ion** (`--secondary: #3ddcff` يمثل الفرونت إند والاستجابات) ولون إشارة (`--signal: #7cffb2`).
   - **Light Mode ("Paper & Ink"):** ورق دافئ (`--bg-0: #f4f1ea`, `--surface: #fbfaf6`) وحبر داكن (`--text: #14161b`) مع درجات أغمق لـ Ember (`#c2310f`) وIon (`#086f91`) لتحقيق تباين WCAG AA وظلال حبر بدلاً من التوهج.
-  - **إدارة الثيم:** عبر خاصية `data-theme="dark|light"` على `<html>`، مع سكربت pre-paint في `index.html` يمنع وميض الثيم (FOUC). الأولوية: اختيار المستخدم في `localStorage` (`portfolio.theme`) ← تفضيل النظام `prefers-color-scheme: light` ← الوضع الداكن `dark`.
+  - **إدارة الثيم:** عبر خاصية `data-theme="dark|light"` على `<html>`، مع سكربت pre-paint في `index.html` يمنع وميض الثيم (FOUC). الأولوية: اختيار المستخدم الصريح في `localStorage` (`portfolio.theme`) ← الوضع الداكن `dark` (تفضيل النظام `prefers-color-scheme` لا يُستشار عمداً). التبديل ذري عبر `src/lib/theme.js` (إيقاف الانتقالات لإطار واحد وإبلاغ طبقات الـ canvas في نفس اللحظة).
+  - **اللغة:** الـ URL هو المصدر، و`/` عربي دائماً إلا إذا اختار الزائر الإنجليزية صراحةً (المفتاح `portfolio.lang` يُكتب عند التبديل فقط، لا عند مجرد زيارة `/en`).
 - **الخطوط (مستضافة ذاتياً عبر `@fontsource` مع `unicode-range`):**
   - العناوين (Display): `Bricolage Grotesque Variable` (EN) / `Alexandria Variable` (AR).
   - النصوص (Body): `Geist Variable` (EN) / `IBM Plex Sans Arabic` (AR).
@@ -46,19 +48,23 @@ src/
   assets/         ملفات مولّدة يستوردها التطبيق (portrait/: صور AVIF/WebP + portrait.json · textures/grain.png)
   components/
     ui/           مكوّنات واجهة ذرية قابلة لإعادة الاستخدام (Button, LocalizedLink, Logo, Magnetic, SectionHeading, Seo, ErrorState...)
-    layout/       غلاف التطبيق والطبقات العامة (RootLayout, Navbar, MobileMenu, Footer, PageTransition, ScrollManager, SmoothScroll, Section, ThemeToggle, LocaleSwitch, SoundToggle, BackgroundLayer, AmbientField, RouteTrace, Cursor, GlobalFx)
+    layout/       غلاف التطبيق والطبقات العامة (RootLayout, Navbar, MobileMenu, Footer, PageTransition, ScrollManager, SmoothScroll, Section, SectionFx, ThemeToggle, LocaleSwitch, SoundToggle, BackgroundLayer, AmbientField, RouteTrace, Cursor, GlobalFx)
   features/       مجلد لكل ميزة يحتوي على components/ و hooks/ و lib/ و fx/ (وحدات GSAP الكسولة)
+    stats/        StatsSection (لوحة Observability) + lib/metrics (odometer وsparkline صادقة) + fx/StatsDirector
+    about/        AboutSection (بوابة AUTH وREADME وبطاقة الكود) + lib/profile-code (كلاس PHP من البيانات) + fx/AboutDirector
+    skills/       SkillsSection (التبويبات + الـ constellation) + lib/constellation + fx/SkillsDirector
+    experience/   ExperienceSection (git log --graph) + lib/git-log + fx/ExperienceDirector
     intro/        BootSequence + boot-store (مراحل الـ Intro ومهام الجاهزية الحقيقية)
     hero/         Hero ومكوّناته + fx/HeroDirector + lib/{mesh/graph, mesh/renderer, terminal, telemetry, portrait}
     journey/      journey-store (تتبع موضع الطلب على مسار المحطات)
-  lib/            بنية تحتية بلا واجهة: create-store · idle · events · device (useDeviceTier) · gsap (كسول فقط) · sound/{sfx, engine}
+  lib/            بنية تحتية بلا واجهة: create-store · idle · events · device (useDeviceTier) · gsap (كسول فقط) · use-director (لوحدات الـ director فقط) · theme · sound/{sfx, engine}
   pages/          صفحات التطبيق المقسمة بـ React.lazy (HomePage, ProjectDetailsPage, BlogListPage, BlogDetailsPage, NotFoundPage)
   hooks/          خطافات عامة (useTheme, useLocale, useApiQuery, useSettings, useMediaQuery, useReducedMotion, usePointerFine, useInView, useScrollState, useSmoothScroll, useHydrated/useIdleReady, useMagnetic, usePointerParallax)
   context/        سياقات React (ThemeContext, LocaleContext, lenis-context, head-context)
   services/api/   عميل axios (client.js, http.js, endpoints.js, errors.js) + خدمات الموارد (*.service.js) + محول البيانات الوهمية (mock/adapter.js, handlers.js, response.js)
   data/mock/      بيانات وهمية ثنائية اللغة ({ ar, en }) تحاكي استجابات Laravel تماماً
   i18n/           إعداد i18next وملفات الترجمة locales/{ar,en}.json
-  styles/         tokens.css · globals.css · fx.css (الطبقات العامة) · hero.css · fonts.js · index.css
+  styles/         tokens.css · globals.css · fx.css (الطبقات العامة) · hero.css · sections.css (أقسام المرحلة 3) · fonts.js · index.css
   utils/          cn.js · storage.js · motion.js · head.js (إدارة <head>) · structured-data.js (JSON-LD)
   config/         env.js · routes.js · navigation.js · journey.js (محطات الرحلة)
   test/           setup.js · renderWithProviders.jsx
@@ -202,6 +208,23 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 
 ---
 
+## 7.1) بنية الأقسام وطبقات حركتها (إلزامية لكل قسم جديد)
+
+- **القسم chunk كسول:** كل قسم حقيقي في الرئيسية `React.lazy` داخل `<Suspense fallback={null}>`.
+  - الـ prerender ينتظره، فنصه كاملاً في الـ HTML.
+  - العميل يعمل له hydrate عند وصول الـ chunk، فلا يزيد الـ JS الأولي.
+- **الحركة في director كسول يُحمَّل عند الاقتراب فقط:** `<SectionFx target="id">` يحمّله بعد الـ hydration والخمول، وعند اقتراب القسم من الشاشة، ولا يحمّله أبداً مع تقليل الحركة.
+- **`useDirector` (`src/lib/use-director.js`) إلزامي لكل director:**
+  - ينتظر الخطوط، ويُنشئ كل شيء متزامناً داخل `gsap.context` واحد.
+  - الـ cleanup يرجّع كل شيء، بالإضافة إلى ما يُسجَّل عبر `onCleanup`: حلقات rAF، والمستمعين، وأي `dataset` أو tween يُنشأ من callbacks الـ scroll خارج الـ context.
+  - هذا هو درس الـ Hero مع StrictMode وتبديل اللغة.
+- **ترتيب الـ refresh:** كل ScrollTrigger في قسم يأخذ `sectionTrigger(order)`، فتُحسب الأقسام الأعلى أولاً.
+- **ممنوع `pin` في الأقسام:** المشاهد الطويلة تُبنى بـ CSS `position: sticky` داخل غلاف طويل يُفعَّل بـ `[data-fx='on']` (يضعه الـ director)، وتُحرَّك بالـ scrub.
+- **الحالة الافتراضية لكل عنصر هي حالته النهائية المقروءة.** الـ director يضيف حالات "قبل" فقط. بدون JS أو مع تقليل الحركة يظهر كل المحتوى.
+- **في الموبايل:** أي grid فيه محتوى عرضه `max-content` (كود، شريط تبويبات قابل للتمرير) يأخذ `minmax(0, 1fr)`، حتى لا يتسع عرض الصفحة.
+
+---
+
 ## 8) قواعد الإتاحة والجودة
 
 - **الإتاحة:**
@@ -238,6 +261,33 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 - **البيانات الحقيقية:** البريد والهاتف وواتساب والموقع (القاهرة، حدائق الأهرام) والمنطقة الزمنية `Africa/Cairo` وGitHub وLinkedIn وFacebook، وحذف X نهائياً، وCV في `public/cv/Abdulrahman_Saad_Backend_Engineer_CV.pdf`. والـ `sameAs` في JSON-LD يضم الحسابات فقط (بدون واتساب).
 - إخفاء `credentials` و`testimonials` و`blog` لحين وجود محتوى حقيقي، وتحويل بيانات الخبرات والمشاريع والإحصائيات إلى نماذج واضحة (`Sample ·` و`sample-*` و`Sample Company A/B/C` وأرقام صفرية، ما عدا سنوات الخبرة 4).
 - `npm run data:todo` أصبح يفرّق بين «ناقص ضروري قبل النشر» (يفشل الأمر) و«mock مؤقت لحين الـ API» (للعلم فقط)، ويتحقق من صيغة الصور وأبعادها.
+
+### المرحلة 3 — Stats وAbout وSkills وExperience (مكتملة، بانتظار المراجعة البصرية)
+- **Stats ← Observability (محطة tap):**
+  - لوحة bento غير متماثلة بأسلوب Grafana.
+  - odometer لكل رقم على حدة، والرقم الحقيقي نص في الـ HTML والبكرات زخرفية.
+  - سلسلة sparkline متدرجة صادقة (خطوة لكل سنة).
+  - لوحة صحة من بيانات حقيقية (الإتاحة والمنطقة الزمنية).
+  - مسح "query refresh" مع التمرير.
+  - القيم الصفرية أو الـ sample تظهر كلوحة "No data"، ولا تظهر كرقم أبداً.
+- **About ← AUTH:**
+  - بوابة sticky تتحقق من الـ token حرفاً حرفاً، ثم يفتح القفل وتنفتح الأبواب على الترحيب.
+  - README تحريري: الاقتباس serif كـ `h2`، وسطر `whoami` بالمسمى الثانوي "CEO of iCode Tech" (`settings.general.company`).
+  - النص يتضح كلمة كلمة مع التمرير.
+  - بطاقة كود PHP 8.3 حقيقية مولّدة من البيانات (readonly وenum وconstructor promotion)، وسطرها المضاء يتزامن مع الفقرة المقروءة (فقرة الاختبارات تضيء `->test()`)، وعلى الموبايل تصير شريطاً sticky مضغوطاً.
+- **Skills ← SERVICES:**
+  - التبويبات هي مصدر الحقيقة: WAI-ARIA tabs مع roving tabindex وأسهم معكوسة في RTL، وكل اللوحات وكل المهارات نص في الـ HTML.
+  - على الديسكتوب: constellation (نواة و5 مدارات، والحجم والسطوع = الإتقان)، والاختيار يضيء المدار ويخفت الباقي، وتمرير المؤشر يربط العقدة بسطرها.
+  - إقلاع "الخدمات تبدأ" مع التمرير، وميل للمؤشر حتى 6°.
+  - على الموبايل: شريط تبويبات قابل للسحب ولوحات تتبدل بالسحب (pointer events بدون `domMax`).
+- **Experience ← QUEUE:**
+  - `git log --graph`: كل دور commit بـ hash ثابت، وفرعه اسم الشركة، وtag الدور، والإنجازات أسطر diff (+).
+  - العمل الحر فرع ينشق ثم يندمج (merge commit في الأعلى ما دام مستمراً).
+  - الرسم يُكتب مع التمرير، ونقطة HEAD (الطلب) تسافر على `main`، والرسم معكوس في RTL.
+- **الرحلة:** محطة `observability` (tap) مع hub في الـ mesh ومشهد إضاءة. الـ Navbar يعلّم محطة الطلب الحالية (`aria-current="location"`).
+- **SEO:** JSON-LD أصبح `ProfilePage` + `Person` (`jobTitle` بالمسميين و`worksFor` iCode Tech) + `WebSite`.
+- **البنية:** الأقسام chunks كسولة، و`SectionFx`، و`useDirector`، و`sections.css`.
+- **اختبارات جديدة:** metrics، profile-code، constellation، git-log، الرحلة، والـ JSON-LD.
 
 ### المرحلة 2 — Intro وHero والطبقات العامة (مكتملة، بانتظار المراجعة البصرية)
 - **الفكرة المركزية "The Visitor Is The Request":**

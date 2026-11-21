@@ -12,8 +12,15 @@ import { readStorage } from '@/utils/storage';
 
 export const THEME_STORAGE_KEY = 'portfolio.theme';
 
+/**
+ * The site's default theme, for every new visitor. Dark is the brand
+ * (Ember × Ion on near-black), so the OS `prefers-color-scheme` is
+ * deliberately NOT consulted: only an explicit choice switches to light.
+ */
+export const DEFAULT_THEME = /** @type {Theme} */ ('dark');
+
 /** Theme assumed by prerendered HTML (the pre-paint script corrects it before paint). */
-export const SERVER_THEME = /** @type {Theme} */ ('dark');
+export const SERVER_THEME = DEFAULT_THEME;
 
 /** @type {import('react').Context<ThemeContextValue | null>} */
 export const ThemeContext = createContext(null);
@@ -21,7 +28,7 @@ export const ThemeContext = createContext(null);
 /**
  * Resolves the initial theme.
  *
- * Priority: explicit saved choice → OS `prefers-color-scheme: light` → dark.
+ * Priority: explicit saved choice (localStorage) → dark.
  * The inline script in `index.html` runs the same logic before first paint
  * (to avoid a flash), so the attribute it already set is preferred.
  *
@@ -35,7 +42,5 @@ export function resolveInitialTheme() {
   if (fromDom === 'dark' || fromDom === 'light') return fromDom;
 
   const saved = readStorage(THEME_STORAGE_KEY);
-  if (saved === 'dark' || saved === 'light') return saved;
-
-  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  return saved === 'light' || saved === 'dark' ? saved : DEFAULT_THEME;
 }

@@ -256,17 +256,19 @@ html[data-boot='play'] body::after {
   background: radial-gradient(ellipse 120% 90% at 50% 45%, transparent 55%, var(--bg-0) 100%);
   opacity: 0.85;
 }
+/* Film grain: a pre-blended RGBA texture (no mix-blend-mode), only slightly
+ * larger than the viewport (the jitter moves it by 4% at most), and still on
+ * low-tier devices. */
 .bg-layer__grain {
   position: absolute;
-  inset: -50%;
-  background-image: url('../assets/textures/grain.png');
+  inset: -6%;
+  background-image: url('../assets/textures/noise.png');
   background-size: 160px 160px;
   opacity: var(--grain-opacity);
-  mix-blend-mode: overlay;
   animation: grain 1.2s steps(6) infinite;
 }
-[data-theme='light'] .bg-layer__grain {
-  mix-blend-mode: multiply;
+.bg-layer[data-tier='low'] .bg-layer__grain {
+  animation: none;
 }
 @keyframes grain {
   0%,

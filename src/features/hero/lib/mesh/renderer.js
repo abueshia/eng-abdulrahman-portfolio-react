@@ -106,7 +106,9 @@ function glowSprite(/** @type {RGB} */ color, size = 64) {
  *   scrolled away (0–1). Null when there is no hero.
  * @property {() => 'ltr' | 'rtl'} getDirection
  * @property {(fps: number) => void} [onFps]
- * @property {() => void} [onDegrade]  The FPS guard gave up on animation.
+ * @property {(level: 'mid' | 'low') => void} [onDegrade]
+ *   FPS guard steps: 'mid' first (the caller drops the heaviest layers: WebGL
+ *   field, animated grain), then fewer nodes, then 'low' (a still frame).
  */
 
 /**
@@ -120,10 +122,33 @@ export function createMeshRenderer(canvas, input) {
   let animated = input.animated;
   let quality = { ...input.profile };
 
-  let palette = readPalette();
-  let sprites = { ember: glowSprite(palette.ember), ion: glowSprite(palette.ion) };
+  /**
+   * Palette, glow sprites and label sprites per theme, built on first use and
+   * kept: switching themes (even in a burst of clicks) rebuilds nothing.
+   * @type {Map<string, { palette: ReturnType<typeof readPalette>, sprites: { ember: HTMLCanvasElement, ion: HTMLCanvasElement }, labels: Map<string, { canvas: HTMLCanvasElement, w: number, h: number }> }>}
+   */
+  const themes = new Map();
+  /** @type {ReturnType<typeof readPalette>} */
+  let palette;
+  /** @type {{ ember: HTMLCanvasElement, ion: HTMLCanvasElement }} */
+  let sprites;
   /** @type {Map<string, { canvas: HTMLCanvasElement, w: number, h: number }>} */
-  let labels = new Map();
+  let labels;
+  function selectPalette() {
+    const key = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+    let entry = themes.get(key);
+    if (!entry) {
+      const read = readPalette();
+      entry = {
+        palette: read,
+        sprites: { ember: glowSprite(read.ember), ion: glowSprite(read.ion) },
+        labels: new Map(),
+      };
+      themes.set(key, entry);
+    }
+    ({ palette, sprites, labels } = entry);
+  }
+  selectPalette();
 
   /** @type {import('./graph').MeshGraph} */
   let graph;
@@ -166,6 +191,9 @@ export function createMeshRenderer(canvas, input) {
   let started = 0;
   let fpsFrames = 0;
   let fpsStart = 0;
+  let guardStep = 0;
+  /** No verdicts right after a deliberate expensive moment (theme switch). */
+  let guardPausedUntil = 0;
   let fps = 0;
 
   function rebuild() {
@@ -221,7 +249,7 @@ export function createMeshRenderer(canvas, input) {
     canvas.height = Math.round(height * dpr);
     // World unit: viewport height, narrowed on tall portrait screens.
     unit = Math.min(height, width * 0.9);
-    labels = new Map();
+    themes.forEach((entry) => entry.labels.clear());
     if (!running && graph) drawStill();
   }
 
@@ -602,7 +630,13 @@ export function createMeshRenderer(canvas, input) {
     guard(now);
   }
 
-  /** FPS guard: 2 s windows; skips the first seconds (boot, hydration). */
+  /**
+   * FPS guard: 2 s windows; skips the first seconds (boot, hydration) and the
+   * moments after a theme switch. Steps down in order of measured cost: the
+   * caller's heavy layers first ('mid'), then node count, then a still frame
+   * ('low'). Interaction feedback (cursor, hovers) is never the caller's to
+   * remove.
+   */
   function guard(/** @type {number} */ now) {
     fpsFrames += 1;
     if (!fpsStart) fpsStart = now;
@@ -612,7 +646,12 @@ export function createMeshRenderer(canvas, input) {
     fpsFrames = 0;
     fpsStart = now;
     onFps?.(fps);
-    if (now - started < 4000 || fps >= quality.fps * 0.72) return;
+    if (now - started < 4000 || now < guardPausedUntil || fps >= quality.fps * 0.72) return;
+    guardStep += 1;
+    if (guardStep === 1) {
+      onDegrade?.('mid');
+      return;
+    }
     if (quality.nodes > PROFILES.mobile.nodes) {
       quality = {
         ...quality,
@@ -625,7 +664,7 @@ export function createMeshRenderer(canvas, input) {
       animated = false;
       stop();
       drawStill();
-      onDegrade?.();
+      onDegrade?.('low');
     }
   }
 
@@ -659,12 +698,19 @@ export function createMeshRenderer(canvas, input) {
     start,
     stop,
     resize,
-    /** Theme changed: re-read colours, rebuild sprites. */
-    refreshPalette() {
-      palette = readPalette();
-      sprites = { ember: glowSprite(palette.ember), ion: glowSprite(palette.ion) };
-      labels = new Map();
-      if (!running) drawStill();
+    /**
+     * Theme changed (or fonts loaded): switch to that theme's cached palette
+     * and repaint right now, in the same frame as the DOM.
+     * @param {{ fontsChanged?: boolean }} [options]
+     */
+    refreshPalette({ fontsChanged = false } = {}) {
+      if (fontsChanged) themes.forEach((entry) => entry.labels.clear());
+      selectPalette();
+      fpsFrames = 0;
+      fpsStart = 0;
+      guardPausedUntil = performance.now() + 2500;
+      if (running) draw(performance.now());
+      else drawStill();
     },
     /** Redraws a still frame when not animating (journey moved, fonts loaded). */
     redraw() {

@@ -5,7 +5,9 @@ import { useCallback, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { LocalizedLink } from '@/components/ui/LocalizedLink';
 import { Logo } from '@/components/ui/Logo';
+import { isStationAnchor, stationForSection } from '@/config/journey';
 import { paths, SECTION_IDS } from '@/config/routes';
+import { useStation } from '@/features/journey/journey-store';
 import { useScrollState } from '@/hooks/useScrollState';
 import { cn } from '@/utils/cn';
 import { LocaleSwitch } from './LocaleSwitch';
@@ -21,10 +23,13 @@ import { useNavItems } from '@/hooks/useNavItems';
  * - Slides away on downward scroll and returns on upward scroll, giving
  *   content the full viewport while reading.
  * - Below `lg` the links collapse into a full-screen menu.
+ * - Follows the journey: the link of the station the request is at is
+ *   marked current (`aria-current="location"`, Ember index).
  */
 export function Navbar() {
   const { t } = useTranslation();
   const navItems = useNavItems();
+  const station = useStation();
   const { scrolled, hidden } = useScrollState();
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
@@ -50,22 +55,36 @@ export function Navbar() {
           <Logo />
 
           <ul className="hidden items-center gap-1 lg:flex">
-            {navItems.map((item, index) => (
-              <li key={item.key}>
-                <LocalizedLink
-                  to={item.to}
-                  className="group relative inline-flex items-baseline gap-1.5 rounded-full px-3.5 py-2 text-sm text-ink-muted transition-colors duration-300 hover:text-ink"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="font-mono text-[10px] text-ink-dim transition-colors group-hover:text-ember"
+            {navItems.map((item, index) => {
+              const current =
+                station !== null &&
+                item.section !== undefined &&
+                isStationAnchor(item.section) &&
+                stationForSection(item.section) === station;
+              return (
+                <li key={item.key}>
+                  <LocalizedLink
+                    to={item.to}
+                    aria-current={current ? 'location' : undefined}
+                    className={cn(
+                      'group relative inline-flex items-baseline gap-1.5 rounded-full px-3.5 py-2 text-sm text-ink-muted transition-colors duration-300 hover:text-ink',
+                      current && 'nav-current text-ink',
+                    )}
                   >
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  {t(item.key)}
-                </LocalizedLink>
-              </li>
-            ))}
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'font-mono text-[10px] text-ink-dim transition-colors group-hover:text-ember',
+                        current && 'text-ember',
+                      )}
+                    >
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    {t(item.key)}
+                  </LocalizedLink>
+                </li>
+              );
+            })}
           </ul>
 
           <div className="flex items-center gap-2">

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocale } from '@/hooks/useLocale';
 import { useTheme } from '@/hooks/useTheme';
 import { useDeviceTier } from '@/lib/device';
-import { collectTelemetry, staticTelemetry } from '../lib/telemetry';
+import { PENDING_MEASUREMENTS, measureTelemetry, stateTelemetry } from '../lib/telemetry';
 
 /**
  * Two counter-moving bands at the foot of the hero, telling the "backend is
@@ -23,7 +23,7 @@ export function HeroMarquee({ hero }) {
   const { locale, dir } = useLocale();
   const { theme } = useTheme();
   const tier = useDeviceTier();
-  const [log, setLog] = useState(/** @type {string[] | null} */ (null));
+  const [measured, setMeasured] = useState(/** @type {string[] | null} */ (null));
 
   const services = useMemo(() => {
     const names = [
@@ -36,15 +36,17 @@ export function HeroMarquee({ hero }) {
   }, [hero]);
 
   useEffect(() => {
-    // After the page settles, so TTFB / hydration / font numbers are final.
-    const id = window.setTimeout(
-      () => setLog(collectTelemetry({ locale, dir, theme, tier })),
-      1200,
-    );
+    // Once, after the page settles, so TTFB / hydration / font numbers are final.
+    const id = window.setTimeout(() => setMeasured(measureTelemetry()), 1200);
     return () => window.clearTimeout(id);
-  }, [locale, dir, theme, tier]);
+  }, []);
 
-  const entries = log ?? staticTelemetry({ path: locale === 'ar' ? '/' : '/en', locale, dir });
+  // Language, theme and tier come from live state: they can never lag the page.
+  const entries = [
+    `GET ${locale === 'ar' ? '/' : '/en'} 200`,
+    ...(measured ?? PENDING_MEASUREMENTS),
+    ...stateTelemetry({ locale, dir, theme, tier }),
+  ];
 
   return (
     <div className="hero-marquee" aria-hidden="true" data-hero-marquee>

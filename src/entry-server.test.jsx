@@ -33,15 +33,19 @@ describe('Prerendering (entry-server)', () => {
     expect(keys).toContainEqual(['projects', {}, 'ar']);
   });
 
-  it('emits Person/WebSite JSON-LD on the home page', async () => {
+  it('emits ProfilePage/Person/WebSite JSON-LD on the home page', async () => {
     const { head } = await renderPage('/en');
     const ld = head?.tags.find((tag) => tag.attrs.type === 'application/ld+json');
     const graph = JSON.parse(ld?.content ?? '{}')['@graph'];
 
-    expect(graph.map((node) => node['@type'])).toEqual(['Person', 'WebSite']);
-    expect(graph[0].name).toBe('Abdulrahman Abu Eisha');
+    expect(graph.map((node) => node['@type'])).toEqual(['ProfilePage', 'Person', 'WebSite']);
+    const [page, person] = graph;
+    expect(page.mainEntity).toEqual({ '@id': person['@id'] });
+    expect(person.name).toBe('Abdulrahman Abu Eisha');
+    expect(person.jobTitle).toEqual(['Full-Stack Software Engineer', 'CEO, iCode Tech']);
+    expect(person.worksFor).toEqual({ '@type': 'Organization', name: 'iCode Tech' });
     // Identity profiles only: no contact channels (WhatsApp) and no X.
-    expect(graph[0].sameAs).toEqual([
+    expect(person.sameAs).toEqual([
       'https://github.com/abueshia',
       'https://www.linkedin.com/in/eng-abdulrahman-abu-eisha/',
       'https://www.facebook.com/abdo.saad.35762241',
@@ -67,6 +71,37 @@ describe('Prerendering (entry-server)', () => {
   it('prerenders the Arabic hero name word-intact', async () => {
     const { html } = await renderPage('/');
     expect(html).toMatch(/<h1[^>]*id="hero-title"[^>]*>[\s\S]*عبدالرحمن[\s\S]*أبو عيشة/);
+  });
+
+  it('prerenders every phase-3 section as real text (lazy chunks included)', async () => {
+    const { html, queryState } = await renderPage('/en');
+    const keys = /** @type {any} */ (queryState).queries.map((q) => q.queryKey[0]);
+
+    // Their data is dehydrated for an identical hydration.
+    expect(keys).toEqual(expect.arrayContaining(['stats', 'technologies', 'experiences']));
+    // Stats: the real figure as text; zeroed samples say "No data", never "0".
+    expect(html).toMatch(/Years of experience[\s\S]*?4\+/);
+    expect(html).toContain('No data');
+    // About: statement, story, company title and the PHP class.
+    expect(html).toMatch(/<h2[^>]*id="about-title"[^>]*>I write code that outlives the project\./);
+    expect(html).toContain('CEO of iCode Tech');
+    expect(html).toContain('final class');
+    expect(html).toContain('AbdulrahmanAbuEisha');
+    expect(html).toContain('<span class="tok tok--fn">test</span>');
+    // Skills: all clusters' skills, including the tabs not selected yet.
+    for (const skill of ['PHP 8.3', 'React', 'PostgreSQL', 'Docker', 'TDD']) {
+      expect(html).toContain(skill);
+    }
+    expect(html).toContain('role="tablist"');
+    // Experience: every role, the side branch and its merge.
+    expect(html).toContain('Senior Full-Stack Software Engineer');
+    expect(html).toContain('Junior Back-end Developer');
+    expect(html).toContain('Merge branch');
+    expect(html).toContain('HEAD -&gt; main');
+    // Journey: the observability tap is a route stop.
+    expect(html).toContain('data-station="observability"');
+    // Directors never ship in the markup.
+    expect(html).not.toContain('data-fx="on"');
   });
 
   it('marks unknown URLs as 404 + noindex', async () => {

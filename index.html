@@ -28,14 +28,11 @@
         var theme, locale;
         try {
           theme = localStorage.getItem('portfolio.theme');
-          locale = localStorage.getItem('portfolio.locale');
+          locale = localStorage.getItem('portfolio.lang');
         } catch (e) {}
-        if (theme !== 'dark' && theme !== 'light') {
-          theme =
-            window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
-              ? 'light'
-              : 'dark';
-        }
+        // Dark for every new visitor; only an explicit saved choice changes it
+        // (the OS colour scheme is deliberately ignored).
+        if (theme !== 'light') theme = 'dark';
         root.setAttribute('data-theme', theme);
         var isEn = /^\/en(\/|$)/.test(location.pathname) || locale === 'en';
         root.lang = isEn ? 'en' : 'ar';

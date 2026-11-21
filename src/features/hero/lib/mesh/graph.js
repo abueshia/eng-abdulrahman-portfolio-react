@@ -23,6 +23,14 @@
 /** @type {ReadonlyArray<Hub>} */
 export const HUBS = Object.freeze([
   { id: 'gateway', x: 0, y: 0, z: 1, services: ['edge', 'cdn', 'waf', 'rate-limit', 'tls'] },
+  // A sidecar off the main axis: monitoring taps the request, it doesn't route it.
+  {
+    id: 'observability',
+    x: -1.05,
+    y: 0.52,
+    z: 0.62,
+    services: ['metrics', 'traces', 'logs', 'alerts'],
+  },
   {
     id: 'auth',
     x: 0.9,

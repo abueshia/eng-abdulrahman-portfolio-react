@@ -67,6 +67,7 @@ export function BackgroundLayer() {
       aria-hidden="true"
       data-station={station}
       data-field={gl ? 'gl' : 'css'}
+      data-tier={tier}
       style={style}
     >
       <div className="bg-layer__glow bg-layer__glow--ember" />

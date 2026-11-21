@@ -12,6 +12,11 @@ export const settings = {
     first_name: t('عبدالرحمن', 'Abdulrahman'),
     last_name: t('أبو عيشة', 'Abu Eisha'),
     job_title: t('مهندس برمجيات Full-Stack', 'Full-Stack Software Engineer'),
+    // Secondary title (owner-provided): the company the owner runs.
+    company: {
+      name: 'iCode Tech',
+      role: t('الرئيس التنفيذي', 'CEO'),
+    },
     years_of_experience: 4,
     // Transparent cutout: lets the head break out of the hero frame.
     avatar: media('profile-cutout.png'),

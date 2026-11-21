@@ -31,9 +31,6 @@ export function LocaleProvider({ children }) {
 
   useEffect(() => {
     if (i18n.language !== locale) i18n.changeLanguage(locale);
-    // Remember the last language actually viewed (step 2 of the detection
-    // order, applied by main.jsx on the next visit).
-    writeStorage(LOCALE_STORAGE_KEY, locale);
   }, [i18n, locale]);
 
   const localize = useCallback((path = '/') => localizePath(locale, path), [locale]);
@@ -42,6 +39,10 @@ export function LocaleProvider({ children }) {
     (target) => {
       const next = target ?? (locale === 'ar' ? 'en' : 'ar');
       if (next === locale) return;
+      // Only an explicit switch is remembered (step 2 of the detection order,
+      // applied by main.jsx on the next visit). Merely viewing an /en URL, e.g.
+      // from a shared link, never takes Arabic away from the root URL.
+      writeStorage(LOCALE_STORAGE_KEY, next);
       // Change the language first so the next screen renders translated
       // immediately, then move to the equivalent URL without scrolling.
       i18n.changeLanguage(next);

@@ -2,10 +2,14 @@
  * "The Visitor Is The Request": the home page is one HTTP request travelling
  * through a live system, and scrolling moves it from station to station:
  *
- *   Gateway (hero) → Auth (about) → Services (skills) → Queue (experience)
- *   → Database (projects) → Response 201 (contact)
+ *   Gateway (hero) → [Observability (stats)] → Auth (about) → Services
+ *   (skills) → Queue (experience) → Database (projects) → Response 201 (contact)
  *
- * Sections between stations (stats, services, faq…) are "in transit": they
+ * Observability is a *tap*: monitoring watches the request go by without
+ * routing it, so it is a stop on the route trace but never a forwarding
+ * target (the hero still forwards the request to /auth).
+ *
+ * Sections between stations (services, faq…) are "in transit": they
  * inherit the previous station. A hidden section simply removes its station
  * from the route (the journey is measured from the DOM, not assumed).
  *
@@ -28,6 +32,7 @@ import { SECTION_IDS } from './routes';
  * @property {string} id
  * @property {string} section  Home section id that hosts the station.
  * @property {string} code     Two-digit ordinal shown in the route trace.
+ * @property {boolean} [tap]    Passive station (observes, never forwards).
  * @property {{ ember: GlowScene, ion: GlowScene, grid: number }} scene
  */
 
@@ -44,9 +49,20 @@ export const STATIONS = Object.freeze([
     },
   },
   {
+    id: 'observability',
+    section: SECTION_IDS.stats,
+    code: '02',
+    tap: true,
+    scene: {
+      ember: { x: 16, y: 70, s: 0.7, a: 0.38 },
+      ion: { x: 78, y: 8, s: 1.1, a: 0.6 },
+      grid: 1.15,
+    },
+  },
+  {
     id: 'auth',
     section: SECTION_IDS.about,
-    code: '02',
+    code: '03',
     scene: {
       ember: { x: 6, y: 18, s: 0.8, a: 0.6 },
       ion: { x: 72, y: 46, s: 1.05, a: 0.5 },
@@ -56,7 +72,7 @@ export const STATIONS = Object.freeze([
   {
     id: 'services',
     section: SECTION_IDS.skills,
-    code: '03',
+    code: '04',
     scene: {
       ember: { x: 58, y: 52, s: 1.15, a: 0.75 },
       ion: { x: -12, y: -6, s: 0.85, a: 0.45 },
@@ -66,7 +82,7 @@ export const STATIONS = Object.freeze([
   {
     id: 'queue',
     section: SECTION_IDS.experience,
-    code: '04',
+    code: '05',
     scene: {
       ember: { x: -22, y: 26, s: 0.95, a: 0.6 },
       ion: { x: 44, y: 74, s: 0.8, a: 0.45 },
@@ -76,7 +92,7 @@ export const STATIONS = Object.freeze([
   {
     id: 'database',
     section: SECTION_IDS.projects,
-    code: '05',
+    code: '06',
     scene: {
       ember: { x: 30, y: 82, s: 1.35, a: 0.7 },
       ion: { x: 76, y: -4, s: 0.75, a: 0.35 },
@@ -86,7 +102,7 @@ export const STATIONS = Object.freeze([
   {
     id: 'response',
     section: SECTION_IDS.contact,
-    code: '06',
+    code: '07',
     scene: {
       ember: { x: 82, y: 92, s: 0.6, a: 0.22 },
       ion: { x: 18, y: 30, s: 1.4, a: 0.9 },
@@ -124,6 +140,17 @@ export function stationForSection(sectionId) {
  * @param {string} sectionId
  */
 export const isStationAnchor = (sectionId) => BY_SECTION.has(sectionId);
+
+/**
+ * First station after `from` that the request is forwarded to (taps skipped).
+ * @param {Array<{ id: string }>} stops Route stops in order.
+ * @param {string} from
+ * @returns {string | undefined}
+ */
+export function nextForwardStation(stops, from) {
+  const start = stops.findIndex((stop) => stop.id === from);
+  return stops.slice(start + 1).find((stop) => !BY_ID.get(stop.id)?.tap)?.id;
+}
 
 /** Station whose light the page uses when no journey is being tracked (inner pages). */
 export const DEFAULT_STATION = 'gateway';

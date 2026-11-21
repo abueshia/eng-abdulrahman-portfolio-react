@@ -8,25 +8,26 @@
 export const HYDRATED_MARK = 'portfolio:hydrated';
 
 /**
- * Entries known before any browser API runs: identical in the prerendered
- * HTML and the first client render (no hydration mismatch).
- * @param {{ path: string, locale: string, dir: string }} context
+ * State entries (language, theme, effects tier). Rendered from live React
+ * state on every render, never from a snapshot, so they always match the page.
+ * @param {{ locale: string, dir: string, theme: string, tier: string }} state
  * @returns {string[]}
  */
-export const staticTelemetry = ({ path, locale, dir }) => [
-  `GET ${path} 200`,
+export const stateTelemetry = ({ locale, dir, theme, tier }) => [
   `lang=${locale} dir=${dir}`,
-  'prerendered ✓',
-  'gateway ready',
+  `theme=${theme}`,
+  `fx tier=${tier}`,
 ];
 
+/** Placeholder measurements, identical on the server and in the first client render. */
+export const PENDING_MEASUREMENTS = Object.freeze(['prerendered ✓', 'gateway ready']);
+
 /**
- * Live entries, measured after hydration.
- * @param {{ locale: string, dir: string, theme: string, tier: string }} context
+ * Measurements of this visit, taken once after hydration has settled.
  * @returns {string[]}
  */
-export function collectTelemetry({ locale, dir, theme, tier }) {
-  const entries = [`GET ${window.location.pathname} 200`];
+export function measureTelemetry() {
+  const entries = [];
   const nav = /** @type {PerformanceNavigationTiming | undefined} */ (
     performance.getEntriesByType?.('navigation')?.[0]
   );
@@ -42,7 +43,6 @@ export function collectTelemetry({ locale, dir, theme, tier }) {
     const loaded = [...document.fonts].filter((face) => face.status === 'loaded').length;
     entries.push(`fonts ${loaded} loaded`);
   }
-  entries.push(`lang=${locale} dir=${dir}`, `theme=${theme}`);
   entries.push(
     `viewport ${window.innerWidth}×${window.innerHeight} @${Number(window.devicePixelRatio.toFixed(2))}x`,
   );
@@ -53,6 +53,5 @@ export function collectTelemetry({ locale, dir, theme, tier }) {
   }
   const connection = /** @type {any} */ (navigator).connection?.effectiveType;
   if (connection) entries.push(`net ${connection}`);
-  entries.push(`fx tier=${tier}`);
   return entries;
 }

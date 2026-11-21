@@ -1067,13 +1067,24 @@ html[data-scrolled='true'] .hero__cue {
 
 /* ───────── Desktop: the asymmetric composition ───────── */
 @media (min-width: 64rem) {
+  /*
+   * --name-reach: how far towards the head the first line runs (1 = exactly
+   *               at it). Below 1 it ends on the portrait's shoulder, still
+   *               behind it, so the depth sandwich holds with a smaller name.
+   * --name-cap:   height cap, so short wide screens don't get a giant name.
+   * The uppercase Latin name read too heavy at full reach; Arabic keeps it.
+   */
   .hero {
     --head-at: 0.83;
     --name-indent: 2.85em;
+    --name-reach: 0.86;
+    --name-cap: 16svh;
   }
   :root[lang='ar'] .hero {
     --head-at: 0.62;
     --name-indent: 1.25em;
+    --name-reach: 1;
+    --name-cap: 21svh;
   }
   .hero__stage {
     height: 100svh;
@@ -1086,7 +1097,10 @@ html[data-scrolled='true'] .hero__cue {
   /* The first line ends at the head: size and position share one reference. */
   .hero-name {
     margin-top: clamp(0rem, 2vh, 1.5rem);
-    font-size: min(calc(100cqw * var(--head-at) / var(--line-ratio)), 21svh);
+    font-size: min(
+      calc(100cqw * var(--head-at) * var(--name-reach) / var(--line-ratio)),
+      var(--name-cap)
+    );
   }
   .hero__copy {
     margin-top: clamp(0.5rem, 2.5vh, 2rem);

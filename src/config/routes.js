@@ -11,7 +11,12 @@
 export const DEFAULT_LOCALE = /** @type {Locale} */ ('ar');
 export const SUPPORTED_LOCALES = /** @type {Locale[]} */ (['ar', 'en']);
 export const RTL_LOCALES = new Set(['ar']);
-export const LOCALE_STORAGE_KEY = 'portfolio.locale';
+/**
+ * Explicit language choice. Renamed from `portfolio.locale`, which also
+ * stored merely viewed languages: old values are ignored, so every visitor
+ * starts in Arabic again until they actually pick a language.
+ */
+export const LOCALE_STORAGE_KEY = 'portfolio.lang';
 
 /** Section anchors on the home page, in render order. */
 export const SECTION_IDS = Object.freeze({

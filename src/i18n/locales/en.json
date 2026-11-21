@@ -154,6 +154,7 @@
   "journey": {
     "stations": {
       "gateway": "Gateway",
+      "observability": "Observability",
       "auth": "Auth",
       "services": "Services",
       "queue": "Queue",
@@ -167,5 +168,62 @@
   },
   "cursor": {
     "view": "View"
+  },
+  "stats": {
+    "board": "observability / production",
+    "lead": "A live board for a running system. Every panel reads the API; a metric without data says so instead of guessing.",
+    "healthy": "healthy",
+    "noData": "No data",
+    "awaiting": "awaiting first sample",
+    "series": "yearly series",
+    "window": "window",
+    "health": {
+      "title": "System health",
+      "status": "status",
+      "operational": "All systems operational",
+      "region": "region",
+      "availability": "availability",
+      "open": "accepting new requests",
+      "closed": "queue full",
+      "latency": "heartbeat"
+    }
+  },
+  "about": {
+    "file": "README.md",
+    "whoami": "whoami",
+    "companyLine": "{{role}} of {{company}}",
+    "principles": "Principles",
+    "codeLabel": "The engineer profile, written as a PHP class",
+    "codeFile": "src/Engineers/AbdulrahmanAbuEisha.php",
+    "auth": {
+      "request": "POST /auth",
+      "verifying": "verifying identity…",
+      "granted": "200 OK · identity verified",
+      "welcome": "authenticated as {{name}}"
+    }
+  },
+  "skills": {
+    "lead": "Five service clusters orbit one core. A node's size and brightness are its proficiency; pick a cluster to inspect it.",
+    "categories": "Technology clusters",
+    "core": "core",
+    "proficiency": "Proficiency",
+    "years_one": "{{count}} year",
+    "years_other": "{{count}} years",
+    "running_one": "{{count}} service running",
+    "running_other": "{{count}} services running",
+    "swipe": "Swipe to switch clusters"
+  },
+  "experience": {
+    "lead": "The career as a commit history: every role a commit, every company a branch, and what each release shipped.",
+    "command": "git log --graph --decorate",
+    "present": "present",
+    "merge": "Merge branch '{{branch}}' into main",
+    "stack": "stack",
+    "types": {
+      "full_time": "full-time",
+      "part_time": "part-time",
+      "contract": "contract",
+      "freelance": "freelance"
+    }
   }
 }

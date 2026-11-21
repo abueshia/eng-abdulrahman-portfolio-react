@@ -4,6 +4,7 @@ import { markBootReady } from '@/features/intro/boot-store';
 import { journeyStore } from '@/features/journey/journey-store';
 import { deviceTier } from '@/lib/device';
 import { EVENTS, on } from '@/lib/events';
+import { subscribeTheme } from '@/lib/theme';
 import { sfx } from '@/lib/sound/sfx';
 import { PROFILES, createMeshRenderer } from '../lib/mesh/renderer';
 import { meshStats } from '../lib/mesh-stats';
@@ -48,7 +49,7 @@ export default function ServiceMesh({ animated, mobile, highTier }) {
         };
       },
       onFps: (fps) => meshStats.set({ fps }),
-      onDegrade: () => deviceTier.degrade('low'),
+      onDegrade: (level) => deviceTier.degrade(level),
     });
     markBootReady('mesh');
     if (!renderer) return undefined;
@@ -72,12 +73,11 @@ export default function ServiceMesh({ animated, mobile, highTier }) {
     document.addEventListener('visibilitychange', onVisibility);
     const resizeObserver = new ResizeObserver(() => renderer.resize());
     resizeObserver.observe(canvas);
-    const themeObserver = new MutationObserver(() => renderer.refreshPalette());
-    themeObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme', 'dir'],
-    });
-    document.fonts?.ready.then(() => renderer.refreshPalette());
+    // Same store, same call as the DOM switch: the canvas never lags a theme.
+    const offTheme = subscribeTheme(() => renderer.refreshPalette());
+    const dirObserver = new MutationObserver(() => renderer.redraw());
+    dirObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['dir'] });
+    document.fonts?.ready.then(() => renderer.refreshPalette({ fontsChanged: true }));
 
     // Still frames follow the journey station by station (no per-frame work).
     let lastStation = journeyStore.get().station;
@@ -96,7 +96,8 @@ export default function ServiceMesh({ animated, mobile, highTier }) {
       hero?.removeEventListener('pointerdown', onDown);
       document.removeEventListener('visibilitychange', onVisibility);
       resizeObserver.disconnect();
-      themeObserver.disconnect();
+      offTheme();
+      dirObserver.disconnect();
       offJourney();
       offOutage();
     };

@@ -50,7 +50,7 @@
   --glow-accent: rgb(255 90 54 / 0.35);
   --glow-secondary: rgb(61 220 255 / 0.28);
   --shadow-elevated: 0 24px 60px -24px rgb(0 0 0 / 0.75), 0 0 0 1px rgb(255 255 255 / 0.04);
-  --grain-opacity: 0.06;
+  --grain-opacity: 0.05;
   --grid-line: rgb(255 255 255 / 0.035);
   --selection: rgb(255 90 54 / 0.32);
 }
@@ -82,7 +82,7 @@
   --glow-accent: rgb(194 49 15 / 0.18);
   --glow-secondary: rgb(8 111 145 / 0.16);
   --shadow-elevated: 0 24px 50px -28px rgb(40 30 10 / 0.35), 0 0 0 1px rgb(20 22 27 / 0.06);
-  --grain-opacity: 0.09;
+  --grain-opacity: 0.07;
   --grid-line: rgb(20 22 27 / 0.05);
   --selection: rgb(194 49 15 / 0.2);
 }

@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { journeyStore } from '@/features/journey/journey-store';
+import { subscribeTheme } from '@/lib/theme';
 
 const INTERACTIVE = 'a[href], button, [role="button"], summary, label[for], select';
 const TEXT =
@@ -23,7 +24,8 @@ const TRAIL_MS = 320;
  *
  * One rAF loop that sleeps when the pointer rests; transforms only.
  */
-export default function Cursor() {
+/** @param {{ trail?: boolean }} props `trail`: draw the fading request trace. */
+export default function Cursor({ trail: showTrail = true }) {
   const { t } = useTranslation();
   const dotRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const ringRef = useRef(/** @type {HTMLDivElement | null} */ (null));
@@ -57,8 +59,7 @@ export default function Cursor() {
       };
     };
     readColors();
-    const themeObserver = new MutationObserver(readColors);
-    themeObserver.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    const offTheme = subscribeTheme(readColors);
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -127,7 +128,7 @@ export default function Cursor() {
         state.ry = state.y;
         root.dataset.cursorVisible = 'true';
       }
-      trail.push({ x: state.x, y: state.y, t: performance.now() });
+      if (showTrail) trail.push({ x: state.x, y: state.y, t: performance.now() });
       if (trail.length > 40) trail.shift();
       if (stick) stick.rect = stick.el.getBoundingClientRect();
       kick();
@@ -180,7 +181,7 @@ export default function Cursor() {
       cancelAnimationFrame(frame);
       delete root.dataset.cursor;
       delete root.dataset.cursorVisible;
-      themeObserver.disconnect();
+      offTheme();
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerover', onOver);
@@ -188,7 +189,7 @@ export default function Cursor() {
       window.removeEventListener('pointerup', onUp);
       root.removeEventListener('pointerleave', onLeave);
     };
-  }, [viewLabel]);
+  }, [viewLabel, showTrail]);
 
   return (
     <div className="cursor" aria-hidden="true">

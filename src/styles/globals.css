@@ -11,9 +11,18 @@
     -webkit-tap-highlight-color: transparent;
     /* Anchor jumps must clear the fixed navbar. */
     scroll-padding-top: var(--nav-height);
-    transition:
-      background-color var(--dur-base) ease,
-      color var(--dur-base) ease;
+    /* No colour transition here: an inherited `color` transition on the root
+     * restyles the whole document on every frame of the fade. Theme switches
+     * are instant and atomic (see lib/theme.js and the rule below). */
+  }
+
+  /* Set for one frame while the theme switches: every element takes the new
+   * colours at once, so no element is caught halfway between two themes. */
+  :root[data-theme-switching],
+  :root[data-theme-switching] *,
+  :root[data-theme-switching] *::before,
+  :root[data-theme-switching] *::after {
+    transition: none !important;
   }
 
   body {

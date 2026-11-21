@@ -6,6 +6,7 @@ import { journeyStore } from '@/features/journey/journey-store';
 import { useLocale } from '@/hooks/useLocale';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 import { EVENTS, emit } from '@/lib/events';
+import { nextForwardStation } from '@/config/journey';
 import { gsap, ScrollTrigger, SplitText } from '@/lib/gsap';
 
 const SCRAMBLE_CHARS = '<>/{}$#_';
@@ -99,18 +100,22 @@ export default function HeroDirector() {
         /** @type {HTMLElement[]} */
         let words = [];
         if (arabic) {
-          words = SplitText.create([first, last], {
+          const split = SplitText.create([first, last], {
             type: 'words',
             wordsClass: 'hn-word',
             mask: 'words',
             aria: 'auto',
-          }).words;
+          });
+          cleanups.push(() => split.revert());
+          words = split.words;
         } else {
-          chars = SplitText.create(first, {
+          const split = SplitText.create(first, {
             type: 'chars',
             charsClass: 'hn-char',
             aria: 'auto',
-          }).chars;
+          });
+          cleanups.push(() => split.revert());
+          chars = split.chars;
           // Freeze each glyph box: scrambling symbols must never reflow the line.
           for (const char of chars) char.style.width = `${char.getBoundingClientRect().width}px`;
         }
@@ -209,10 +214,14 @@ export default function HeroDirector() {
         /* ---------- 2. scroll: the gateway accepts the request ---------- */
         const transmit = q('[data-hero-transmit]');
         const stops = journeyStore.get().stops;
-        const nextStation = stops.find((stop) => stop.id !== 'gateway')?.id;
+        const nextStation = nextForwardStation(stops, 'gateway');
         const transmitText = t('hero.transmit', { station: nextStation ?? 'response' });
 
         const mm = gsap.matchMedia();
+        // Reverted explicitly (first, before anything else): a pin left behind
+        // by a previous run makes the next run measure an already pinned stage,
+        // which then sits ~75vh down the page with no pin spacing.
+        cleanups.unshift(() => mm.revert());
         mm.add('(min-width: 64rem)', () => {
           const tl = gsap.timeline({
             defaults: { ease: 'none' },
@@ -284,13 +293,14 @@ export default function HeroDirector() {
         const marquee = q('[data-hero-marquee]');
         if (marquee) {
           const skew = gsap.quickTo(marquee, 'skewX', { duration: 0.6, ease: 'ember' });
-          ScrollTrigger.create({
+          const skewTrigger = ScrollTrigger.create({
             trigger: hero,
             start: 'top top',
             end: 'bottom top',
             onUpdate: (self) => skew(gsap.utils.clamp(-7, 7, self.getVelocity() / -320)),
             onLeave: () => skew(0),
           });
+          cleanups.push(() => skewTrigger.kill());
         }
 
         // Lenis drives the scroll position; keep ScrollTrigger in the same frame.
@@ -311,7 +321,11 @@ export default function HeroDirector() {
       });
 
       // Never leave the hero hidden if something goes wrong while setting up.
+      let disposed = false;
       const safeSetup = () => {
+        // fonts.ready can resolve after this run was already cleaned up
+        // (StrictMode, a language switch): never set up a dead run.
+        if (disposed) return;
         try {
           setup();
         } catch (error) {
@@ -324,7 +338,11 @@ export default function HeroDirector() {
       if (!document.fonts || document.fonts.status === 'loaded') safeSetup();
       else document.fonts.ready.then(safeSetup);
 
-      return () => cleanups.forEach((cleanup) => cleanup());
+      return () => {
+        disposed = true;
+        cleanups.forEach((cleanup) => cleanup());
+        cleanups.length = 0;
+      };
     },
     { dependencies: [locale, dir], revertOnUpdate: true },
   );

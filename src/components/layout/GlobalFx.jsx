@@ -12,7 +12,9 @@ const Cursor = lazy(() => import('./Cursor'));
  * Client-only chrome layers shared by every page, loaded when the browser is
  * idle (never in the prerendered HTML, never in the initial bundle):
  *  - the route trace (scroll progress as the request's route);
- *  - the custom cursor (mouse only, full motion, not on low-tier devices).
+ *  - the custom cursor (mouse only, full motion). It is cheap and it is
+ *    interaction feedback, so the performance guard never removes it: on a
+ *    low tier only its decorative trail is dropped.
  */
 export function GlobalFx() {
   const ready = useIdleReady();
@@ -26,9 +28,9 @@ export function GlobalFx() {
       <Suspense fallback={null}>
         <RouteTrace />
       </Suspense>
-      {fine && !reduced && tier !== 'low' && (
+      {fine && !reduced && (
         <Suspense fallback={null}>
-          <Cursor />
+          <Cursor trail={tier !== 'low'} />
         </Suspense>
       )}
     </>

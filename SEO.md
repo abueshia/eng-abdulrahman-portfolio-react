@@ -52,6 +52,12 @@ The client **hydrates** only if `__PRERENDER__.path` equals the current pathname
 | Router created before the saved-locale rewrite | `createAppRouter()` factory called in `main.jsx` after the rewrite |
 | Lingering timers keep Node alive after generation | Query cache cleared after dehydration; script exits explicitly |
 
+**Home sections are separate chunks (phase 3).** Stats, About, Skills and Experience are `React.lazy` components inside `<Suspense fallback={null}>`. The prerenderer waits for them, so their full text is in the HTML; on the client their markup hydrates as soon as each chunk arrives (React keeps the server HTML until then). Their markup code therefore never enters the initial bundle. Content rules that keep them indexable:
+
+- Every number, skill, role, date and paragraph is text in the HTML. Decorative layers (odometer reels, the AUTH gate, the constellation SVG, the graph gutter) are `aria-hidden`, and their default state is the final one.
+- Skills: all five tab panels are in the HTML (inactive ones use `hidden`), and each skill carries its proficiency (`role="meter"`) and years as text.
+- No browser-dependent values in markup: dates are formatted by hand (`2024·03`), never with `Intl` (month names differ between the build machine and browsers), and a running role shows "present" rather than a duration computed from "today".
+
 **Rule for new code:** anything that renders on a page must be renderable in Node. Media queries go through `useMediaQuery` (server snapshot), and canvas/GSAP/Lenis work belongs in effects. Run `npm run build` before considering a feature done.
 
 ---
@@ -97,8 +103,8 @@ Passed to `<Seo jsonLd={…}>`. Builders live in `src/utils/structured-data.js` 
 
 | Page | Schema | Status |
 | --- | --- | --- |
-| Home | `Person` (name, jobTitle, image, `sameAs` socials, knowsAbout) + `WebSite`, linked by `@id` | ✅ Phase 1 |
-| Home | `ProfilePage` wrapping the Person | Phase 6 |
+| Home | `ProfilePage` (`mainEntity` → Person, `isPartOf` → WebSite) | ✅ Phase 3 |
+| Home | `Person` (name, `jobTitle` = [engineer title, "CEO, iCode Tech"], `worksFor` Organization, image, `sameAs` socials, knowsAbout) + `WebSite`, linked by `@id` | ✅ Phase 1, titles + `worksFor` Phase 3 |
 | Case study | `CreativeWork` / `SoftwareApplication` + `BreadcrumbList` | Phase 4 |
 | Article | `BlogPosting` (headline, datePublished, dateModified, author → Person `@id`, image) + `BreadcrumbList` | Phase 5 |
 | FAQ section | `FAQPage` | Phase 5 |

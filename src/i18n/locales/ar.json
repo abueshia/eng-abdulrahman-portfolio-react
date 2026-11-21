@@ -158,6 +158,7 @@
   "journey": {
     "stations": {
       "gateway": "البوابة",
+      "observability": "المراقبة",
       "auth": "المصادقة",
       "services": "الخدمات",
       "queue": "الطابور",
@@ -171,5 +172,70 @@
   },
   "cursor": {
     "view": "عرض"
+  },
+  "stats": {
+    "board": "المراقبة / الإنتاج",
+    "lead": "لوحة حية لنظام شغّال. كل لوحة تقرأ من الـ API، والمؤشر الذي لا يملك بيانات يقول ذلك بدلاً من التخمين.",
+    "healthy": "سليم",
+    "noData": "لا توجد بيانات",
+    "awaiting": "في انتظار أول قراءة",
+    "series": "سلسلة سنوية",
+    "window": "النافذة",
+    "health": {
+      "title": "صحة النظام",
+      "status": "الحالة",
+      "operational": "كل الأنظمة تعمل",
+      "region": "المنطقة",
+      "availability": "الإتاحة",
+      "open": "يستقبل طلبات جديدة",
+      "closed": "الطابور ممتلئ",
+      "latency": "نبض"
+    }
+  },
+  "about": {
+    "file": "README.md",
+    "whoami": "whoami",
+    "companyLine": "{{role}} لشركة {{company}}",
+    "principles": "المبادئ",
+    "codeLabel": "الملف التعريفي للمهندس مكتوباً ككلاس PHP",
+    "codeFile": "src/Engineers/AbdulrahmanAbuEisha.php",
+    "auth": {
+      "request": "POST /auth",
+      "verifying": "جارٍ التحقق من الهوية…",
+      "granted": "200 OK · تم التحقق من الهوية",
+      "welcome": "تم الدخول باسم {{name}}"
+    }
+  },
+  "skills": {
+    "lead": "خمس مجموعات خدمات تدور حول نواة واحدة. حجم العقدة وسطوعها هما مستوى الإتقان، اختر مجموعة لتفحصها.",
+    "categories": "مجموعات التقنيات",
+    "core": "النواة",
+    "proficiency": "الإتقان",
+    "years_zero": "أقل من سنة",
+    "years_one": "سنة واحدة",
+    "years_two": "سنتان",
+    "years_few": "{{count}} سنوات",
+    "years_many": "{{count}} سنة",
+    "years_other": "{{count}} سنة",
+    "running_zero": "لا خدمات تعمل",
+    "running_one": "خدمة واحدة تعمل",
+    "running_two": "خدمتان تعملان",
+    "running_few": "{{count}} خدمات تعمل",
+    "running_many": "{{count}} خدمة تعمل",
+    "running_other": "{{count}} خدمة تعمل",
+    "swipe": "اسحب للتنقل بين المجموعات"
+  },
+  "experience": {
+    "lead": "المسيرة كسجل commits: كل دور commit، وكل شركة فرع، ومع كل إصدار ما تم تسليمه.",
+    "command": "git log --graph --decorate",
+    "present": "حتى الآن",
+    "merge": "Merge branch '{{branch}}' into main",
+    "stack": "التقنيات",
+    "types": {
+      "full_time": "دوام كامل",
+      "part_time": "دوام جزئي",
+      "contract": "تعاقد",
+      "freelance": "عمل حر"
+    }
   }
 }

@@ -7,7 +7,7 @@
  * Output (committed, imported by the app so Vite fingerprints the files):
  *   src/assets/portrait/portrait-<w>.avif|webp   responsive variants
  *   src/assets/portrait/portrait.json            facts the UI and `data:todo` read
- *   src/assets/textures/grain.png                tiled film-grain texture
+ *   src/assets/textures/noise.png                tiled film-grain texture (RGBA)
  *
  * Replacing the portrait is the whole workflow: drop a new file at the same
  * path and the pipeline re-detects transparency, trims the empty margins,
@@ -26,7 +26,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const PORTRAIT_SOURCE = 'public/images/profile-cutout.png';
 const PORTRAIT_DIR = 'src/assets/portrait';
-const GRAIN_FILE = 'src/assets/textures/grain.png';
+const GRAIN_FILE = 'src/assets/textures/noise.png';
 
 /** Candidate output widths; only those the source can honestly serve are used. */
 const WIDTHS = [360, 540, 720, 960, 1280];
@@ -139,13 +139,22 @@ async function generateGrain(sharp, root) {
   if (existsSync(file)) return false;
   const size = 160;
   const random = mulberry32(0x5eed);
-  const pixels = Buffer.alloc(size * size);
-  for (let i = 0; i < pixels.length; i += 1) {
-    // Triangular distribution: centred on mid-grey, so `overlay` blending is neutral on average.
-    pixels[i] = Math.round(((random() + random()) / 2) * 255);
+  // Pre-blended grain: white specks lighten and black specks darken, each
+  // with alpha proportional to its strength. It looks like `overlay` grain but
+  // composites with plain alpha, so the page needs no mix-blend-mode (a
+  // full-screen blend layer has to be re-blended whenever anything behind
+  // it repaints, which was the costliest layer of the page).
+  const pixels = Buffer.alloc(size * size * 4);
+  for (let i = 0; i < size * size; i += 1) {
+    const d = (random() + random()) / 2 - 0.5; // triangular, centred on 0
+    const shade = d > 0 ? 255 : 0;
+    pixels[i * 4] = shade;
+    pixels[i * 4 + 1] = shade;
+    pixels[i * 4 + 2] = shade;
+    pixels[i * 4 + 3] = Math.round(Math.min(1, Math.abs(d) * 2.4) * 255);
   }
   mkdirSync(join(root, 'src/assets/textures'), { recursive: true });
-  await sharp(pixels, { raw: { width: size, height: size, channels: 1 } })
+  await sharp(pixels, { raw: { width: size, height: size, channels: 4 } })
     .png({ compressionLevel: 9 })
     .toFile(file);
   return true;

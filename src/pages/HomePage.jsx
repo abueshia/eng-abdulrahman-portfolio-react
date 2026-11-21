@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { LocalizedLink } from '@/components/ui/LocalizedLink';
@@ -11,6 +11,19 @@ import { Hero } from '@/features/hero/components/Hero';
 import { HeroFx } from '@/features/hero/components/HeroFx';
 import { buildHomeJsonLd } from '@/utils/structured-data';
 import { PlaceholderSection } from './home/PlaceholderSection';
+
+/*
+ * Real sections are separate chunks: they are fully prerendered (the
+ * prerenderer waits for them) and hydrate as soon as their chunk arrives, so
+ * their markup code never weighs on the initial bundle. Their motion layers
+ * load later still, only near the viewport (SectionFx).
+ */
+const SECTION_COMPONENTS = {
+  stats: lazy(() => import('@/features/stats/components/StatsSection')),
+  about: lazy(() => import('@/features/about/components/AboutSection')),
+  skills: lazy(() => import('@/features/skills/components/SkillsSection')),
+  experience: lazy(() => import('@/features/experience/components/ExperienceSection')),
+};
 
 /** Section order and the phase in which each real section lands. */
 const SECTIONS = [
@@ -79,11 +92,21 @@ export default function HomePage() {
       />
       <Hero />
       <HeroFx />
-      {SECTIONS.map(({ id, phase }, i) => (
-        <PlaceholderSection key={id} id={id} index={i + 1} phase={phase}>
-          {id === 'projects' && <ProjectsProbe />}
-        </PlaceholderSection>
-      ))}
+      {SECTIONS.map(({ id, phase }, i) => {
+        const Real = SECTION_COMPONENTS[/** @type {keyof typeof SECTION_COMPONENTS} */ (id)];
+        if (Real) {
+          return (
+            <Suspense key={id} fallback={null}>
+              <Real />
+            </Suspense>
+          );
+        }
+        return (
+          <PlaceholderSection key={id} id={id} index={i + 1} phase={phase}>
+            {id === 'projects' && <ProjectsProbe />}
+          </PlaceholderSection>
+        );
+      })}
     </>
   );
 }

@@ -70,6 +70,7 @@ export default function RouteTrace() {
               key={stop.id}
               className={cn(
                 'trace__stop',
+                meta?.tap && 'is-tap',
                 i === activeIndex && 'is-active',
                 i < activeIndex && 'is-passed',
               )}

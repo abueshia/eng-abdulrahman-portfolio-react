@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 
+import { subscribeTheme } from '@/lib/theme';
+
 /**
  * "Ember field": a WebGL fragment shader that replaces the CSS light masses
  * on high-tier devices (lazy chunk, ~3 KB, raw WebGL: no library).
@@ -86,21 +88,28 @@ function rgb(value) {
  * }} props
  */
 export default function AmbientField({ scene, onActive }) {
-  const canvasRef = useRef(/** @type {HTMLCanvasElement | null} */ (null));
+  const hostRef = useRef(/** @type {HTMLDivElement | null} */ (null));
   const sceneRef = useRef(scene);
   useEffect(() => {
     sceneRef.current = scene;
   }, [scene]);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const gl = canvas?.getContext('webgl', {
+    const host = hostRef.current;
+    if (!host) return undefined;
+    // A fresh canvas per run, removed on cleanup. A canvas whose context was
+    // lost paints solid WHITE over the page; reusing one after `loseContext()`
+    // (React StrictMode re-runs effects on the same element) or keeping one
+    // after a real context loss turned the dark theme white.
+    const canvas = document.createElement('canvas');
+    canvas.className = 'bg-layer__field';
+    const gl = canvas.getContext('webgl', {
       antialias: false,
       alpha: false,
       depth: false,
       powerPreference: 'low-power',
     });
-    if (!canvas || !gl) return undefined;
+    if (!gl) return undefined;
 
     const compile = (/** @type {number} */ type, /** @type {string} */ source) => {
       const shader = /** @type {WebGLShader} */ (gl.createShader(type));
@@ -117,6 +126,7 @@ export default function AmbientField({ scene, onActive }) {
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return undefined;
     gl.useProgram(program);
+    host.append(canvas);
 
     const buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -155,8 +165,6 @@ export default function AmbientField({ scene, onActive }) {
       };
     };
     readColors();
-    const themeObserver = new MutationObserver(readColors);
-    themeObserver.observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
     const resize = () => {
       const scale = 0.5;
@@ -202,9 +210,7 @@ export default function AmbientField({ scene, onActive }) {
     let last = 0;
     let lost = false;
     const started = performance.now();
-    const loop = (/** @type {number} */ now) => {
-      frame = requestAnimationFrame(loop);
-      if (now - last < 32) return; // ~30 fps is plenty for slow light
+    const render = (/** @type {number} */ now) => {
       last = now;
       ember = ease(ember, toVec(sceneRef.current.ember), 0.035);
       ion = ease(ion, toVec(sceneRef.current.ion), 0.035);
@@ -224,6 +230,15 @@ export default function AmbientField({ scene, onActive }) {
       gl.uniform1f(u.uDay, daylight);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     };
+    const loop = (/** @type {number} */ now) => {
+      frame = requestAnimationFrame(loop);
+      if (now - last >= 32) render(now); // ~30 fps is plenty for slow light
+    };
+    // Theme switch: new colours and a frame right now, in step with the DOM.
+    const offTheme = subscribeTheme(() => {
+      readColors();
+      if (!lost) render(performance.now());
+    });
     const onVisibility = () => {
       cancelAnimationFrame(frame);
       if (!document.hidden && !lost) frame = requestAnimationFrame(loop);
@@ -232,6 +247,7 @@ export default function AmbientField({ scene, onActive }) {
       event.preventDefault();
       lost = true;
       cancelAnimationFrame(frame);
+      canvas.remove(); // never leave a dead (white) canvas on screen
       onActive(false);
     };
     canvas.addEventListener('webglcontextlost', onLost);
@@ -243,15 +259,16 @@ export default function AmbientField({ scene, onActive }) {
       cancelAnimationFrame(frame);
       window.clearInterval(daylightTimer);
       onActive(false);
-      themeObserver.disconnect();
+      offTheme();
       window.removeEventListener('resize', resize);
       window.removeEventListener('pointermove', onMove);
       root.removeEventListener('pointerleave', onLeave);
       canvas.removeEventListener('webglcontextlost', onLost);
       document.removeEventListener('visibilitychange', onVisibility);
+      canvas.remove();
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
   }, [onActive]);
 
-  return <canvas ref={canvasRef} className="bg-layer__field" />;
+  return <div ref={hostRef} className="bg-layer__field-host" />;
 }
