@@ -18,7 +18,7 @@ import {
   isSupportedLocale,
   localizePath,
 } from '@/config/routes';
-import i18n from '@/i18n';
+import { changeLocale } from '@/i18n';
 import { readStorage } from '@/utils/storage';
 
 /**
@@ -37,46 +37,73 @@ function applySavedLocale() {
   if (rewrite) {
     window.history.replaceState(null, '', `${localizePath(saved, pathname)}${search}${hash}`);
   }
-  i18n.changeLanguage(getLocaleFromPath(window.location.pathname));
   return rewrite;
 }
 
+/**
+ * A tab opened before a redeploy still references the previous build's
+ * chunks, which no longer exist (every deploy is immutable). Instead of a
+ * half-broken page, reload once to get the current HTML and its assets.
+ * Guarded so a genuinely missing file cannot cause a reload loop.
+ */
+window.addEventListener('vite:preloadError', (event) => {
+  const key = 'portfolio.chunk-reload';
+  try {
+    const last = Number(window.sessionStorage.getItem(key) ?? 0);
+    if (Date.now() - last < 30_000) return;
+    window.sessionStorage.setItem(key, String(Date.now()));
+  } catch {
+    return;
+  }
+  event.preventDefault();
+  window.location.reload();
+});
+
 const rewritten = applySavedLocale();
 
-// The boot intro was requested before paint (index.html). Start fetching its
-// chunk now, in parallel with hydration; drop the request if effects are off.
-if (document.documentElement.dataset.boot === 'play') {
-  if (env.fx) import('@/features/intro/components/BootSequence');
-  else delete document.documentElement.dataset.boot;
+/** Hydrates the prerendered markup (or renders fresh) once strings are ready. */
+function start() {
+  // The boot intro was requested before paint (index.html). Start fetching its
+  // chunk now, in parallel with hydration; drop the request if effects are off.
+  if (document.documentElement.dataset.boot === 'play') {
+    if (env.fx) import('@/features/intro/components/BootSequence');
+    else delete document.documentElement.dataset.boot;
+  }
+  const container = /** @type {HTMLElement} */ (document.getElementById('root'));
+  const queryClient = createQueryClient();
+  const router = createAppRouter();
+
+  /** @type {import('@/app/prerender-state').PrerenderState | undefined} */
+  const prerendered = window[PRERENDER_GLOBAL];
+  const canHydrate =
+    !rewritten &&
+    prerendered !== undefined &&
+    container.hasChildNodes() &&
+    normalizePath(prerendered.path) === normalizePath(window.location.pathname);
+
+  const app = (
+    <StrictMode>
+      <App router={router} queryClient={queryClient} />
+    </StrictMode>
+  );
+
+  if (canHydrate) {
+    // Seed the cache with the data the HTML was rendered from, so the first
+    // client render matches the markup exactly.
+    hydrate(queryClient, prerendered.queryState);
+    hydrateRoot(container, app);
+  } else {
+    // HTML (if any) belongs to another URL: discard it and render fresh.
+    container.replaceChildren();
+    createRoot(container).render(app);
+  }
+
+  // Real number for the hero's access log ("hydrated in …ms").
+  requestAnimationFrame(() => performance.mark(HYDRATED_MARK));
 }
-const container = /** @type {HTMLElement} */ (document.getElementById('root'));
-const queryClient = createQueryClient();
-const router = createAppRouter();
 
-/** @type {import('@/app/prerender-state').PrerenderState | undefined} */
-const prerendered = window[PRERENDER_GLOBAL];
-const canHydrate =
-  !rewritten &&
-  prerendered !== undefined &&
-  container.hasChildNodes() &&
-  normalizePath(prerendered.path) === normalizePath(window.location.pathname);
-
-const app = (
-  <StrictMode>
-    <App router={router} queryClient={queryClient} />
-  </StrictMode>
-);
-
-if (canHydrate) {
-  // Seed the cache with the data the HTML was rendered from, so the first
-  // client render matches the markup exactly.
-  hydrate(queryClient, prerendered.queryState);
-  hydrateRoot(container, app);
-} else {
-  // HTML (if any) belongs to another URL: discard it and render fresh.
-  container.replaceChildren();
-  createRoot(container).render(app);
-}
-
-// Real number for the hero's access log ("hydrated in …ms").
-requestAnimationFrame(() => performance.mark(HYDRATED_MARK));
+// The page's strings must be registered before the first render so that it
+// matches the prerendered markup. The HTML modulepreloads that chunk, so this
+// resolves without a round-trip. (A promise, not top-level await: TLA in the
+// entry makes the bundler split the initial graph into many small chunks.)
+changeLocale(getLocaleFromPath(window.location.pathname)).then(start);

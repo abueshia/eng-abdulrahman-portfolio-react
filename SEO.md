@@ -1,6 +1,8 @@
 # SEO Strategy & Implementation
 
-SEO is a top priority for this portfolio: the domain will be verified in Google Search Console, and every page has to be fully indexable in **Arabic and English**. This document is the source of truth for how pages get discovered, rendered, described and measured. Update it in the same commit as any change to routing, metadata, structured data or the build pipeline.
+SEO is a top priority for this portfolio: the domain is verified in Google Search Console, and every page has to be fully indexable in **Arabic and English**. This document is the source of truth for how pages get discovered, rendered, described and measured. Update it in the same commit as any change to routing, metadata, structured data or the build pipeline. The keyword map lives in [`SEO_KEYWORDS.md`](SEO_KEYWORDS.md).
+
+**Canonical origin:** `https://eng-abdulrahman-abu-eisha.vercel.app` (`VITE_SITE_URL`). Every absolute URL the build writes comes from that one variable: canonical, hreflang, `og:url`, JSON-LD, `sitemap.xml`, `robots.txt` and `llms.txt`. It must be the exact origin verified in Search Console (§10).
 
 ---
 
@@ -10,7 +12,7 @@ SEO is a top priority for this portfolio: the domain will be verified in Google 
 2. **One URL per language.** Arabic at the root (`/…`), English under `/en/…`. Every page carries its canonical URL and hreflang alternates.
 3. **Real status codes.** Unknown URLs get an HTTP `404` (from `404.html`), not a `200` with a client-rendered "not found".
 4. **The same data path in every mode.** The prerenderer uses the same services as the browser (mock adapter or live Laravel API), so what is indexed is exactly what users see.
-5. **Content beats tricks.** Fast pages, semantic markup (`<header>`, `<main>`, `<article>`, one `<h1>`), descriptive links and accurate structured data. No hidden text, no keyword stuffing.
+5. **Content beats tricks.** Fast pages, semantic markup (`<header>`, `<main>`, `<article>`, one `<h1>`), descriptive links and accurate structured data. No hidden text, no keyword stuffing, no superlatives.
 
 ---
 
@@ -18,7 +20,7 @@ SEO is a top priority for this portfolio: the domain will be verified in Google 
 
 ### Decision
 
-The site is deployed as a **static, prerendered SPA**. SSR at request time was rejected: the content changes only when the owner publishes, a static CDN is cheaper and faster, and the hosting stays simple (Vercel static). The trade-off is that **new content needs a rebuild**. See §8.
+The site is deployed as a **static, prerendered SPA**. SSR at request time was rejected: content changes only when the owner publishes, a static CDN is cheaper and faster, and the hosting stays simple (Vercel static). The trade-off is that **new content needs a rebuild**. See §8.
 
 ### Pipeline (`npm run build`)
 
@@ -26,20 +28,23 @@ The site is deployed as a **static, prerendered SPA**. SSR at request time was r
 | --- | --- | --- |
 | 1. Client bundle | `vite build` | `dist/` (HTML shell, JS, CSS, public files) |
 | 2. Server bundle | `vite build --ssr src/entry-server.jsx --outDir dist-ssr` | `dist-ssr/entry-server.js` (deleted after step 3) |
-| 3. Generate | `node scripts/prerender.js` | `dist/**/index.html`, `dist/404.html`, `dist/sitemap.xml`, `dist/robots.txt` |
+| 3. Generate | `node scripts/prerender.js` | `dist/**/index.html`, `dist/404.html`, `dist/sitemap.xml`, `dist/robots.txt`, `dist/llms.txt` |
+| 4. Verify | `node scripts/verify-dist.js` | Fails the build if a page lacks its CSS/JS, references a missing file, lacks its SEO head, has invalid JSON-LD, if the home page is `noindex`, if the sitemap lists a non-indexable URL, or if anything mentions localhost |
 
 `npm run build:spa` runs only step 1 (client-only debugging).
 
 ### How a page is rendered (`src/entry-server.jsx`)
 
 1. `react-dom/static` `prerender()` renders the route through React Router's static handler. It waits for lazy page chunks.
-2. Queries never fetch on the server, so after each pass the queries the tree declared are fetched through the normal services. Rendering repeats until no new queries appear (max 4 passes). **Pages need no SSR-specific code.**
+2. Queries never fetch on the server. After each pass, the queries the tree declared are fetched through the normal services, and rendering repeats until no new queries appear (max 4 passes). **Pages need no SSR-specific code.**
 3. The query cache is dehydrated into the page as `window.__PRERENDER__ = { path, queryState }`.
-4. `<Seo>` reports its tags to a head collector (`HeadContext`), and they are serialised into `<head>`.
+4. `<Seo>` reports its tags to a head collector (`HeadContext`), and they are serialized into `<head>`.
 
 ### Hydration contract (`src/main.jsx`)
 
-The client **hydrates** only if `__PRERENDER__.path` equals the current pathname and the URL was not rewritten by the saved-locale rule. Otherwise (`404.html`, SPA fallback, `/` → `/en` rewrite) it discards the markup and renders fresh. `src/app/hydration.test.jsx` hydrates real prerendered output and fails on any hydration mismatch.
+- **When it hydrates:** only if `__PRERENDER__.path` equals the current pathname and the URL was not rewritten by the saved-locale rule. Otherwise (`404.html`, `/` → `/en` rewrite) it discards the markup and renders fresh.
+- **Strings first:** the page language's base strings load before the first render. Each language is a separate chunk, `modulepreload`ed by the page, so this costs no round-trip.
+- **Test:** `src/app/hydration.test.jsx` hydrates real prerendered output and fails on any hydration mismatch.
 
 ### Pitfalls already solved (keep them solved)
 
@@ -51,28 +56,29 @@ The client **hydrates** only if `__PRERENDER__.path` equals the current pathname
 | Browser-only APIs during render | `window`/`document` only inside effects, event handlers or guarded helpers |
 | Router created before the saved-locale rewrite | `createAppRouter()` factory called in `main.jsx` after the rewrite |
 | Lingering timers keep Node alive after generation | Query cache cleared after dehydration; script exits explicitly |
+| A tab opened before a redeploy requests chunks that no longer exist (the "raw HTML" symptom) | `vite:preloadError` triggers one guarded reload; HTML is never cached (`max-age=0, must-revalidate`) |
 
-**Home sections are separate chunks (phase 3).** Stats, About, Skills and Experience are `React.lazy` components inside `<Suspense fallback={null}>`. The prerenderer waits for them, so their full text is in the HTML; on the client their markup hydrates as soon as each chunk arrives (React keeps the server HTML until then). Their markup code therefore never enters the initial bundle. Content rules that keep them indexable:
+### Sections: lazy, prerendered, hydrated on demand
+
+Every home section is a `React.lazy` chunk inside `<Suspense fallback={null}>`. The prerenderer waits for it, so its full text is in the HTML.
+
+- **On demand:** in the browser, the chunk (and so the hydration) of a section waits until the section is about to be seen (one viewport ahead) or the visitor first interacts (`src/lib/hydrate-on-demand.js`). The footer follows the same rule. Until then React keeps the server HTML untouched: visible, readable, crawlable.
+- **Why:** hydrating the whole ~3,000-node page at once was most of the mobile blocking time.
+- **Phones and tablets:** sections also use `content-visibility: auto`, so off-screen sections skip layout and paint, but stay in the DOM, the accessibility tree and find-in-page.
+
+Content rules that keep sections indexable:
 
 - Every number, skill, role, date and paragraph is text in the HTML. Decorative layers (odometer reels, the AUTH gate, the constellation SVG, the graph gutter) are `aria-hidden`, and their default state is the final one.
-- Skills: all five tab panels are in the HTML (inactive ones use `hidden`), and each skill carries its proficiency (`role="meter"`) and years as text.
-- No browser-dependent values in markup: dates are formatted by hand (`2024·03`), never with `Intl` (month names differ between the build machine and browsers), and a running role shows "present" rather than a duration computed from "today".
-
-**Projects and Services (phase 4)** follow the same model (lazy chunks, fully prerendered):
-
-- Every case file is an `<article>` with its title (an `<h3>` link to the case study), summary, role, stack and metrics as text. The hover reveal and the "View" cursor are decoration.
-- Filters (`?type=…&tech=…`) apply **after hydration only**: the prerendered list is always the full one, so a filtered URL hydrates against identical markup (tested), then filters.
-- Every service is a native `<details>` (works without JavaScript, opens on find-in-page). Closed contracts are still in the HTML: titles, descriptions, every deliverable and provider.
-- The case study is prerendered in full, including the architecture diagram (SVG text from the data, plus a visually hidden list of the data flows), the decisions, the gallery `alt`s and the next case. Request packets on the diagram are client-only.
-- Phase-4 UI strings live in `src/i18n/locales/work.{ar,en}.json`, registered by the chunks that use them (`src/i18n/work.js`), so the initial bundle does not carry them. Module evaluation precedes rendering, so prerender and hydration render the same text.
-
-**Testimonials, Blog, FAQ, Contact and the footer (phase 5)** follow the same model:
-
+- Skills: all tab panels are in the HTML (inactive ones use `hidden`), and each skill carries its proficiency (`role="meter"`) and years as text.
+- Projects: every case file is an `<article>` with its title (an `<h3>` link to the case study), summary, role, stack and metrics. Filters (`?type=…&tech=…`) apply after hydration only, and the prerendered list is always the full one.
+- Services: every service is a native `<details>` (works without JavaScript, opens on find-in-page). Closed contracts are still in the HTML.
+- FAQ: native `<details name="faq">`; every answer is in the HTML.
 - Testimonials: every review is text in a native scroll-snap row; embla (lazy) only enhances it.
-- FAQ: native `<details name="faq">`; every answer is in the HTML, closed ones included.
-- Contact: the whole form, the live request preview and the direct channels are prerendered; react-hook-form hydrates them.
-- The footer is a lazy chunk too (prerendered in full). Its local clock is a reserved `--:--` slot filled after hydration.
-- **Articles are processed at build time.** `useBlog` runs the article pipeline (`src/features/blog/lib/article.js`) inside the query: DOMPurify sanitises the API HTML (allow-list), headings get ids for the TOC, and Shiki highlights the code (php/js/jsx/bash/json/sql, JavaScript regex engine, dual theme through CSS variables). In Node the pipeline uses a jsdom window. The processed HTML is what gets dehydrated, so a prerendered article hydrates without loading DOMPurify or Shiki. Only a client-side navigation to an article runs it in the browser (lazy chunk). `jsdom` must be installed at build time.
+- Contact: the whole form, the live request preview and the direct channels are prerendered.
+- No browser-dependent values in markup:
+  - Dates are formatted by hand (`2024·03`), never with `Intl`.
+  - Clocks fill a slot already sized by a hidden `--:--` placeholder, so no layout shift.
+- Feature UI strings ship with their chunks (`src/i18n/work.js`, `src/i18n/sections.js`), not with the initial bundle.
 
 **Rule for new code:** anything that renders on a page must be renderable in Node. Media queries go through `useMediaQuery` (server snapshot), and canvas/GSAP/Lenis work belongs in effects. Run `npm run build` before considering a feature done.
 
@@ -84,33 +90,32 @@ The client **hydrates** only if `__PRERENDER__.path` equals the current pathname
 | --- | --- | --- |
 | Home | `/` | `/en` |
 | Case study | `/projects/:slug` | `/en/projects/:slug` |
-| Blog index | `/blog` | `/en/blog` |
-| Article | `/blog/:slug` | `/en/blog/:slug` |
 
 - **No trailing slashes** (`vercel.json` → `"trailingSlash": false`, which 308-redirects `/en/` to `/en`).
 - **Slugs are shared across languages**, so alternates are derived by toggling the `/en` prefix.
 - **hreflang on every page:** `ar`, `en` and `x-default` (Arabic), always absolute and reciprocal. Also repeated in `sitemap.xml`.
-- **Canonical is self-referencing** per language. A page never canonicalises to the other language.
-- **Language detection never redirects bots.** The only redirect is client-side (`/` → `/en` when a *returning visitor* last used English). Crawlers have no `localStorage`, so they always get the URL they asked for. No `Accept-Language` or IP redirects, ever.
-- **Filter state in the URL** (projects filters: `/?type=saas&tech=laravel`) uses query strings. Filtered views keep the canonical of the unfiltered page (`<Seo>` builds the canonical from the pathname only), and the filter controls are buttons, not links, so crawlers are not invited into filter permutations.
+- **Canonical is self-referencing** per language. A page never canonicalizes to the other language.
+- **Language detection never redirects bots.** The only redirect is client-side (`/` → `/en` when a *returning visitor* last chose English). Crawlers have no `localStorage`, so they always get the URL they asked for. No `Accept-Language` or IP redirects, ever.
+- **Filter state in the URL** (`/?type=saas&tech=laravel`) uses query strings. Filtered views keep the canonical of the unfiltered page, and the filter controls are buttons, not links.
+- **The blog was removed** (phase 5 follow-up). `/blog` URLs render the 404 page with a 404 status. If it returns, it gets its own row here and its own routes in the sitemap.
 
 ---
 
 ## 4. Metadata (`<Seo>`)
 
-Every page renders exactly one `<Seo>` (`src/components/ui/Seo.jsx`). The tags are built by pure helpers in `src/utils/head.js`, which are shared by the prerenderer and the browser. Managed tags carry `data-seo` and are replaced on navigation.
+Every page renders exactly one `<Seo>` (`src/components/ui/Seo.jsx`). The tags are built by pure helpers in `src/utils/head.js`, shared by the prerenderer and the browser. Managed tags carry `data-seo` and are replaced on navigation.
 
 | Tag | Source |
 | --- | --- |
-| `<title>` | `meta.titleTemplate` (`%s \| عبدالرحمن أبو عيشة` / `%s \| Abdulrahman Abu Eisha`). Home uses `meta.defaultTitle`. Target ≤ 60 chars. |
-| `meta description` | Page data (`summary`, `excerpt`, `settings.seo.meta_description`), falling back to `meta.defaultDescription`. Target 120–160 chars. |
+| `<title>` | Home: `settings.seo.meta_title` used as is (`fullTitle`), ≤ ~60 characters, fallback `meta.defaultTitle`. Other pages: `meta.titleTemplate` (`%s \| عبدالرحمن أبو عيشة` / `%s \| Abdulrahman Abu Eisha`). Unique per page and language (tested). |
+| `meta description` | Home: `settings.seo.meta_description` (≈ 155 characters: name, 4 years, Laravel/PHP, React, payments, REST APIs, Cairo). Case studies: `summary`. Fallback `meta.defaultDescription`. |
 | `robots` | `index, follow, max-image-preview:large`; `noindex, follow` on sample case studies (`is_sample`); `noindex, nofollow` on the 404 page |
 | HTTP status (prerender) | `<Seo status>`: 200 by default, `404` on the not-found page. Not derived from `noindex` (sample pages are noindex but real 200 pages). |
 | `link canonical` / `alternate hreflang` | See §3 |
-| Open Graph | `og:type` (`profile` on home, `article` on case studies and posts), `og:title`, `og:description`, `og:url`, `og:image`, `og:site_name`, `og:locale` + `og:locale:alternate` |
+| Open Graph | `og:type` (`profile` on home, `article` on case studies), `og:title`, `og:description`, `og:url`, `og:image`, `og:site_name`, `og:locale` + `og:locale:alternate` |
 | Twitter | `summary_large_image` card mirroring OG |
 
-**OG images:** 1200×630 JPG/PNG under 300 KB, with safe margins for the cropped square previews. Default: `/images/og-cover.jpg` (1200×630, final). Case studies and posts use their `cover_image` when it is a raster image (JPG/PNG/WebP); the generated SVG sample covers fall back to the default, since social scrapers do not render SVG. Phase 6 may generate per-page OG images at build time.
+**OG images:** 1200×630 JPG/PNG under 300 KB. Default: `/images/og-cover.jpg` (final). Case studies use their `cover_image` when it is a raster image; the generated SVG sample covers fall back to the default, since social scrapers do not render SVG.
 
 ---
 
@@ -120,30 +125,51 @@ Passed to `<Seo jsonLd={…}>`. Builders live in `src/utils/structured-data.js` 
 
 | Page | Schema | Status |
 | --- | --- | --- |
-| Home | `ProfilePage` (`mainEntity` → Person, `isPartOf` → WebSite) | ✅ Phase 3 |
-| Home | `Person` (name, `jobTitle` = [engineer title, "CEO, iCode Tech"], `worksFor` Organization, image, `sameAs` socials, knowsAbout) + `WebSite`, linked by `@id` | ✅ Phase 1, titles + `worksFor` Phase 3 |
-| Home | `ProfessionalService` (founded by the Person) with `hasOfferCatalog`: one `OfferCatalog` per service group, each service an `Offer` → `Service` (name, description, `serviceType`, provider → Person) | ✅ Phase 4 |
-| Case study | `CreativeWork` (or `SoftwareSourceCode` with `codeRepository` when `github_url` is public) authored by the Person + `BreadcrumbList` (Home → Work → project). **Real projects only**: `is_sample` projects get none. | ✅ Phase 4 |
-| Article | `BlogPosting` (headline, description, datePublished, dateModified, author/publisher → Person `@id`, image, articleSection, keywords, timeRequired) + `BreadcrumbList` (Home → Blog → post). **Real posts only**: `is_sample` posts get none. | ✅ Phase 5 |
-| Home | `FAQPage` (every visible question with its `acceptedAnswer`), emitted only while the FAQ section is visible | ✅ Phase 5 |
-| Testimonials | None on purpose: Google ignores self-serving reviews about one's own services, and samples must never be marked up | — |
+| Home | `ProfilePage` (`mainEntity` → Person, `isPartOf` → WebSite) | ✅ |
+| Home | `Person`. See the field list below | ✅ Phase 6 (identity fields) |
+| Home | `WebSite` (name, description, publisher → Person) | ✅ |
+| Home | `ProfessionalService` (founded by the Person, `address` Cairo/EG, `areaServed`) with `hasOfferCatalog`: one `OfferCatalog` per service group, each service an `Offer` → `Service` (name, description, `serviceType`, provider → Person) | ✅ |
+| Home | `FAQPage` (every visible question with its `acceptedAnswer`), only while the FAQ section is visible | ✅ (13 questions) |
+| Case study | `CreativeWork` (or `SoftwareSourceCode` with `codeRepository` when `github_url` is public) authored by the Person + `BreadcrumbList`. **Real projects only**: `is_sample` projects get none. | ✅ |
+| Testimonials | None on purpose: self-serving reviews are ignored by Google, and samples must never be marked up. No `Review`, no `AggregateRating` anywhere (tested). | — |
 
-Rules: only absolute `https` URLs, so placeholder or non-URL values are filtered out. `sameAs` lists identity profiles only (GitHub, LinkedIn, Facebook), never contact channels like WhatsApp. Mark up only content that is visible on the page. Validate with the [Rich Results Test](https://search.google.com/test/rich-results) before every release.
+`Person` fields:
+
+- `name`
+- `alternateName`: common spellings, from `settings.general.alternate_names`. They are also shown in a visible "Also written as" line in About, never as hidden text.
+- `description`: the meta description.
+- `jobTitle`: [engineer title, "CEO, iCode Tech"].
+- `worksFor`: Organization, with `url` once `company.url` exists.
+- `image`.
+- `sameAs`: GitHub, LinkedIn, Facebook.
+- `knowsAbout`.
+- `knowsLanguage`: ar, en.
+- `address`: PostalAddress with the city and country only (Cairo, EG), never the street.
+- `areaServed`: Egypt and the Arab world.
+
+Rules:
+
+- Only absolute `https` URLs; placeholder or non-URL values are filtered out.
+- `sameAs` lists identity profiles only, never contact channels like WhatsApp.
+- Mark up only content that is visible on the page.
+- Validate with the [Rich Results Test](https://search.google.com/test/rich-results) and the [Schema Markup Validator](https://validator.schema.org/) before every release.
 
 ---
 
 ## 6. Crawling & indexing
 
-- **Hidden sections are not published:** with `sections_visibility.blog = false`, `/blog` and its posts are neither prerendered nor listed in the sitemap, they render the 404 page, and the nav link disappears.
-- **Visible but sample:** the blog is visible with sample posts (phase 5). Every post page is generated but `noindex` and unlisted, and `/blog` itself is `noindex` and unlisted while *all* posts are samples. The first real post flips both automatically.
-- **`sitemap.xml`** is generated from the same route list that is prerendered: every route × locale, with `xhtml:link` alternates and `lastmod` (from `updated_at` / `published_at`, else the build date). Routes flagged `sitemap: false` are generated but not listed: sample case studies (`is_sample: true`), which are also `noindex`.
-- **Sample projects:** until real case studies replace them, the samples are reachable (links work, pages are prerendered) but invisible to search engines. When the API returns a project without `is_sample`, it is indexed, listed and described with JSON-LD automatically.
+- **`sitemap.xml`** is generated from the same route list that is prerendered: every route × locale, with `xhtml:link` alternates (ar, en, x-default) and `lastmod` (from `updated_at` / `published_at`, else the build date). Routes flagged `sitemap: false` are generated but not listed: sample case studies (`is_sample: true`), which are also `noindex`. Today it lists `/` and `/en`.
+- **Sample projects:** reachable (links work, pages are prerendered) but invisible to search engines. When the API returns a project without `is_sample`, it is indexed, listed and described with JSON-LD automatically.
+- **Hidden sections** (`settings.sections_visibility`) are not rendered, not linked and not in the FAQPage.
 - **`robots.txt`:** allow all, plus the sitemap location.
-- **404:** `dist/404.html` (Arabic, `noindex`) is served by Vercel with a real `404` status for any URL that was not generated.
-- **Internal linking:** real `<a href>` links (`LocalizedLink`) for every page. Never navigate with `onClick` alone. Case studies link to related projects and the next case. Posts link to related posts.
-- **Images:** descriptive `alt` (from the API, localised), explicit `width`/`height`, AVIF/WebP with `srcset` via `npm run images`, lazy below the fold, `fetchpriority="high"` only for an image that is the LCP element.
-  - The hero portrait is not the LCP element (the name is), so it is not prioritised over the font.
-  - Its `alt` is "Portrait of {name}" in each language.
+- **`/llms.txt`** (GEO): a short, factual Markdown brief generated from the API data at build time (`src/utils/llms.js`): a one-sentence definition ("Abdulrahman Abu Eisha (عبدالرحمن أبو عيشة) is a Full-Stack Software Engineer based in Cairo, Egypt, with 4 years of experience, and CEO of iCode Tech."), identity, pages, services, FAQ, profiles and contact. Sample projects and phone numbers are never listed.
+- **404:** `dist/404.html` (Arabic, `noindex`) is served by Vercel with a real `404` status for any URL that was not generated. There is no catch-all rewrite, so there are no soft 404s.
+- **Internal linking:** real `<a href>` links (`LocalizedLink`) for every page. Never navigate with `onClick` alone. Case studies link to related projects and the next case.
+- **Images:**
+  - Descriptive `alt` (from the API, localized), explicit `width`/`height`.
+  - AVIF/WebP with `srcset` via `npm run images`, lazy below the fold.
+  - The hero portrait's `alt` is "{name}, {job title}" in each language. It carries `fetchpriority="high"`, because on phones it is the largest element in the first viewport (the LCP element; on desktop the name is).
+- **Quotable copy (GEO):** the hero states who and where in one sentence under the `<h1>` ("Full-Stack Software Engineer and back-end developer based in Cairo, Egypt…"), and About has a factual paragraph about working from Cairo with clients in Egypt and the Arab world.
 
 ---
 
@@ -153,16 +179,15 @@ The backend must provide, per locale:
 
 | Resource | Fields needed for SEO |
 | --- | --- |
-| `GET /settings` | `general.owner_name`, `general.job_title`, `general.avatar`, `general.socials[].url` (absolute), `seo.meta_title`, `seo.meta_description`, `seo.og_image` |
+| `GET /settings` | `general.owner_name`, `general.site_name`, `general.job_title`, `general.avatar`, `general.socials[].url` (absolute), `general.alternate_names[]`, `general.address{locality, country, country_code}` (city level only), `general.area_served[]`, `general.company{name, role, url?}`, `general.years_of_experience`, `seo.meta_title` (≤ 60 chars), `seo.meta_description` (≈ 155 chars), `seo.og_image`, `hero.summary` |
 | `GET /projects`, `/projects/:slug` | stable `slug`, `title`, `summary` (≤ 160 chars), `cover_image` (absolute or root-relative) + `cover_alt`, `published_at`, `updated_at`, `is_sample` (boolean). Summary items also carry `type`, `year`, `role`, `preview_image`, `metrics[]`, `technologies[]`. The full record adds `problem`, `solution`, `challenges[{title, body}]`, `architecture{nodes[{id,label,layer,note}], edges[{from,to,kind,label}]}`, `decisions[{title, body, nodes[]}]`, `metrics[{label, value \| null}]`, `gallery[{image, alt}]`, `duration`, `client`, `live_url`, `github_url`, `related_projects[]` |
 | `GET /services` | flat list sorted by group then id: `slug`, `method`, `title`, `description`, `deliverables[]`, `stack[]`, `group{slug, name, sort}` |
-| `GET /blogs`, `/blogs/:slug` | stable `slug`, `title`, `excerpt`, HTML `content` (headings h2/h3, code as `<pre><code class="language-x" data-filename="…">`; the front end sanitises it again), `cover_image` + `cover_alt`, `category{slug,name}`, `tags[]`, `published_at`, `updated_at`, `reading_time`, `is_sample`. The full post adds `related_posts[]` |
 | `GET /testimonials` | `name`, `role`, `company`, `quote`, `scope`, `checks[]`, `avatar`, `is_sample` |
-| `GET /faqs` | `question`, `answer` (plain text: it is copied verbatim into `FAQPage`) |
+| `GET /faqs` | `question`, `answer` (plain text: it is copied verbatim into `FAQPage` and `llms.txt`) |
 | `POST /contact` | body `{ name, email, phone?, type, message, website? }` (`website` = honeypot: answer 201, store nothing). 201 on success, 422 with `errors{field: [message]}` (shown on the fields), anything else is "500 — Retry". Escape all input server-side; the client already refuses HTML |
 | Listings | Pagination (`pagination.last_page`) so the prerenderer can enumerate every item |
 
-**Slug changes:** a slug must never change silently. If it must, the backend records the old slug and the frontend build emits a `308` redirect (`vercel.json` `redirects`, generated in phase 6).
+**Slug changes:** a slug must never change silently. If it must, the backend records the old slug, and a `308` redirect is added to `vercel.json` `redirects`.
 
 ---
 
@@ -171,43 +196,63 @@ The backend must provide, per locale:
 Content is baked in at build time, so publishing must trigger a rebuild:
 
 1. Create a **Vercel Deploy Hook** for the production branch.
-2. Laravel calls it (queued job) whenever a project, post, setting or FAQ is created, updated, published or deleted.
+2. Laravel calls it (queued job) whenever a project, setting, service, FAQ or testimonial is created, updated, published or deleted.
 3. Vercel rebuilds (about 1 minute). New URLs appear in the regenerated `sitemap.xml`.
 
-Until the API is live (`VITE_USE_MOCK=true`), the build prerenders the mock data.
+Until the API is live (`VITE_USE_MOCK=true`), the build prerenders the mock data, and the contact form relays to WhatsApp in production (`VITE_CONTACT_RELAY`).
 
 ---
 
 ## 9. Performance & Core Web Vitals
 
-Rankings use field CWV (LCP, INP, CLS). Targets: Lighthouse ≥ 90 on mobile for Performance, Accessibility, Best Practices and SEO.
+Rankings use field CWV (LCP, INP, CLS). Targets: LCP < 2.5 s, CLS < 0.1, INP < 200 ms.
 
-- **LCP** is the hero name (text), present in the prerendered HTML, so it does not wait for JS.
-  - The display font of the page's language is preloaded (`<link rel="preload" as="font">`, injected by `scripts/prerender.js`), so the name paints in its real face sooner.
+- **LCP:**
+  - Desktop: the hero name (text), present in the prerendered HTML. The display font of the page's language is preloaded (`<link rel="preload" as="font">`, injected by `scripts/prerender.js`).
+  - Phones: the portrait image (`fetchpriority="high"`).
   - The canvas, WebGL and GSAP layers mount only after idle and are never LCP candidates.
 - **CLS:** layout never depends on JavaScript:
   - Fonts: self-hosted with `font-display: swap`.
   - Name: one line per row (`white-space: nowrap`) with a line-height tied to the font size, so a font swap cannot reflow it.
   - Portrait: explicit `width`/`height`.
-  - Live values (clock, telemetry, uptime) fill slots that are already reserved.
-- **INP:** heavy visuals are deferred, written outside React (rAF + CSS variables), paused with the tab and governed by the device tier and an FPS guard.
-- **Hydration waterfall:** each prerendered page carries `modulepreload` for its own lazy page chunk (from the Vite manifest), so hydration does not wait for entry → page chunk.
-- **JS budget:** the plan targets < 170 KB gzip of initial JS. Measure it with `npm run size` after a build.
+  - Live values (clock, telemetry, uptime) fill slots already sized by a hidden placeholder.
+  - Font-swap shift was measured at ≈ 0.001, so no fallback-metric `@font-face` overrides are needed.
+- **INP / TBT:**
+  - Sections hydrate on demand (§2), and off-screen sections skip layout on phones (`content-visibility`).
+  - Heavy visuals are deferred, written outside React (rAF + CSS variables), paused with the tab and governed by the device tier and an FPS guard.
+  - On touch screens below the high tier, the service mesh is a still frame. Entry-level touch devices (≤ 4 cores or ≤ 4 GB) get the `low` tier: static frames only.
+- **Hydration waterfall:** each prerendered page carries `modulepreload` for its page chunk and for its language's strings.
+- **JS budget:** < 170 KB gzip of initial JS for the home page (`npm run size` after a build).
 
-  | | Phase 1 | Phase 2 | Phase 3 | Phase 4 | Phase 5 |
-  | --- | --- | --- | --- | --- | --- |
-  | Initial JS: entry + modulepreload (gzip) | | | 192.4 KB | 192.9 KB | 192.7 KB |
-  | Home page, initial + page chunk (gzip) | 204.4 KB | 201.1 KB | 203.0 KB | 204.7 KB | 205.0 KB |
-  | Initial CSS (gzip) | | | 28.9 KB | 34.7 KB | 38.9 KB |
-  | Deferred (idle / interaction / route) | 17.6 KB | ~107 KB | 121.3 KB | 146.6 KB | 383.8 KB |
+  | | Phase 3 | Phase 4 | Phase 5 | Phase 6 |
+  | --- | --- | --- | --- | --- |
+  | Home page initial JS: entry + modulepreload, after `npm run build` (gzip) | 203.0 KB | 204.7 KB | 204.1 KB | **169.4 KB** |
+  | Initial CSS (gzip) | 28.9 KB | 34.7 KB | 37.3 KB | 37.4 KB |
 
-  Measured on a client-only build (`npx vite build && npm run size`): after the full `npm run build`, `dist/index.html` is the prerendered home page, whose `modulepreload` for the page chunk makes "initial" equal "home".
+  Phase 6 removed ≈ 35 KB from the first load without dropping features:
+  - axios (≈ 21 KB) now loads on the first real request. A prerendered page hydrates from embedded data and usually never fetches.
+  - Lenis (≈ 5 KB) loads on mount.
+  - tailwind-merge (≈ 9 KB) was replaced by plain `clsx`, with explicit variant props where classes used to conflict.
+  - Only the page language's base strings ship (≈ 3 KB).
 
-  Phase 4 kept the initial JS flat (+0.5 KB: the new journey station, the curtain's View Transition branch, `<Seo status>`). Three things were done to get there: the phase-4 strings ship with their chunks, new icons are inline SVG (`LineIcon`) because `react-icons/lu` is one module that lives in the entry, and the filter FLIP is a small WAAPI hook instead of motion's `domMax`, whose separate chunk made the bundler split motion's core out of the entry (+1.2 KB). CSS grows because every section style is global by rule (prerendered pages must be styled before any chunk loads).
+- **Lighthouse (phase 6).** Local production build (`vite preview`), Lighthouse 13.6, simulated throttling. First visit, so the boot intro plays. Three runs each, range shown:
 
-  Phase 5 lowered the initial JS (the footer became a lazy chunk). The deferred total jumps because it now includes Shiki (core, JavaScript engine, six grammars, two themes), DOMPurify, embla, react-hook-form and zod. None of it loads up front: Shiki and DOMPurify load only on a client-side navigation to an article (prerendered articles ship finished HTML), embla near the testimonials, and the form libraries with the contact chunk.
+  | Page | Device | Performance | Accessibility | Best practices | SEO | LCP | TBT | CLS |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | `/` | Mobile | 47–49 | 94 | 100 | 100 | 6.3–6.5 s | 1.6–1.8 s | 0 |
+  | `/en` | Mobile | 47–52 | 97–100 | 100 | 100 | 6.6–7.0 s | 1.2–1.7 s | 0 |
+  | `/` | Desktop | 70–77 | 97 | 100 | 100 | 1.1–1.5 s | 430–520 ms | ≤ 0.01 |
+  | `/en` | Desktop | 72–82 | 97–100 | 100 | 100 | 1.4–1.7 s | 300–480 ms | ≤ 0.013 |
 
-  The hero did not grow the initial bundle: motion's animation features moved to an async chunk, and GSAP, the mesh, WebGL, the cursor and the intro all load deferred. The remaining gap to 170 KB is react-dom, react-router, i18next, TanStack Query and axios; it is Phase 6 work.
+  Before phase 6, mobile was 37–42 (TBT ≈ 2.6 s, CLS 0.18 for returning visitors) and desktop 70–71.
+
+  **Mobile is below the 90 target, and this is the honest number.** Under Lighthouse's 4× CPU throttle:
+  - The remaining cost is the first layout of the hero itself (~0.6 s), its relayout when the web fonts swap in, and the hydration of the hero and navigation.
+  - LCP is simulated from that main-thread time; the observed LCP in the same runs is ≈ 1.2 s.
+  - The accessibility deduction on `/` is axe catching the boot intro's typed lines mid-fade (decorative, transient).
+  - axe-core (WCAG 2.2 AA + best practices) reports 0 violations on every main page in both themes once the page settles.
+
+  Going further means changing the hero itself (fewer layers, no intro on phones), which is a design decision, not a fix. Measure field data (Search Console → Core Web Vitals, PageSpeed Insights) after launch before deciding.
 
 ### The boot intro and crawlers
 
@@ -215,23 +260,54 @@ Rankings use field CWV (LCP, INP, CLS). Targets: Lighthouse ≥ 90 on mobile for
   - The pre-paint script sets `data-boot="play"` only for the first home-page view of a session, and a CSS cover hides the page until the app mounts.
   - The content underneath is fully rendered, and without JavaScript nothing is covered.
   - A CSS failsafe lifts the cover after 3.5 s if the app never starts.
-- Deep links (case studies, articles) and returning visitors never see it.
+- Deep links (case studies) and returning visitors never see it.
 - Googlebot renders with JavaScript, but it reads the DOM rather than the pixels, and the DOM is complete from the first byte.
 - `src/entry-server.test.jsx` asserts that the name, summary, actions and portrait `alt` are in the generated HTML, and that no intro or canvas markup is.
 
 ---
 
-## 10. Google Search Console: launch checklist
+## 10. Google Search Console
 
-- [ ] Set `VITE_SITE_URL` (Vercel env + `.env.example` default) to the final domain and rebuild.
-- [ ] Verify the **Domain property** via DNS TXT record (covers http/https and subdomains).
-- [ ] Redirect every alternate host (`www`/apex, `*.vercel.app`) to the canonical domain with `308`.
-- [ ] Submit `https://<domain>/sitemap.xml`.
-- [ ] URL Inspection → "Test live URL" for `/`, `/en`, one case study and one article (rendered HTML must show the content).
-- [ ] Check hreflang errors (none expected) and the Page indexing report weekly for the first month.
-- [ ] Rich Results Test on home (Person), an article (BlogPosting) and the FAQ (FAQPage).
-- [ ] Add the site to Bing Webmaster Tools (it can import from Search Console).
-- [ ] `npm run data:todo` reports zero placeholders.
+### Domain
+
+`VITE_SITE_URL` must equal the property verified in Search Console: `https://eng-abdulrahman-abu-eisha.vercel.app` today. If the site moves to a custom domain:
+
+1. Change `VITE_SITE_URL` in Vercel (Production) and in `.env.example`.
+2. Rebuild. Every canonical, hreflang, `og:url`, JSON-LD id, sitemap entry, `robots.txt` and `llms.txt` follows automatically, and `npm run build` fails if any of them still points elsewhere.
+3. Redirect the old host to the new one with `308`, add the new property in Search Console, and use **Settings → Change of address**.
+
+### Verify ownership
+
+- **HTML file (in place):** `public/googlec00db20ccafa5da5.html` is deployed at `/googlec00db20ccafa5da5.html` (the build serves it verbatim; no rewrite touches it). Keep it in `public/` forever: removing it un-verifies the property.
+- **DNS (for a custom domain):** add the Domain property and its `TXT` record at the DNS provider. It covers every subdomain and protocol.
+
+### Submit and inspect
+
+1. **Sitemaps → Add** `https://eng-abdulrahman-abu-eisha.vercel.app/sitemap.xml`. Status should become "Success", with 2 discovered URLs today (`/` and `/en`), more once real projects exist.
+2. **URL Inspection** for `/` and `/en` → **Test live URL** → *View tested page*: the rendered HTML must contain the name, the hero summary and the JSON-LD. Then **Request indexing** for each.
+3. Repeat URL Inspection + Request indexing for each real case study as it is published.
+
+### Post-deploy checklist (every release)
+
+- [ ] `npm run build` passed (the verifier ran), and `npm run data:todo` reports nothing blocking.
+- [ ] `https://…/` and `/en` load styled. DevTools Network: no 404s, CSS and JS are `200`.
+- [ ] `curl -I https://…/assets/<file>.js` shows `cache-control: public, max-age=31536000, immutable`; `curl -I https://…/` shows `max-age=0, must-revalidate` and the security headers.
+- [ ] `curl -I https://…/nope` returns `404`; `/googlec00db20ccafa5da5.html`, `/sitemap.xml`, `/robots.txt` and `/llms.txt` return `200`.
+- [ ] View source: one `<title>`, description, canonical, three hreflang links, JSON-LD present (no `noindex` on home).
+- [ ] [Rich Results Test](https://search.google.com/test/rich-results) on `/` and `/en`: Profile page and FAQ detected, no errors.
+- [ ] [PageSpeed Insights](https://pagespeed.web.dev/) on `/` (mobile and desktop): note the numbers, and field data once available.
+- [ ] Bing Webmaster Tools: import from Search Console once.
+
+### Follow-up plan
+
+- **Weekly (first two months), then monthly:**
+  - **Pages** report (Indexing → Pages): `/` and `/en` indexed. Investigate any "Crawled, currently not indexed", "Duplicate without user-selected canonical" or hreflang issue.
+  - **Performance** report: queries and pages. Filter by country (Egypt, Gulf) and compare Arabic vs English queries. Note which phrases from `SEO_KEYWORDS.md` gain impressions and adjust copy honestly.
+- **Monthly:**
+  - Core Web Vitals report (field data).
+  - Enhancements (FAQ, Profile page).
+  - Links report.
+- **After each content publish:** URL Inspection → Request indexing for the new URL.
 
 ---
 
@@ -240,8 +316,9 @@ Rankings use field CWV (LCP, INP, CLS). Targets: Lighthouse ≥ 90 on mobile for
 | Phase | SEO work |
 | --- | --- |
 | 1 ✅ | SSG pipeline, `<Seo>` head manager, canonical/hreflang/OG/Twitter, Person + WebSite JSON-LD, sitemap, robots, real 404, hydration tests |
-| 2 ✅ | Hero LCP discipline (text LCP + display-font preload, canvas/WebGL/GSAP after idle), intro kept out of the HTML, page-chunk `modulepreload`, responsive AVIF/WebP pipeline (`npm run images`) |
+| 2 ✅ | Hero LCP discipline (text LCP + display-font preload, canvas/WebGL/GSAP after idle), intro kept out of the HTML, page-chunk `modulepreload`, responsive AVIF/WebP pipeline |
 | 3 ✅ | Semantic section headings, about/experience content indexable in both languages |
-| 4 ✅ | Case-study JSON-LD + breadcrumbs (real projects only), samples noindex + out of the sitemap, `<Seo status>`, filter URLs canonicalised, services `ProfessionalService` / `OfferCatalog`. Per-project OG images move to phase 6 (needs raster covers). |
-| 5 ✅ | BlogPosting (real posts only) + FAQPage JSON-LD, build-time article processing (sanitise + TOC anchors + Shiki), related posts, sample posts and the all-sample `/blog` kept noindex and out of the sitemap |
-| 6 | Lighthouse audit (real numbers), JS budget work, slug redirects, OG image generation, final Search Console checklist |
+| 4 ✅ | Case-study JSON-LD + breadcrumbs (real projects only), samples noindex + out of the sitemap, `<Seo status>`, filter URLs canonicalized, `ProfessionalService` / `OfferCatalog` |
+| 5 ✅ | FAQPage JSON-LD, sample content kept noindex and out of the sitemap; the blog was later removed |
+| 6 ✅ | Deploy hardening (headers, no catch-all rewrite, post-build verifier, stale-chunk recovery), titles/descriptions from settings, Person identity (`alternateName`, address, `areaServed`), 5 new FAQs, keyword-natural copy, `llms.txt`, initial JS 204 → 169.4 KB, hydration on demand, CLS fix, WCAG AA contrast, Search Console runbook |
+| 7 | Laravel API connected; real projects and testimonials (indexable case studies, CreativeWork JSON-LD), Deploy Hook |

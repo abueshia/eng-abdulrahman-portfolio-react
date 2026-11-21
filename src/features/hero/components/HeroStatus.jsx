@@ -6,8 +6,11 @@ import { useLocale } from '@/hooks/useLocale';
 /**
  * Status strip above the name: availability (real, from settings) plus the
  * owner's location and live local time. The clock is client-only (a
- * prerendered time would be wrong and would break hydration); its slot has a
- * fixed width so it appears without moving anything.
+ * prerendered time would be wrong and would break hydration). Its slot holds
+ * the full localized string with a "--:--" placeholder, invisible until the
+ * client fills it, so the real width is reserved and nothing moves (a
+ * fixed-width slot was narrower than "local time 19:30" and wrapped the line
+ * on phones: measured CLS 0.16).
  *
  * @param {{ general?: any, hero?: any }} props
  */
@@ -48,8 +51,12 @@ export function HeroStatus({ general, hero }) {
       </p>
       <p className="hero-status__item hero-status__item--muted">
         <span>{general?.location}</span>
-        <span className="hero-status__clock" aria-hidden={time ? undefined : 'true'}>
-          {time ? t('hero.status.localTime', { time }) : null}
+        <span
+          className="hero-status__clock"
+          data-pending={time ? undefined : 'true'}
+          aria-hidden={time ? undefined : 'true'}
+        >
+          {t('hero.status.localTime', { time: time ?? '--:--' })}
         </span>
       </p>
     </div>

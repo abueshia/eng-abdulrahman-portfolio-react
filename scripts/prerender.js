@@ -5,11 +5,13 @@
  * entry → dist-ssr/). For every indexable route × locale it writes
  * `dist/<path>/index.html` with real markup, the final <head> (title,
  * description, canonical, hreflang, OG, JSON-LD) and the dehydrated data the
- * client hydrates from. It also emits `404.html`, `sitemap.xml` and `robots.txt`.
+ * client hydrates from. It also emits `404.html`, `sitemap.xml`, `robots.txt`
+ * and `llms.txt`.
  *
  * Resource hints per page (from the Vite manifest, then the manifest is
- * deleted): `modulepreload` for the page's own chunk (otherwise hydration
- * waits for a request waterfall: entry → lazy page chunk), and `preload` for
+ * deleted): `modulepreload` for the page's own chunk and the page language's
+ * strings (otherwise hydration waits for a request waterfall: entry → lazy
+ * page chunk / locale chunk), and `preload` for
  * the display font of that language, because the name in that font is the
  * home page's LCP element.
  *
@@ -28,6 +30,7 @@ const ssrDir = join(root, 'dist-ssr');
 
 const {
   renderPage,
+  renderLlmsTxt,
   getPrerenderRoutes,
   env,
   localizePath,
@@ -81,7 +84,11 @@ function chunkClosure(source) {
 function resourceHints(routePath, locale) {
   const page =
     PAGE_MODULES.find(([pattern]) => pattern.test(routePath))?.[1] ?? 'src/pages/NotFoundPage.jsx';
-  const scripts = chunkClosure(page)
+  // The page's base strings are awaited before hydration (src/i18n): preload
+  // them with the page chunk so they never form a request waterfall.
+  const scripts = [
+    ...new Set([...chunkClosure(`src/i18n/locales/${locale}.json`), ...chunkClosure(page)]),
+  ]
     .filter((file) => !template.includes(`/${file}`))
     .map((file) => `<link rel="modulepreload" crossorigin href="/${file}">`);
   const font = assetFiles.find((file) => DISPLAY_FONTS[locale]?.test(file));
@@ -189,13 +196,16 @@ await writeFile(
   'utf-8',
 );
 
+// llms.txt: a factual brief for AI answer engines, from the same data (GEO).
+await writeFile(join(distDir, 'llms.txt'), await renderLlmsTxt(), 'utf-8');
+
 // The server bundle and the manifest are build intermediates only.
 await rm(ssrDir, { recursive: true, force: true });
 await rm(join(distDir, '.vite'), { recursive: true, force: true });
 
 const seconds = ((performance.now() - started) / 1000).toFixed(1);
 console.log(
-  `✓ prerendered ${written} pages + 404.html, sitemap.xml (${entries.length} URLs), robots.txt in ${seconds}s`,
+  `✓ prerendered ${written} pages + 404.html, sitemap.xml (${entries.length} URLs), robots.txt, llms.txt in ${seconds}s`,
 );
 
 if (failures.length > 0) {

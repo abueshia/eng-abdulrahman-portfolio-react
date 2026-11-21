@@ -14,7 +14,6 @@ export function Logo({ className, onClick }) {
     <LocalizedLink
       to="/"
       onClick={onClick}
-      aria-label={t('a11y.homeLink')}
       className={cn('group inline-flex items-center gap-3', className)}
     >
       <span
@@ -26,12 +25,14 @@ export function Logo({ className, onClick }) {
       </span>
       <span
         aria-hidden="true"
-        className="hidden font-mono text-sm text-ink-muted sm:inline"
+        className="logo__word hidden font-mono text-sm text-ink-muted sm:inline"
         dir="ltr"
       >
         abu<span className="text-ink">eisha</span>
         <span className="ms-0.5 inline-block w-2 animate-blink text-ember">_</span>
       </span>
+      {/* The name comes from text, not aria-label: the visible marks are decorative. */}
+      <span className="sr-only">{t('a11y.homeLink')}</span>
     </LocalizedLink>
   );
 }

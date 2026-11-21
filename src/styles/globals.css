@@ -94,6 +94,20 @@
   .section-y {
     padding-block: var(--section-pad);
   }
+  /*
+   * Phones and tablets: sections off screen skip layout and paint until they
+   * come near (content-visibility). Measured: the first layout of the whole
+   * ~3 000-node home page cost ~2 s of main thread on a throttled mid-range
+   * phone. The content stays in the DOM, the accessibility tree and
+   * find-in-page; `auto` remembers each section's real size once rendered,
+   * so scroll positions settle after the first pass.
+   */
+  @media (max-width: 63.999rem) {
+    .section-y {
+      content-visibility: auto;
+      contain-intrinsic-size: auto 1100px;
+    }
+  }
 
   .glass {
     background: color-mix(in oklab, var(--surface) 72%, transparent);

@@ -1,9 +1,9 @@
 {
   "meta": {
     "siteName": "Eng. Abdulrahman Abu Eisha",
-    "defaultTitle": "Eng. Abdulrahman Abu Eisha | Full-Stack Software Engineer",
+    "defaultTitle": "Eng. Abdulrahman Abu Eisha | Full-Stack Software Engineer, Cairo",
     "titleTemplate": "%s | Abdulrahman Abu Eisha",
-    "defaultDescription": "Full-Stack Software Engineer specialising in PHP 8.3, Laravel, React and clean, scalable REST APIs.",
+    "defaultDescription": "Eng. Abdulrahman Abu Eisha, Full-Stack Software Engineer in Cairo with 4 years of experience: Laravel and PHP back ends, React front ends, REST APIs, payments.",
     "notFoundTitle": "Page not found"
   },
   "a11y": {
@@ -100,7 +100,7 @@
       "label": "Terminal command (type help)",
       "placeholder": "type help"
     },
-    "portraitAlt": "Portrait of {{name}}",
+    "portraitAlt": "Portrait of {{name}}, {{title}}",
     "monogram": "AA",
     "cue": "Scroll to send the request",
     "transmit": "GET / → 200 OK · forwarding → /{{station}}",
@@ -187,6 +187,7 @@
     "file": "README.md",
     "whoami": "whoami",
     "companyLine": "{{role}} of {{company}}",
+    "aka": "Also written as:",
     "principles": "Principles",
     "codeLabel": "The engineer profile, written as a PHP class",
     "codeFile": "src/Engineers/AbdulrahmanAbuEisha.php",

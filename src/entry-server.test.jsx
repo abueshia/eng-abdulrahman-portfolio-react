@@ -80,6 +80,68 @@ describe('Prerendering (entry-server)', () => {
       'https://www.linkedin.com/in/eng-abdulrahman-abu-eisha/',
       'https://www.facebook.com/abdo.saad.35762241',
     ]);
+    // Common spellings, city-level address only, and where clients are served.
+    expect(person.alternateName).toEqual(
+      expect.arrayContaining([
+        'عبد الرحمن أبو عيشة',
+        'Abdelrahman Abu Eisha',
+        'Eng. Abdulrahman Abu Eisha',
+      ]),
+    );
+    expect(person.address).toEqual({
+      '@type': 'PostalAddress',
+      addressLocality: 'Cairo',
+      addressCountry: 'EG',
+    });
+    expect(person.areaServed).toEqual([
+      { '@type': 'Place', name: 'Egypt' },
+      { '@type': 'Place', name: 'Arab world' },
+    ]);
+    expect(person.knowsAbout).toEqual(expect.arrayContaining(['Laravel', 'PHP', 'React']));
+    expect(JSON.stringify(graph)).not.toMatch(/"@type":"(Review|AggregateRating)"|Hadayek|حدائق/);
+  });
+
+  it('gives every generated page a complete, valid head (title, description, canonical, hreflang, JSON-LD)', async () => {
+    const { routes, locales } = await getPrerenderRoutes();
+    const titles = new Set();
+    for (const route of routes) {
+      for (const locale of locales) {
+        const url = locale === 'en' ? `/en${route.path === '/' ? '' : route.path}` : route.path;
+        const result = await renderPage(url);
+        const head = /** @type {any} */ (result.head);
+        const attrs = (/** @type {Record<string, string>} */ match) =>
+          head.tags.find((tag) => Object.entries(match).every(([k, v]) => tag.attrs[k] === v))
+            ?.attrs;
+
+        expect(result.status, url).toBe(200);
+        expect(head.title.length, url).toBeGreaterThan(10);
+        titles.add(head.title);
+        expect(attrs({ name: 'description' })?.content.length, url).toBeGreaterThan(50);
+        expect(attrs({ rel: 'canonical' })?.href, url).toMatch(/^https:\/\//);
+        for (const lang of ['ar', 'en', 'x-default']) {
+          expect(attrs({ rel: 'alternate', hreflang: lang })?.href, `${url} ${lang}`).toMatch(
+            /^https:\/\//,
+          );
+        }
+        for (const tag of head.tags.filter((t) => t.attrs.type === 'application/ld+json')) {
+          expect(() => JSON.parse(tag.content), url).not.toThrow();
+        }
+        const robots = attrs({ name: 'robots' })?.content;
+        if (route.path === '/') expect(robots, url).toContain('index, follow');
+        if (route.sitemap === false) expect(robots, url).toContain('noindex');
+      }
+    }
+    // Titles are unique per page and language.
+    expect(titles.size).toBe(routes.length * locales.length);
+  });
+
+  it('uses the settings title on the home page and keeps it within ~60 characters', async () => {
+    for (const url of ['/', '/en']) {
+      const { head } = await renderPage(url);
+      const title = /** @type {any} */ (head).title;
+      expect(title).toMatch(/عبدالرحمن أبو عيشة|Abdulrahman Abu Eisha/);
+      expect([...title].length).toBeLessThanOrEqual(65);
+    }
   });
 
   it('describes the services as a ProfessionalService offer catalogue, grouped like the page', async () => {
@@ -135,11 +197,15 @@ describe('Prerendering (entry-server)', () => {
 
     // The name is the <h1> (and the LCP element), as real text.
     expect(html).toMatch(/<h1[^>]*id="hero-title"[^>]*>[\s\S]*Abdulrahman[\s\S]*Abu Eisha/);
-    expect(html).toContain('I build robust back-end systems');
+    expect(html).toContain(
+      'Full-Stack Software Engineer and back-end developer based in Cairo, Egypt',
+    );
     expect(html).toContain('Explore case studies');
     expect(html).toContain('Download CV');
     expect(html).toContain('php artisan engineer:profile --stack');
-    expect(html).toMatch(/<img[^>]*alt="Portrait of Abdulrahman Abu Eisha"/);
+    expect(html).toMatch(
+      /<img[^>]*alt="Portrait of Abdulrahman Abu Eisha, Full-Stack Software Engineer"/,
+    );
     // Journey stops are in the markup; client-only layers are not.
     expect(html).toContain('data-station-anchor="true"');
     expect(html).not.toContain('class="boot');
@@ -194,7 +260,7 @@ describe('Prerendering (entry-server)', () => {
     const ld = head?.tags.find((tag) => tag.attrs.type === 'application/ld+json');
     const faq = JSON.parse(ld?.content ?? '{}')['@graph'].find((n) => n['@type'] === 'FAQPage');
 
-    expect(faq.mainEntity).toHaveLength(8);
+    expect(faq.mainEntity).toHaveLength(13);
     expect(faq.mainEntity[0]).toMatchObject({
       '@type': 'Question',
       name: 'How do you usually work?',

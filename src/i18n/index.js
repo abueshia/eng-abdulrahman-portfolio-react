@@ -1,8 +1,11 @@
 /**
  * i18next bootstrap.
  *
- * - Both locale bundles are imported statically: they are tiny, and it makes
- *   language switching instant (no network round-trip, no Suspense flash).
+ * - Each base locale bundle is its own chunk, loaded with `loadLocale()`:
+ *   the browser awaits only the page's language before hydrating (the
+ *   prerendered HTML carries a modulepreload for it, so there is no extra
+ *   round-trip), and the other language is preloaded on idle so switching
+ *   stays instant. The prerenderer and the test suite load both up front.
  * - Detection order is URL path → localStorage → Arabic. Browser language is
  *   deliberately NOT consulted so Arabic remains the true default. The
  *   localStorage step happens in `main.jsx` (it rewrites the URL), so by the
@@ -19,8 +22,15 @@ import {
   getDirection,
   getLocaleFromPath,
 } from '@/config/routes';
-import ar from './locales/ar.json';
-import en from './locales/en.json';
+
+/** @type {Record<string, () => Promise<{ default: Record<string, unknown> }>>} */
+const LOADERS = {
+  ar: () => import('./locales/ar.json'),
+  en: () => import('./locales/en.json'),
+};
+
+/** @type {Map<string, Promise<void>>} */
+const loading = new Map();
 
 /**
  * Reflects the active locale on the document root so CSS (`:root[lang=ar]`),
@@ -39,7 +49,8 @@ const initialLocale =
 
 i18n.use(initReactI18next).init({
   lng: initialLocale,
-  resources: { ar: { translation: ar }, en: { translation: en } },
+  resources: {},
+  partialBundledLanguages: true,
   supportedLngs: SUPPORTED_LOCALES,
   fallbackLng: DEFAULT_LOCALE,
   load: 'languageOnly',
@@ -49,7 +60,51 @@ i18n.use(initReactI18next).init({
   react: { useSuspense: false },
 });
 
-applyDocumentLocale(i18n.resolvedLanguage ?? DEFAULT_LOCALE);
+// The initial language is known from the URL even before its strings load.
+applyDocumentLocale(initialLocale);
 i18n.on('languageChanged', applyDocumentLocale);
+
+/** @type {Set<string>} */
+const loaded = new Set();
+
+/**
+ * Whether a language's base strings are registered (synchronous check).
+ * @param {string} locale
+ */
+export const isLocaleLoaded = (locale) => loaded.has(locale);
+
+/**
+ * Registers a language's base strings (once). Deep-merged without
+ * overwriting, so it composes with the lazily registered feature bundles
+ * (`sections.js`, `work.js`).
+ * @param {string} locale
+ * @returns {Promise<void>}
+ */
+export function loadLocale(locale) {
+  const load = LOADERS[locale];
+  if (!load) return Promise.resolve();
+  if (!loading.has(locale)) {
+    loading.set(
+      locale,
+      load().then((module) => {
+        i18n.addResourceBundle(locale, 'translation', module.default, true, false);
+        loaded.add(locale);
+      }),
+    );
+  }
+  return /** @type {Promise<void>} */ (loading.get(locale));
+}
+
+/**
+ * Loads a language if needed, then activates it. Synchronous (like a plain
+ * `changeLanguage`) when the strings are already registered.
+ * @param {string} locale
+ * @returns {Promise<unknown>}
+ */
+export function changeLocale(locale) {
+  const activate = () => (i18n.language === locale ? undefined : i18n.changeLanguage(locale));
+  if (isLocaleLoaded(locale)) return Promise.resolve(activate());
+  return loadLocale(locale).then(activate);
+}
 
 export default i18n;

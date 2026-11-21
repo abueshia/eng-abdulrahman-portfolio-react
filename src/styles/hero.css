@@ -130,10 +130,13 @@
 }
 .hero-status__clock {
   display: inline-block;
-  min-width: 9ch;
   font-variant-numeric: tabular-nums;
 }
-.hero-status__clock:not(:empty)::before {
+/* Reserved until the client knows the time (no shift when it appears). */
+.hero-status__clock[data-pending] {
+  visibility: hidden;
+}
+.hero-status__clock::before {
   content: '·';
   margin-inline-end: 0.65rem;
 }

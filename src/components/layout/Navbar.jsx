@@ -67,15 +67,15 @@ export function Navbar() {
                     to={item.to}
                     aria-current={current ? 'location' : undefined}
                     className={cn(
-                      'group relative inline-flex items-baseline gap-1.5 rounded-full px-3.5 py-2 text-sm text-ink-muted transition-colors duration-300 hover:text-ink',
-                      current && 'nav-current text-ink',
+                      'group relative inline-flex items-baseline gap-1.5 rounded-full px-3.5 py-2 text-sm transition-colors duration-300 hover:text-ink',
+                      current ? 'nav-current text-ink' : 'text-ink-muted',
                     )}
                   >
                     <span
                       aria-hidden="true"
                       className={cn(
-                        'font-mono text-[10px] text-ink-dim transition-colors group-hover:text-ember',
-                        current && 'text-ember',
+                        'font-mono text-[10px] transition-colors group-hover:text-ember',
+                        current ? 'text-ember' : 'text-ink-dim',
                       )}
                     >
                       {String(index + 1).padStart(2, '0')}
@@ -88,7 +88,7 @@ export function Navbar() {
           </ul>
 
           <div className="flex items-center gap-2">
-            <SoundToggle className="hidden sm:grid" />
+            <SoundToggle desktopOnly />
             <LocaleSwitch />
             <ThemeToggle />
             <Button

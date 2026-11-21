@@ -28,14 +28,30 @@ It also lists the sections hidden through `settings.sections_visibility`.
 | Portrait | `public/images/profile-cutout.png`: transparent PNG cutout ✓ (hero runs in `cutout` mode) |
 | Company | CEO of **iCode Tech** (`settings.general.company`): shown in About and in JSON-LD (`jobTitle`, `worksFor`) |
 | OG image | `public/images/og-cover.jpg`: 1200×630 JPEG (final social preview) ✓ |
+| SEO copy | `settings.seo.meta_title` / `meta_description`, `hero.summary`, the Cairo paragraph in About, and `general.alternate_names` (8 spellings, JSON-LD + visible "Also written as" line). Facts only: see `SEO_KEYWORDS.md` |
+| Public address | `general.address`: Cairo, Egypt (city and country only) for JSON-LD; the detailed location stays in the visible status strip only |
 
 JSON-LD `sameAs` lists identity profiles only (GitHub, LinkedIn, Facebook). WhatsApp is a contact channel, so it stays out.
 
-## ✗ Required before publishing
+## What remains before launch
 
-- [ ] Final domain: update `VITE_SITE_URL` (see `SEO.md` §10). Not detectable by the script.
-- [ ] **Visible sections serving samples** (`npm run data:todo` fails on these): `projects` (3 sample case studies), `testimonials` (4 sample reviews) and `blog` (3 sample articles). Replace them with real content from the API, or hide the section in `settings.sections_visibility`, before going live.
-- [ ] **Contact form on the mock adapter:** with `VITE_USE_MOCK` not `false`, a submitted message reaches nobody (the success panel says "Mock mode: not delivered"). Connect the Laravel `POST /contact` and set `VITE_USE_MOCK=false` in Vercel (or `.env.production`). The direct channels (email, WhatsApp, phone) work regardless.
+After phase 6, only three kinds of work are left: real content, the domain decision, and connecting the API (phase 7).
+
+1. **Real content** (blocks `npm run data:todo`):
+   - [ ] **Projects:** replace the 3 sample case studies (`is_sample: true`) with real ones from the API, or hide the section (`sections_visibility.projects = false`).
+   - [ ] **Testimonials:** replace the 4 sample reviews with real, permitted quotes, or hide the section.
+   - [ ] **Experience and stats:** real roles and measured figures (today only "4 years" is real; the rest shows "No data").
+2. **Domain:**
+   - [x] Production origin decided: `https://eng-abdulrahman-abu-eisha.vercel.app` is the default `VITE_SITE_URL` everywhere (canonical, hreflang, OG, sitemap, robots, JSON-LD, llms.txt).
+   - [ ] Confirm the same value is set in Vercel (Production) and verified in Search Console (`SEO.md` §10). If a custom domain is added later, follow the "Domain" steps there.
+3. **API (phase 7):**
+   - [ ] Laravel endpoints with the documented envelope and SEO fields (`SEO.md` §7, `README.md`), then `VITE_USE_MOCK=false` + `VITE_API_URL` in Vercel.
+   - [ ] `POST /contact` live. Until then the form runs in **relay mode** in production: it says up front that sending opens WhatsApp, then opens `wa.me/201028292449` with the message pre-filled (mail app if no WhatsApp number). `npm run data:todo` lists this as *recommended*. With `VITE_CONTACT_RELAY=false` and no API, it becomes *blocking* (a pure mock reaches nobody).
+   - [ ] Vercel Deploy Hook called by the backend on every publish (`SEO.md` §8).
+
+### ✗ Required before publishing (`npm run data:todo` exit 1)
+
+- [ ] **Visible sections serving samples:** `projects` (3 sample case studies) and `testimonials` (4 sample reviews). Replace them with real content from the API, or hide the section in `settings.sections_visibility`, before going live.
 
 ## ◇ Recommended (not blocking)
 
@@ -53,8 +69,7 @@ Clearly fictional sample content (`sample-*` slugs, "Sample Company A/B/C", zero
 - `experiences.js`, `stats.js` (only "4+ years" is real). The observability board shows the zeroed sample metrics as **"No data"** panels (no number, flat dashed series), so nothing fictional reads as a real figure.
 - `services.js`: the **real** list of 14 services in 5 groups (edit wording freely). It stays in a mock file only until `GET /services` serves it.
 - `testimonials.js`: **4 sample reviews** (`is_sample: true`): owner-provided wording, a sample role only ("Sample client, …"), no names, photos, logos, stars or ratings, and no Review/AggregateRating JSON-LD. The badge shows on the section and on every card. Real ones need the client's role, the quote and permission to publish (name and company optional).
-- `blogs.js`: **3 sample articles** (`is_sample: true`): Idempotency in payment webhooks, Laravel queues, Core Web Vitals for React. Wording is general and has no invented figures, so they can become real posts once the owner reviews and publishes them (then drop the flag and the `sample-` slug prefix). Covers are generated SVGs in `public/images/blog/`.
-- `faqs.js`: the owner's FAQ, 8 honest general answers (no prices, durations or ranking promises). Edit freely.
+- `faqs.js`: the owner's FAQ, 13 honest general answers (no prices, durations or ranking promises). Phase 6 added five that match real searches (freelance Laravel developer in Cairo, back end vs Full-Stack, remote work, Paymob/Fawry, Laravel REST APIs). Edit freely.
 - `technologies.js`
 - `credentials.js`: **hidden** (`sections_visibility.credentials = false`), so it is absent from the navigation and prerendering until real content exists
 

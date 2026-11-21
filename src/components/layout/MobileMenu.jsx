@@ -136,9 +136,9 @@ export function MobileMenu({ open, onClose }) {
             >
               {t('nav.cta')}
             </Button>
-            <LocaleSwitch className="size-14" />
-            <ThemeToggle className="size-14" />
-            <SoundToggle className="size-14" />
+            <LocaleSwitch size="lg" />
+            <ThemeToggle size="lg" />
+            <SoundToggle size="lg" />
           </div>
         </m.div>
       )}

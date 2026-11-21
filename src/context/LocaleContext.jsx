@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import '@/i18n';
+import { changeLocale, isLocaleLoaded, loadLocale } from '@/i18n';
+import { onIdle } from '@/lib/idle';
 import {
   LOCALE_STORAGE_KEY,
   getDirection,
@@ -30,8 +31,11 @@ export function LocaleProvider({ children }) {
   const locale = getLocaleFromPath(pathname);
 
   useEffect(() => {
-    if (i18n.language !== locale) i18n.changeLanguage(locale);
+    if (i18n.language !== locale) changeLocale(locale);
   }, [i18n, locale]);
+
+  // Preload the other language's strings so an explicit switch is instant.
+  useEffect(() => onIdle(() => loadLocale(locale === 'ar' ? 'en' : 'ar')), [locale]);
 
   const localize = useCallback((path = '/') => localizePath(locale, path), [locale]);
 
@@ -45,11 +49,16 @@ export function LocaleProvider({ children }) {
       writeStorage(LOCALE_STORAGE_KEY, next);
       // Change the language first so the next screen renders translated
       // immediately, then move to the equivalent URL without scrolling.
-      i18n.changeLanguage(next);
-      navigate(`${localizePath(next, stripLocale(pathname))}${search}${hash}`, {
-        preventScrollReset: true,
-        state: { localeSwitch: true },
-      });
+      const go = () => {
+        i18n.changeLanguage(next);
+        navigate(`${localizePath(next, stripLocale(pathname))}${search}${hash}`, {
+          preventScrollReset: true,
+          state: { localeSwitch: true },
+        });
+      };
+      // The strings are normally preloaded on idle; otherwise wait for them.
+      if (isLocaleLoaded(next)) go();
+      else loadLocale(next).then(go);
     },
     [i18n, locale, navigate, pathname, search, hash],
   );

@@ -9,7 +9,8 @@ import { createStore } from './create-store';
  *            including the WebGL ambient field.
  *  - `mid`:  the default (most laptops and phones) → animated canvas layers
  *            with lighter counts.
- *  - `low`:  data saver, 2G, ≤ 2 cores or ≤ 2 GB → static frames only.
+ *  - `low`:  data saver, 2G, ≤ 2 cores or ≤ 2 GB, or a touch device with
+ *            ≤ 4 cores or ≤ 4 GB (entry-level phones) → static frames only.
  *
  * The tier only ever goes down at runtime: the service mesh's FPS guard calls
  * `deviceTier.degrade()` when frames drop, and every effect follows.
@@ -40,6 +41,8 @@ export function classifyDevice({
   if (saveData || reducedData) return 'low';
   if (effectiveType === 'slow-2g' || effectiveType === '2g') return 'low';
   if ((cores !== undefined && cores <= 2) || (memory !== undefined && memory <= 2)) return 'low';
+  // Entry-level phones and tablets: animated canvas layers cost them frames.
+  if (!pointerFine && ((cores ?? 8) <= 4 || (memory ?? 8) <= 4)) return 'low';
   if (pointerFine && width >= 1024 && (cores ?? 8) >= 8 && (memory ?? 8) >= 8) return 'high';
   return 'mid';
 }

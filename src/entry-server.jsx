@@ -20,8 +20,9 @@ import { createQueryClient } from '@/app/query-client';
 import { routes } from '@/app/router';
 import { env } from '@/config/env';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, getLocaleFromPath, paths } from '@/config/routes';
-import i18n from '@/i18n';
-import { projectsService } from '@/services/api';
+import { changeLocale, loadLocale } from '@/i18n';
+import { faqsService, projectsService, servicesService, settingsService } from '@/services/api';
+import { buildLlmsTxt } from '@/utils/llms';
 
 // Re-exported for scripts/prerender.js (it only imports this bundle).
 export { env };
@@ -62,7 +63,8 @@ async function renderToHtml(element) {
  */
 export async function renderPage(url) {
   const locale = getLocaleFromPath(new URL(url, ORIGIN).pathname);
-  await i18n.changeLanguage(locale);
+  await Promise.all(SUPPORTED_LOCALES.map(loadLocale));
+  await changeLocale(locale);
 
   const queryClient = createQueryClient();
   const defaults = queryClient.getDefaultOptions();
@@ -155,4 +157,29 @@ export async function getPrerenderRoutes() {
       })),
     ],
   };
+}
+
+/**
+ * `/llms.txt` content, built from the same API data as the pages (GEO).
+ * @returns {Promise<string>}
+ */
+export async function renderLlmsTxt() {
+  /** @param {'ar' | 'en'} lang */
+  const load = async (lang) => {
+    const options = { lang };
+    const [settings, services, faqs, projects] = await Promise.all([
+      settingsService.get(options),
+      servicesService.list(options),
+      faqsService.list(options),
+      projectsService.list({ per_page: 50 }, options),
+    ]);
+    return {
+      settings: settings.data,
+      services: services.data,
+      faqs: faqs.data,
+      projects: projects.data,
+    };
+  };
+  const [ar, en] = await Promise.all([load('ar'), load('en')]);
+  return buildLlmsTxt({ siteUrl: env.siteUrl, ar, en });
 }

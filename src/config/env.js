@@ -7,6 +7,10 @@
  * @typedef {Object} AppEnv
  * @property {string}  apiUrl       Base URL of the Laravel REST API.
  * @property {boolean} useMock      When true, requests are served by the in-app mock adapter.
+ * @property {boolean} contactRelay True when a production build still runs on the mock adapter:
+ *                                  the contact form then opens WhatsApp (or email) with the
+ *                                  message pre-filled instead of a mock that reaches no one.
+ *                                  Override with VITE_CONTACT_RELAY=true|false.
  * @property {number}  mockLatency  Simulated network latency (ms) for the mock adapter.
  * @property {string}  siteUrl      Public canonical origin (canonical, hreflang, OG, sitemap).
  * @property {string}  appVersion   Injected at build time from package.json.
@@ -17,6 +21,7 @@
  */
 
 const raw = import.meta.env;
+const useMock = parseBool(raw.VITE_USE_MOCK, true);
 
 /**
  * Parses boolean-like env strings. Anything other than "false"/"0" is truthy,
@@ -33,7 +38,8 @@ export function parseBool(value, fallback) {
 /** @type {AppEnv} */
 export const env = Object.freeze({
   apiUrl: raw.VITE_API_URL || 'http://localhost:8000/api/v1',
-  useMock: parseBool(raw.VITE_USE_MOCK, true),
+  useMock,
+  contactRelay: useMock && parseBool(raw.VITE_CONTACT_RELAY, Boolean(raw.PROD)),
   // No artificial latency while prerendering: it would only slow the build.
   mockLatency: raw.SSR ? 0 : Number(raw.VITE_MOCK_LATENCY ?? 350),
   // Canonical URLs must always name the production origin, even in local

@@ -81,7 +81,8 @@ function CodeCard({ lines }) {
         {t('about.codeFile')}
       </figcaption>
       <div className="code__viewport">
-        <pre className="code__pre" dir="ltr">
+        {/* Scrollable on small screens: focusable so the keyboard can scroll it. */}
+        <pre className="code__pre" dir="ltr" tabIndex={0}>
           <code className="code__body" data-code-scroller>
             {lines.map((line, n) => (
               <span key={n} className="code__line" data-line={line.key ?? undefined}>
@@ -133,6 +134,8 @@ export default function AboutSection() {
     [hero?.terminal_stack, general?.years_of_experience, company, general?.timezone],
   );
   const story = /** @type {string[]} */ (about?.story ?? []);
+  // Other spellings people search for, shown as plain readable text.
+  const aka = /** @type {string[]} */ (general?.alternate_names ?? []);
   const principles = /** @type {Array<{ key: string, title: string, description: string }>} */ (
     about?.principles ?? []
   );
@@ -169,6 +172,11 @@ export default function AboutSection() {
               </p>
             ))}
           </div>
+          {aka.length > 0 && (
+            <p className="about__aka">
+              <span className="about__aka-label">{t('about.aka')}</span> {aka.join(' · ')}
+            </p>
+          )}
 
           {principles.length > 0 && (
             <section className="about__principles" aria-labelledby="about-principles">

@@ -21,10 +21,26 @@ import {
   requestPreview,
   toPayload,
 } from '../lib/schema';
+import { relayMessage, relayTarget } from '../lib/relay';
 
 const ContactDirector = lazy(() => import('../fx/ContactDirector'));
 
-/** @typedef {'idle' | 'sending' | 'success' | 'invalid' | 'failure' | 'duplicate'} Phase */
+/** @typedef {'idle' | 'sending' | 'success' | 'relayed' | 'invalid' | 'failure' | 'duplicate'} Phase */
+
+/**
+ * Opens the relay URL. A blocked pop-up falls back to navigating there
+ * (wa.me hands over to the app; mailto: never leaves the page).
+ * @param {{ channel: 'whatsapp' | 'email', url: string }} target
+ */
+function openRelay(target) {
+  if (target.channel === 'email') {
+    window.location.href = target.url;
+    return;
+  }
+  const opened = window.open(target.url, '_blank');
+  if (opened) opened.opener = null;
+  else window.location.assign(target.url);
+}
 
 const SWAP = {
   initial: { clipPath: 'inset(0% 0% 100% 0%)' },
@@ -79,7 +95,10 @@ function Field({ name, label, error, children }) {
  *   "500 — Retry", or the server's 422 errors on their fields. A honeypot
  *   catches bots, the same request is never sent twice, and HTML is refused.
  * - Mock mode is honest: while the API is not connected the success panel
- *   says the message was not delivered.
+ *   says the message was not delivered (development builds).
+ * - Relay mode (`env.contactRelay`: a production build still on the mock
+ *   adapter): the form says up front that sending opens WhatsApp (or the mail
+ *   app), then opens it with the message pre-filled from the fields.
  * - Direct channels (email, WhatsApp, phone) and `ls ~/socials` from the
  *   real settings are always there. Reaching them is the Response station.
  */
@@ -89,9 +108,15 @@ export default function ContactSection() {
   const { data } = useSettings();
   const settings = data?.data;
   const general = settings?.general;
+  const whatsapp = general?.socials?.find((s) => s.platform === 'whatsapp');
+  const relay = env.contactRelay;
+  const relayChannel = whatsapp ? 'whatsapp' : 'email';
   const [phase, setPhase] = useState(/** @type {Phase} */ ('idle'));
   const [response, setResponse] = useState(/** @type {any} */ (null));
   const [sentKey, setSentKey] = useState(/** @type {string | null} */ (null));
+  const [relayed, setRelayed] = useState(
+    /** @type {{ channel: 'whatsapp' | 'email', url: string } | null} */ (null),
+  );
   const resultRef = useRef(/** @type {HTMLDivElement | null} */ (null));
 
   const {
@@ -110,7 +135,9 @@ export default function ContactSection() {
   const values = useWatch({ control, defaultValue: EMPTY_CONTACT });
 
   useEffect(() => {
-    if (phase === 'success' || phase === 'failure') resultRef.current?.focus();
+    if (phase === 'success' || phase === 'relayed' || phase === 'failure') {
+      resultRef.current?.focus();
+    }
   }, [phase]);
 
   const onSubmit = handleSubmit(async (formValues) => {
@@ -119,6 +146,39 @@ export default function ContactSection() {
     const key = fingerprint(payload);
     if (sentKey === key) {
       setPhase('duplicate');
+      return;
+    }
+    if (relay) {
+      const typeLabel = settings?.contact?.project_types?.find(
+        (/** @type {any} */ type) => type.value === payload.type,
+      )?.label;
+      const message = relayMessage(
+        payload,
+        {
+          greeting: t('contact.relay.greeting', { name: payload.name }),
+          email: t('contact.email'),
+          phone: t('contact.phone'),
+          type: t('contact.fields.type'),
+        },
+        typeLabel,
+      );
+      const target = relayTarget(
+        {
+          whatsapp: whatsapp?.url,
+          email: general?.email,
+          subject: t('contact.relay.subject', { name: payload.name }),
+        },
+        message,
+      );
+      if (!target) {
+        setPhase('failure');
+        return;
+      }
+      // Honeypot filled: look done, open nothing.
+      if (!payload.website) openRelay(target);
+      setSentKey(key);
+      setRelayed(target);
+      setPhase('relayed');
       return;
     }
     setPhase('sending');
@@ -148,17 +208,18 @@ export default function ContactSection() {
   const again = () => {
     reset(EMPTY_CONTACT);
     setResponse(null);
+    setRelayed(null);
     setPhase('idle');
   };
 
   const titleWords = (settings?.cta?.title ?? t('sections.contact')).split(/\s+/);
-  const whatsapp = general?.socials?.find((s) => s.platform === 'whatsapp');
   const socials = general?.socials?.filter((s) => s.platform !== 'whatsapp') ?? [];
   const status = {
     idle: t('contact.awaiting'),
     duplicate: t('contact.duplicate'),
     sending: t('contact.sending'),
     success: `HTTP/1.1 ${response?.code ?? 201} Created`,
+    relayed: t(`contact.relay.${relayed?.channel ?? relayChannel}.status`),
     invalid: t('contact.invalid'),
     failure: t('contact.failure.status'),
   }[phase];
@@ -216,6 +277,36 @@ export default function ContactSection() {
                     {t('contact.again')}
                   </button>
                 </m.div>
+              ) : phase === 'relayed' && relayed ? (
+                <m.div
+                  key="relayed"
+                  className="req__result"
+                  variants={SWAP}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  ref={resultRef}
+                  tabIndex={-1}
+                  role="status"
+                >
+                  <p className="req__stamp" dir="ltr">
+                    302 <span>Found</span>
+                  </p>
+                  <p className="req__result-title">{t(`contact.relay.${relayed.channel}.title`)}</p>
+                  <p className="req__result-body">{t(`contact.relay.${relayed.channel}.body`)}</p>
+                  <a
+                    className="req__again"
+                    href={relayed.url}
+                    {...(relayed.channel === 'whatsapp'
+                      ? { target: '_blank', rel: 'noopener noreferrer' }
+                      : {})}
+                  >
+                    {t(`contact.relay.${relayed.channel}.open`)}
+                  </a>
+                  <button type="button" className="req__again" onClick={again}>
+                    {t('contact.again')}
+                  </button>
+                </m.div>
               ) : (
                 <m.form
                   key="form"
@@ -226,7 +317,7 @@ export default function ContactSection() {
                   exit="exit"
                   onSubmit={onSubmit}
                   noValidate
-                  aria-describedby="contact-status"
+                  aria-describedby={relay ? 'contact-relay-note contact-status' : 'contact-status'}
                 >
                   <div className="req__row">
                     <Field name="name" label={t('contact.fields.name')} error={errors.name}>
@@ -304,6 +395,11 @@ export default function ContactSection() {
                     />
                   </div>
 
+                  {relay && (
+                    <p id="contact-relay-note" className="req__relay" role="note">
+                      {t(`contact.relay.${relayChannel}.note`)}
+                    </p>
+                  )}
                   <button
                     type="submit"
                     className="req__send"
@@ -317,7 +413,9 @@ export default function ContactSection() {
                         ? t('contact.sending')
                         : phase === 'failure'
                           ? t('contact.retry')
-                          : t('contact.submit')}
+                          : relay
+                            ? t(`contact.relay.${relayChannel}.submit`)
+                            : t('contact.submit')}
                     </span>
                     {phase !== 'sending' && <LineIcon name="arrow" className="req__send-icon" />}
                   </button>

@@ -28,8 +28,8 @@ export const services = [
     method: 'POST',
     title: t('تصميم وبناء REST APIs', 'REST API Design & Development'),
     description: t(
-      'واجهات Laravel نظيفة تخدم الويب والجوال وأنظمة الشركاء، بعقد واضح وموثق يصمد مع تطور المنتج.',
-      'Clean Laravel APIs for web, mobile and partner systems, with a clear, documented contract that holds as the product evolves.',
+      'تطوير REST API بـ Laravel يخدم الويب والجوال وأنظمة الشركاء، بعقد واضح وموثق يصمد مع تطور المنتج.',
+      'Laravel REST API development for web, mobile and partner systems, with a clear, documented contract that holds as the product evolves.',
     ),
     deliverables: t(
       [
@@ -58,8 +58,8 @@ export const services = [
     method: 'POST',
     title: t('تكامل بوابات الدفع', 'Payment Gateway Integration'),
     description: t(
-      'دفع آمن ومحلي وعالمي، من صفحة الدفع حتى تسوية الحالة في نظامك، مع webhooks موثوقة واسترجاع منظم.',
-      'Secure local and international payments, from checkout to the final state in your system, with reliable webhooks and clean refunds.',
+      'تكامل بوابات الدفع في مصر والعالم (Paymob وFawry وPayPal وغيرها)، من صفحة الدفع حتى تسوية الحالة في نظامك، مع webhooks موثوقة واسترجاع منظم.',
+      'Payment gateway integration in Egypt and worldwide (Paymob, Fawry, PayPal and more), from checkout to the final state in your system, with reliable webhooks and clean refunds.',
     ),
     deliverables: t(
       [
@@ -203,8 +203,8 @@ export const services = [
     method: 'PUT',
     title: t('واجهات React عالية الأداء', 'High-performance React Front-ends'),
     description: t(
-      'واجهات سريعة ومتاحة للجميع بتجربة مستخدم مدروسة، مبنية على نظام تصميم يكبر مع المنتج.',
-      'Fast, accessible interfaces with a considered user experience, built on a design system that grows with the product.',
+      'واجهات React سريعة ومتاحة للجميع بتجربة مستخدم مدروسة، مبنية على نظام تصميم يكبر مع المنتج.',
+      'Fast, accessible React interfaces with a considered user experience, built on a design system that grows with the product.',
     ),
     deliverables: t(
       [

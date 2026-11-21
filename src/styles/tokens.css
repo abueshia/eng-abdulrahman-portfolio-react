@@ -37,7 +37,7 @@
   /* Ink */
   --text: #eceef2;
   --text-muted: #9aa3b2;
-  --text-dim: #5c6575;
+  --text-dim: #7e8798; /* ≥ 4.5:1 on every dark surface (WCAG AA) */
 
   /* Brand: Ember (backend / requests) x Ion (frontend / responses). */
   --accent: #ff5a36;
@@ -68,14 +68,14 @@
 
   --text: #14161b;
   --text-muted: #555b66;
-  --text-dim: #8a8f98;
+  --text-dim: #646972; /* ≥ 4.5:1 on every light surface (WCAG AA) */
 
   /* Darker brand shades so text-on-paper meets WCAG AA (>= 4.5:1). */
   --accent: #c2310f;
   --accent-strong: #a52508;
   --accent-contrast: #fbfaf6;
   --secondary: #086f91;
-  --signal: #0f7a45;
+  --signal: #0d7341; /* ≥ 4.5:1 on every light surface, code card included */
   --danger: #b4173a;
 
   /* Light mode uses ink shadows rather than glow. */

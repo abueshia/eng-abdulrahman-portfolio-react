@@ -1,9 +1,9 @@
 {
   "meta": {
     "siteName": "م. عبدالرحمن أبو عيشة",
-    "defaultTitle": "م. عبدالرحمن أبو عيشة | مهندس برمجيات Full-Stack",
+    "defaultTitle": "م. عبدالرحمن أبو عيشة | مهندس برمجيات Full-Stack في القاهرة",
     "titleTemplate": "%s | عبدالرحمن أبو عيشة",
-    "defaultDescription": "مهندس برمجيات Full-Stack متخصص في PHP 8.3 وLaravel وReact وبناء واجهات REST نظيفة وقابلة للتوسع.",
+    "defaultDescription": "م. عبدالرحمن أبو عيشة، مهندس برمجيات Full-Stack في القاهرة بخبرة 4 سنوات. مطور باك إند بـ PHP وLaravel وواجهات React، وتكامل بوابات الدفع وتطوير REST APIs.",
     "notFoundTitle": "الصفحة غير موجودة"
   },
   "a11y": {
@@ -100,7 +100,7 @@
       "label": "أمر الطرفية (اكتب help)",
       "placeholder": "اكتب help"
     },
-    "portraitAlt": "صورة {{name}}",
+    "portraitAlt": "صورة {{name}}، {{title}}",
     "monogram": "ع.أ",
     "cue": "مرّر لإرسال الطلب",
     "transmit": "GET / → 200 OK · forwarding → /{{station}}",
@@ -191,6 +191,7 @@
     "file": "README.md",
     "whoami": "whoami",
     "companyLine": "{{role}} لشركة {{company}}",
+    "aka": "يُكتب الاسم أيضاً:",
     "principles": "المبادئ",
     "codeLabel": "الملف التعريفي للمهندس مكتوباً ككلاس PHP",
     "codeFile": "src/Engineers/AbdulrahmanAbuEisha.php",

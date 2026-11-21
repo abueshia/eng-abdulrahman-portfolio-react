@@ -1,8 +1,11 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach, beforeEach, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, vi } from 'vitest';
 
-import i18n from '@/i18n';
+import i18n, { loadLocale } from '@/i18n';
+
+// Base strings are lazy chunks in the app; tests use both languages freely.
+beforeAll(() => Promise.all([loadLocale('ar'), loadLocale('en')]));
 
 /**
  * Configurable matchMedia stub for jsdom. Tests can flip media query results
@@ -21,6 +24,9 @@ export function setMediaQueryMatches(query, matches) {
 
 // Node-environment suites (e.g. prerendering) have no DOM to reset.
 const hasDom = typeof window !== 'undefined';
+
+// jsdom lacks scrollIntoView (the mobile skills tab strip keeps the active tab in view).
+if (hasDom && !Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => {};
 
 // jsdom lacks ResizeObserver (used by Lenis when the full app mounts).
 if (hasDom && !('ResizeObserver' in window)) {

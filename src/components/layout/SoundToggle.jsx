@@ -6,9 +6,9 @@ import { cn } from '@/utils/cn';
 /**
  * Interface sound switch: OFF by default, remembered once chosen. The icon is
  * a live waveform (bars) that flattens when muted, drawn in CSS.
- * @param {{ className?: string }} props
+ * @param {{ className?: string, size?: 'md' | 'lg', desktopOnly?: boolean }} props
  */
-export function SoundToggle({ className }) {
+export function SoundToggle({ className, size = 'md', desktopOnly = false }) {
   const { t } = useTranslation();
   const enabled = useSoundEnabled();
   const label = enabled ? t('sound.off') : t('sound.on');
@@ -21,8 +21,10 @@ export function SoundToggle({ className }) {
       aria-label={label}
       title={label}
       className={cn(
-        'sound-toggle grid size-10 place-items-center rounded-full border border-line text-ink-muted',
+        'sound-toggle place-items-center rounded-full border border-line text-ink-muted',
         'transition-colors duration-300 hover:border-line-strong hover:text-ink',
+        desktopOnly ? 'hidden sm:grid' : 'grid',
+        size === 'lg' ? 'size-14' : 'size-10',
         className,
       )}
       data-on={enabled ? 'true' : 'false'}

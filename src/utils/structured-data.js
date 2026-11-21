@@ -15,6 +15,45 @@ const isAbsoluteUrl = (/** @type {unknown} */ value) =>
 /** Short English role used in `jobTitle` alongside the localized one. */
 const COMPANY_ROLE_EN = 'CEO';
 
+/** Topics the Person demonstrably works with (mirrors the skills and services sections). */
+const KNOWS_ABOUT = [
+  'PHP',
+  'Laravel',
+  'React',
+  'JavaScript',
+  'REST API',
+  'MySQL',
+  'PostgreSQL',
+  'Redis',
+  'Payment gateway integration',
+  'Clean Architecture',
+  'SOLID',
+  'Technical SEO',
+];
+
+/**
+ * Public postal address: city and country only, never a street address.
+ * @param {any} general
+ */
+function postalAddress(general) {
+  const address = general?.address;
+  if (!address?.locality && !address?.country_code) return undefined;
+  return {
+    '@type': 'PostalAddress',
+    ...(address.locality ? { addressLocality: address.locality } : {}),
+    ...(address.country_code ? { addressCountry: address.country_code } : {}),
+  };
+}
+
+/**
+ * `areaServed` from settings: plain place names.
+ * @param {any} general
+ */
+const areaServed = (general) =>
+  (Array.isArray(general?.area_served) ? general.area_served : [])
+    .filter((name) => typeof name === 'string' && name)
+    .map((name) => ({ '@type': 'Place', name }));
+
 /**
  * ProfilePage + Person + WebSite graph for the home page.
  *
@@ -28,15 +67,25 @@ const COMPANY_ROLE_EN = 'CEO';
  * @param {'ar' | 'en'} locale
  * When the FAQ is passed (and visible), a `FAQPage` lists every question
  * with its accepted answer, exactly as the FAQ section shows them.
- * @param {{ services?: any[], catalogName?: string, faqs?: any[] }} [extra]
+ * @param {{ services?: any[], catalogName?: string, faqs?: any[], description?: string }} [extra]
  * @returns {object | undefined}
  */
-export function buildHomeJsonLd(general, locale, { services = [], catalogName, faqs = [] } = {}) {
+export function buildHomeJsonLd(
+  general,
+  locale,
+  { services = [], catalogName, faqs = [], description } = {},
+) {
   if (!general) return undefined;
   const url = `${env.siteUrl}${localizePath(locale, '/')}`;
   const personId = `${env.siteUrl}/#person`;
   const company = general.company?.name ? general.company : null;
   const companyRole = company ? `${COMPANY_ROLE_EN}, ${company.name}` : null;
+  const address = postalAddress(general);
+  const served = areaServed(general);
+  const alternateNames = (general.alternate_names ?? []).filter(
+    (/** @type {unknown} */ name) =>
+      typeof name === 'string' && name && name !== general.owner_name,
+  );
 
   return {
     '@context': 'https://schema.org',
@@ -54,6 +103,8 @@ export function buildHomeJsonLd(general, locale, { services = [], catalogName, f
         '@type': 'Person',
         '@id': personId,
         name: general.owner_name,
+        ...(alternateNames.length > 0 ? { alternateName: alternateNames } : {}),
+        ...(description ? { description } : {}),
         jobTitle: companyRole ? [general.job_title, companyRole] : general.job_title,
         ...(company
           ? {
@@ -70,13 +121,17 @@ export function buildHomeJsonLd(general, locale, { services = [], catalogName, f
           .filter((s) => !NON_PROFILE_PLATFORMS.has(s.platform))
           .map((s) => s.url)
           .filter(isAbsoluteUrl),
-        knowsAbout: ['PHP', 'Laravel', 'React', 'REST API', 'Clean Architecture', 'SOLID'],
+        knowsAbout: KNOWS_ABOUT,
+        knowsLanguage: ['ar', 'en'],
+        ...(address ? { address } : {}),
+        ...(served.length > 0 ? { areaServed: served } : {}),
       },
       {
         '@type': 'WebSite',
         '@id': `${env.siteUrl}/#website`,
         url,
         name: general.site_name,
+        ...(description ? { description } : {}),
         inLanguage: locale,
         publisher: { '@id': personId },
       },
@@ -130,7 +185,8 @@ function buildServicesNode({ general, url, personId, services, catalogName }) {
     name: general.site_name,
     url: `${url}#services`,
     ...(general.avatar ? { image: new URL(general.avatar, `${env.siteUrl}/`).href } : {}),
-    ...(general.location ? { address: general.location } : {}),
+    ...(postalAddress(general) ? { address: postalAddress(general) } : {}),
+    ...(areaServed(general).length > 0 ? { areaServed: areaServed(general) } : {}),
     founder: { '@id': personId },
     hasOfferCatalog: {
       '@type': 'OfferCatalog',

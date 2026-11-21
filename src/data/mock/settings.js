@@ -25,6 +25,22 @@ export const settings = {
     email: 'rm01062293490@gmail.com',
     phone: '+201028292449',
     location: t('القاهرة، حدائق الأهرام', 'Hadayek El Ahram, Cairo, Egypt'),
+    // Public address for structured data: city and country only.
+    address: { locality: t('القاهرة', 'Cairo'), country_code: 'EG', country: t('مصر', 'Egypt') },
+    // Where the owner takes clients (JSON-LD `areaServed`).
+    area_served: t(['مصر', 'العالم العربي'], ['Egypt', 'Arab world']),
+    // Other common spellings of the name: JSON-LD `alternateName` and the
+    // visible "also written as" line in About (never hidden text).
+    alternate_names: [
+      'عبد الرحمن أبو عيشة',
+      'عبدالرحمن ابو عيشه',
+      'م. عبدالرحمن أبو عيشة',
+      'Eng. Abdulrahman Abu Eisha',
+      'Abdelrahman Abu Eisha',
+      'Abdelrahman Abu Aisha',
+      'Abd El Rahman Abu Eisha',
+      'Abdulrahman Abu Aishah',
+    ],
     timezone: 'Africa/Cairo',
     available_for_work: true,
     socials: [
@@ -43,13 +59,14 @@ export const settings = {
     ],
   },
   seo: {
+    // Home page <title> (used as is, ≤ ~60 characters) and description (~155).
     meta_title: t(
-      'م. عبدالرحمن أبو عيشة | مهندس برمجيات Full-Stack',
-      'Eng. Abdulrahman Abu Eisha | Full-Stack Software Engineer',
+      'م. عبدالرحمن أبو عيشة | مهندس برمجيات Full-Stack في القاهرة',
+      'Eng. Abdulrahman Abu Eisha | Full-Stack Software Engineer, Cairo',
     ),
     meta_description: t(
-      'مهندس برمجيات Full-Stack بخبرة +4 سنوات في PHP 8.3 وLaravel وReact وبناء أنظمة نظيفة قابلة للتوسع.',
-      'Full-Stack Software Engineer with 4+ years building clean, scalable systems with PHP 8.3, Laravel and React.',
+      'م. عبدالرحمن أبو عيشة، مهندس برمجيات Full-Stack في القاهرة بخبرة 4 سنوات. مطور باك إند بـ PHP وLaravel وواجهات React، وتكامل بوابات الدفع وتطوير REST APIs.',
+      'Eng. Abdulrahman Abu Eisha, Full-Stack Software Engineer in Cairo with 4 years of experience: Laravel and PHP back ends, React front ends, REST APIs, payments.',
     ),
     keywords: t(
       'مهندس برمجيات, Laravel, React, PHP, Full-Stack, REST API',
@@ -79,8 +96,8 @@ export const settings = {
       ['Full-Stack Software Engineer', 'Laravel Architect', 'React Craftsman'],
     ),
     summary: t(
-      'أبني أنظمة خلفية متينة وواجهات دقيقة التفاصيل: من تصميم الـ API ومعمارية الخدمات حتى آخر micro-interaction يراها المستخدم.',
-      'I build robust back-end systems and meticulously crafted interfaces: from API design and service architecture down to the last micro-interaction a user feels.',
+      'مهندس برمجيات Full-Stack ومطور باك إند من القاهرة، مصر. أبني بـ PHP وLaravel أنظمة وواجهات REST API متينة، وبـ React واجهات دقيقة التفاصيل.',
+      'Full-Stack Software Engineer and back-end developer based in Cairo, Egypt. I build robust systems and REST APIs with PHP and Laravel, and precise interfaces with React.',
     ),
     terminal_stack_command: 'php artisan engineer:profile --stack',
     terminal_stack: [
@@ -98,11 +115,13 @@ export const settings = {
         'بدأت رحلتي بفضول تجاه كيف تتحدث الأنظمة مع بعضها، وتحوّل هذا الفضول إلى أكثر من أربع سنوات في بناء تطبيقات ويب كاملة، من قواعد البيانات حتى الواجهة.',
         'أؤمن أن المعمارية الجيدة ليست رفاهية: الفصل الواضح بين الطبقات، ومبادئ SOLID، والاختبارات، هي ما يجعل الفريق يتحرك بسرعة بعد سنة وليس فقط في الأسبوع الأول.',
         'أعمل اليوم على أنظمة Laravel قابلة للتوسع وواجهات React سريعة، وأهتم بالتفاصيل التي لا يراها أحد حتى تختفي.',
+        'أعمل من القاهرة، وأتعاون عن بُعد مع عملاء وفرق في مصر والعالم العربي: مشاريع مستقلة (freelance) أو ضمن فريق، من تطوير الـ API وتكامل بوابات الدفع حتى الإطلاق.',
       ],
       [
         'My journey started with curiosity about how systems talk to each other, and that curiosity turned into 4+ years of building complete web applications, from the database to the pixel.',
         'I believe good architecture is not a luxury: clear layer boundaries, SOLID principles and tests are what let a team move fast a year later, not just in week one.',
         'Today I build scalable Laravel systems and fast React interfaces, and I care about the details nobody notices until they are missing.',
+        'I work from Cairo and collaborate remotely with clients and teams in Egypt and across the Arab world, freelance or as part of a team, from API development and payment gateway integration to launch.',
       ],
     ),
     principles: [

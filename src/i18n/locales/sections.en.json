@@ -77,7 +77,27 @@
     "email": "Email",
     "whatsapp": "WhatsApp",
     "phone": "Phone",
-    "socials": "ls ~/socials"
+    "socials": "ls ~/socials",
+    "relay": {
+      "greeting": "Hello, I'm {{name}}.",
+      "subject": "Project request from {{name}}",
+      "whatsapp": {
+        "note": "Sending opens WhatsApp with a message pre-filled from this form; you send it from there.",
+        "submit": "Send via WhatsApp",
+        "title": "Your message is ready in WhatsApp.",
+        "body": "WhatsApp opened with your request filled in. Press send there and it reaches me.",
+        "open": "Didn't open? Open WhatsApp",
+        "status": "302 Found → WhatsApp"
+      },
+      "email": {
+        "note": "Sending opens your mail app with a message pre-filled from this form; you send it from there.",
+        "submit": "Send by email",
+        "title": "Your message is ready in your mail app.",
+        "body": "Your mail app opened with your request filled in. Press send there and it reaches me.",
+        "open": "Didn't open? Open email",
+        "status": "302 Found → mail"
+      }
+    }
   },
   "footer": {
     "signature": "Build signature",

@@ -14,6 +14,14 @@ describe('device tier', () => {
     expect(classifyDevice({ memory: 2 })).toBe('low');
   });
 
+  it('treats entry-level touch devices (≤ 4 cores or ≤ 4 GB) as low', () => {
+    expect(classifyDevice({ cores: 4, memory: 8, pointerFine: false })).toBe('low');
+    expect(classifyDevice({ cores: 8, memory: 4, pointerFine: false })).toBe('low');
+    expect(classifyDevice({ cores: 8, memory: 8, pointerFine: false })).toBe('mid');
+    // A laptop with 4 cores keeps its animated layers.
+    expect(classifyDevice({ cores: 4, memory: 8, pointerFine: true })).toBe('mid');
+  });
+
   it('reserves high for capable desktops with a precise pointer', () => {
     expect(classifyDevice({ cores: 8, memory: 8, pointerFine: true, width: 1440 })).toBe('high');
     expect(classifyDevice({ cores: 8, memory: 8, pointerFine: false, width: 1440 })).toBe('mid');

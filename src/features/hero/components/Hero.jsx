@@ -67,7 +67,12 @@ export function Hero() {
             <HeroCtas cvUrl={general?.cv_url} />
           </div>
 
-          <Portrait className="hero__portrait" name={general?.owner_name} badges={hero?.badges} />
+          <Portrait
+            className="hero__portrait"
+            name={general?.owner_name}
+            title={general?.job_title}
+            badges={hero?.badges}
+          />
           <HeroTerminal general={general} hero={hero} />
 
           <p className="hero__cue" aria-hidden="true" data-hero-cue>

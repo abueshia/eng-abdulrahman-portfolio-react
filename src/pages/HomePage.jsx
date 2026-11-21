@@ -8,25 +8,48 @@ import { useLocale } from '@/hooks/useLocale';
 import { useSettings } from '@/hooks/useSettings';
 import { Hero } from '@/features/hero/components/Hero';
 import { HeroFx } from '@/features/hero/components/HeroFx';
+import { whenNeeded } from '@/lib/hydrate-on-demand';
 import { buildHomeJsonLd } from '@/utils/structured-data';
 import { PlaceholderSection } from './home/PlaceholderSection';
 
 /*
  * Real sections are separate chunks: they are fully prerendered (the
  * prerenderer waits for them) and hydrate as soon as their chunk arrives, so
- * their markup code never weighs on the initial bundle. Their motion layers
- * load later still, only near the viewport (SectionFx).
+ * their markup code never weighs on the initial bundle. On a prerendered page
+ * each chunk (and so its hydration) waits until the section is about to be
+ * seen or the visitor interacts (`whenNeeded`); the server HTML stays visible
+ * meanwhile. Their motion layers load later still (SectionFx).
  */
 const SECTION_COMPONENTS = {
-  stats: lazy(() => import('@/features/stats/components/StatsSection')),
-  about: lazy(() => import('@/features/about/components/AboutSection')),
-  skills: lazy(() => import('@/features/skills/components/SkillsSection')),
-  experience: lazy(() => import('@/features/experience/components/ExperienceSection')),
-  projects: lazy(() => import('@/features/projects/components/ProjectsSection')),
-  services: lazy(() => import('@/features/services/components/ServicesSection')),
-  testimonials: lazy(() => import('@/features/testimonials/components/TestimonialsSection')),
-  faq: lazy(() => import('@/features/faq/components/FaqSection')),
-  contact: lazy(() => import('@/features/contact/components/ContactSection')),
+  stats: lazy(() =>
+    whenNeeded('#stats').then(() => import('@/features/stats/components/StatsSection')),
+  ),
+  about: lazy(() =>
+    whenNeeded('#about').then(() => import('@/features/about/components/AboutSection')),
+  ),
+  skills: lazy(() =>
+    whenNeeded('#skills').then(() => import('@/features/skills/components/SkillsSection')),
+  ),
+  experience: lazy(() =>
+    whenNeeded('#experience').then(
+      () => import('@/features/experience/components/ExperienceSection'),
+    ),
+  ),
+  projects: lazy(() =>
+    whenNeeded('#projects').then(() => import('@/features/projects/components/ProjectsSection')),
+  ),
+  services: lazy(() =>
+    whenNeeded('#services').then(() => import('@/features/services/components/ServicesSection')),
+  ),
+  testimonials: lazy(() =>
+    whenNeeded('#testimonials').then(
+      () => import('@/features/testimonials/components/TestimonialsSection'),
+    ),
+  ),
+  faq: lazy(() => whenNeeded('#faq').then(() => import('@/features/faq/components/FaqSection'))),
+  contact: lazy(() =>
+    whenNeeded('#contact').then(() => import('@/features/contact/components/ContactSection')),
+  ),
 };
 
 /** Section order and the phase in which each real section lands. */
@@ -64,13 +87,15 @@ export default function HomePage() {
         services: services?.data ?? [],
         catalogName,
         faqs: faqVisible ? (faqs?.data ?? []) : [],
+        description: seo?.meta_description,
       }),
-    [general, locale, services, catalogName, faqs, faqVisible],
+    [general, locale, services, catalogName, faqs, faqVisible, seo?.meta_description],
   );
 
   return (
     <>
       <Seo
+        fullTitle={seo?.meta_title}
         description={seo?.meta_description}
         image={seo?.og_image}
         type="profile"

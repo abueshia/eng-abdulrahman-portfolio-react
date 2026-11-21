@@ -52,7 +52,12 @@ export default function ExperienceDirector() {
         // Lanes passing straight through the row draw across all of it.
         step('[data-gl-seg="through"]', { scaleY: 0 }, { ...grow, duration: 1 }, 0);
         step('[data-gl-node]', { scale: 0 }, { scale: 1, duration: 0.08, ease: 'weight' }, 0.1);
-        step('[data-gl-curve]', { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.2 }, 0.14);
+        step(
+          '[data-gl-curve]',
+          { strokeDashoffset: 1 },
+          { strokeDashoffset: 0, duration: 0.2 },
+          0.14,
+        );
         step('[data-gl-seg="out"]', { scaleY: 0 }, { ...grow, duration: 0.8 }, 0.2);
         step(
           '[data-gl-add]',

@@ -78,7 +78,7 @@ export default defineConfig(({ isSsrBuild }) => ({
     setupFiles: ['./src/test/setup.js'],
     css: false,
     env: { VITE_USE_MOCK: 'true', VITE_MOCK_LATENCY: '0', VITE_FX: 'off' },
-    include: ['src/**/*.test.{js,jsx}'],
+    include: ['src/**/*.test.{js,jsx}', 'scripts/**/*.test.js'],
     // Prerender, hydration and form tests render whole pages: 5 s is too
     // tight for them.
     testTimeout: 20_000,

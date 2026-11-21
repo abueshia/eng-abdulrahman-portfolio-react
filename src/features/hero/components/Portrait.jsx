@@ -75,9 +75,9 @@ function Rings() {
  * the arch; `photo` crops and grades an opaque image inside the frame;
  * `missing` shows a monogram. Replacing the source file is all it takes.
  *
- * @param {{ name?: string, badges?: string[], className?: string }} props
+ * @param {{ name?: string, title?: string, badges?: string[], className?: string }} props
  */
-export function Portrait({ name, badges = [], className }) {
+export function Portrait({ name, title, badges = [], className }) {
   const { t } = useTranslation();
   const rootRef = useRef(/** @type {HTMLElement | null} */ (null));
   const imgRef = useRef(/** @type {HTMLImageElement | null} */ (null));
@@ -159,8 +159,11 @@ export function Portrait({ name, badges = [], className }) {
                       src={portrait.src}
                       width={portrait.width}
                       height={portrait.height}
-                      alt={t('hero.portraitAlt', { name })}
+                      alt={t('hero.portraitAlt', { name, title })}
                       decoding="async"
+                      // On phones the portrait is the largest element in the
+                      // first viewport (the LCP element), so fetch it first.
+                      fetchPriority="high"
                       className="portrait__img"
                     />
                   </picture>

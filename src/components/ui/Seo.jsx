@@ -20,6 +20,7 @@ const OG_LOCALES = { ar: 'ar_AR', en: 'en_US' };
  *
  * @param {Object} props
  * @param {string} [props.title]        Page title (wrapped by the locale title template).
+ * @param {string} [props.fullTitle]    Complete title used as is (home page, from settings.seo.meta_title).
  * @param {string} [props.description]
  * @param {string} [props.image]        Absolute or root-relative OG image.
  * @param {'website' | 'article' | 'profile'} [props.type='website']
@@ -29,6 +30,7 @@ const OG_LOCALES = { ar: 'ar_AR', en: 'en_US' };
  */
 export function Seo({
   title,
+  fullTitle,
   description,
   image,
   type = 'website',
@@ -43,9 +45,8 @@ export function Seo({
 
   const basePath = stripLocale(pathname);
   // `%s` is replaced manually: i18next interpolation uses {{ }} placeholders.
-  const resolvedTitle = title
-    ? t('meta.titleTemplate').replace('%s', title)
-    : t('meta.defaultTitle');
+  const resolvedTitle =
+    fullTitle || (title ? t('meta.titleTemplate').replace('%s', title) : t('meta.defaultTitle'));
   const desc = description || t('meta.defaultDescription');
   const siteName = t('meta.siteName');
 

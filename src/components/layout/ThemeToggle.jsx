@@ -7,9 +7,9 @@ import { cn } from '@/utils/cn';
 /**
  * Dark/light switch. Both icons are always rendered and cross-rotate, so the
  * transition is pure CSS (no remounts) and the button never changes size.
- * @param {{ className?: string }} props
+ * @param {{ className?: string, size?: 'md' | 'lg' }} props
  */
-export function ThemeToggle({ className }) {
+export function ThemeToggle({ className, size = 'md' }) {
   const { theme, toggleTheme } = useTheme();
   const { t } = useTranslation();
   const isDark = theme === 'dark';
@@ -22,8 +22,9 @@ export function ThemeToggle({ className }) {
       aria-label={label}
       title={label}
       className={cn(
-        'relative grid size-10 place-items-center overflow-hidden rounded-full border border-line text-ink-muted',
+        'relative grid place-items-center overflow-hidden rounded-full border border-line text-ink-muted',
         'transition-colors duration-300 hover:border-line-strong hover:text-ink',
+        size === 'lg' ? 'size-14' : 'size-10',
         className,
       )}
     >

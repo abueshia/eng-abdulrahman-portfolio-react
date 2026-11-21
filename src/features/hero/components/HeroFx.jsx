@@ -4,6 +4,7 @@ import { env } from '@/config/env';
 import { isBooting, markBootReady } from '@/features/intro/boot-store';
 import { useIdleReady } from '@/hooks/useHydrated';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { usePointerFine } from '@/hooks/usePointerFine';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useDeviceTier } from '@/lib/device';
 
@@ -16,7 +17,9 @@ const HeroDirector = lazy(() => import('../fx/HeroDirector'));
  * away while the boot intro covers the page, which waits for them).
  *
  * - Service mesh: animated on capable devices; a single still frame for
- *   reduced motion and low-tier devices; a lighter profile on phones.
+ *   reduced motion, low-tier devices and touch screens below the high tier
+ *   (measured on a throttled mid-range phone: the canvas loop and its paints
+ *   competed with first interaction); a lighter profile on small screens.
  * - Hero director (GSAP): skipped entirely under reduced motion.
  */
 export function HeroFx() {
@@ -25,6 +28,7 @@ export function HeroFx() {
   const reduced = useReducedMotion();
   const tier = useDeviceTier();
   const mobile = useMediaQuery('(max-width: 47.999rem)');
+  const fine = usePointerFine();
 
   // Readiness the intro would otherwise wait for in vain.
   useEffect(() => {
@@ -41,7 +45,7 @@ export function HeroFx() {
     <>
       <Suspense fallback={null}>
         <ServiceMesh
-          animated={!reduced && tier !== 'low'}
+          animated={!reduced && tier !== 'low' && (fine || tier === 'high')}
           mobile={mobile}
           highTier={tier === 'high'}
         />

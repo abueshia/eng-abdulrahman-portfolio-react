@@ -174,26 +174,44 @@ for (const [section, file] of Object.entries(SAMPLE_SOURCES)) {
 }
 
 /*
- * The contact form only delivers messages through the live API. With the mock
- * adapter a "sent" message reaches nobody, so production must not run on it.
+ * The contact form delivers messages only through the live API. A production
+ * build still on the mock adapter runs in RELAY mode by default (the form
+ * opens WhatsApp or the mail app with the message pre-filled, and says so):
+ * usable, so only recommended. With the relay explicitly disabled
+ * (VITE_CONTACT_RELAY=false) a "sent" message would reach nobody: blocking.
  * Read from the env files and the current environment (CI/hosting sets it).
  */
 const envFiles = ['.env', '.env.production', '.env.production.local', '.env.local'];
-const mockValues = [
-  process.env.VITE_USE_MOCK,
-  ...envFiles
-    .map((name) => join(root, name))
-    .filter(existsSync)
-    .map((file) => readFileSync(file, 'utf-8').match(/^\s*VITE_USE_MOCK\s*=\s*(\S+)/m)?.[1]),
-].filter((value) => value !== undefined);
-const liveApi = mockValues.some((value) =>
-  ['false', '0', 'no', 'off'].includes(String(value).toLowerCase()),
-);
+/** @param {string} name */
+const envValues = (name) =>
+  [
+    process.env[name],
+    ...envFiles
+      .map((file) => join(root, file))
+      .filter(existsSync)
+      .map(
+        (file) =>
+          readFileSync(file, 'utf-8').match(
+            new RegExp(String.raw`^\s*${name}\s*=\s*(\S+)`, 'm'),
+          )?.[1],
+      ),
+  ].filter((value) => value !== undefined);
+const isFalse = (/** @type {unknown} */ value) =>
+  ['false', '0', 'no', 'off'].includes(String(value).toLowerCase());
+const liveApi = envValues('VITE_USE_MOCK').some(isFalse);
+const relayOff = envValues('VITE_CONTACT_RELAY').some(isFalse);
 if (!liveApi && !hidden.includes('contact')) {
-  required.push(
-    'contact form  VITE_USE_MOCK is not "false" for production (.env.production or the host env): ' +
-      'messages would hit the mock adapter and reach nobody. Connect the Laravel API (POST /contact) first',
-  );
+  if (relayOff) {
+    required.push(
+      'contact form  pure mock: VITE_USE_MOCK is not "false" and VITE_CONTACT_RELAY=false, so a sent ' +
+        'message reaches nobody. Connect the Laravel API (POST /contact) or re-enable the relay',
+    );
+  } else {
+    recommended.push(
+      'contact form  relay mode: the API is not connected (VITE_USE_MOCK is not "false"), so in production ' +
+        'the form opens WhatsApp (or email) with the message pre-filled. Works, but connect POST /contact (phase 7)',
+    );
+  }
 }
 
 /* -------------------------------------------------------------- report */

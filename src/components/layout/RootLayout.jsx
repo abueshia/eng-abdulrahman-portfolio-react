@@ -6,14 +6,16 @@ import { env } from '@/config/env';
 import { useBootPhase } from '@/features/intro/boot-store';
 import { trackJourney } from '@/features/journey/journey-store';
 import { useHydrated } from '@/hooks/useHydrated';
+import { whenNeeded } from '@/lib/hydrate-on-demand';
 import { BackgroundLayer } from './BackgroundLayer';
 import { GlobalFx } from './GlobalFx';
 import { Navbar } from './Navbar';
 import { PageTransition } from './PageTransition';
 import { ScrollManager } from './ScrollManager';
 
-// The footer is a lazy chunk: prerendered in full, hydrated when it arrives.
-const Footer = lazy(() => import('./Footer'));
+// The footer is a lazy chunk: prerendered in full, hydrated when it is about
+// to be seen (or on the first interaction), see lib/hydrate-on-demand.
+const Footer = lazy(() => whenNeeded('footer.foot').then(() => import('./Footer')));
 const BootSequence = lazy(() => import('@/features/intro/components/BootSequence'));
 
 /** Minimal, layout-stable fallback while a page chunk downloads. */

@@ -10,7 +10,7 @@ describe('FAQ (man faq)', () => {
     await screen.findByText('How do you usually work?');
 
     const items = /** @type {HTMLDetailsElement[]} */ ([...container.querySelectorAll('details')]);
-    expect(items).toHaveLength(8);
+    expect(items).toHaveLength(13);
     expect(items[0].open).toBe(true);
     // Closed answers are still in the DOM (and in the prerendered HTML).
     expect(screen.getByText(/it does not guarantee them/)).toBeInTheDocument();

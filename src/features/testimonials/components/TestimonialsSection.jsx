@@ -161,10 +161,12 @@ export default function TestimonialsSection() {
             aria-roledescription="carousel"
             aria-label={t('testimonials.carousel')}
           >
-            <div className="reviews__viewport" ref={viewportRef} data-embla="off">
-              <ul className="reviews__track">
+            {/* Focusable so keyboard users can scroll the row without JavaScript.
+                Slides are groups (carousel pattern), so the track is not a list. */}
+            <div className="reviews__viewport" ref={viewportRef} data-embla="off" tabIndex={0}>
+              <div className="reviews__track">
                 {items.map((item, i) => (
-                  <li
+                  <div
                     key={item.id}
                     className="review"
                     role="group"
@@ -212,9 +214,9 @@ export default function TestimonialsSection() {
                         </footer>
                       )}
                     </article>
-                  </li>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
 
             {items.length > 1 && (
