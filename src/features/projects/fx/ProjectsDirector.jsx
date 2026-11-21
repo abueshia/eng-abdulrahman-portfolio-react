@@ -31,7 +31,9 @@ export default function ProjectsDirector({ filterKey }) {
       const wrap = scope.querySelector('[data-cases]');
       if (!wrap) return;
       const base = sectionTrigger(5);
-      const hidden = dir === 'rtl' ? 'inset(0% 0% 0% 100%)' : 'inset(0% 100% 0% 0%)';
+      // Fields slide in from the reading start (composited transform/opacity;
+      // a clip-path per field repainted every scroll frame).
+      const fromStart = dir === 'rtl' ? 18 : -18;
       const mm = gsap.matchMedia();
 
       mm.add(DESKTOP, () => {
@@ -106,9 +108,10 @@ export default function ProjectsDirector({ filterKey }) {
           if (fields.length) {
             gsap.fromTo(
               fields,
-              { clipPath: hidden },
+              { autoAlpha: 0, x: fromStart },
               {
-                clipPath: 'inset(0% 0% 0% 0%)',
+                autoAlpha: 1,
+                x: 0,
                 ease: 'snap',
                 stagger: 0.12,
                 scrollTrigger: {
@@ -145,14 +148,15 @@ export default function ProjectsDirector({ filterKey }) {
       });
       onCleanup(() => mm.revert());
 
-      // Records moved (FLIP settled, or the filter changed mid-animation).
+      // Records moved (enter/exit settled after a filter change). Not on
+      // EVENTS.layout: every refresh emits that, so it would loop forever.
       let frame = 0;
       const refresh = () => {
         cancelAnimationFrame(frame);
         frame = requestAnimationFrame(() => ScrollTrigger.refresh());
       };
       const settle = window.setTimeout(refresh, 800);
-      const off = on(EVENTS.layout, refresh);
+      const off = on(EVENTS.casesMoved, refresh);
       onCleanup(() => {
         off();
         window.clearTimeout(settle);

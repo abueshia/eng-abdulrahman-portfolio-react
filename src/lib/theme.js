@@ -1,6 +1,6 @@
 /**
  * Colour-theme store shared by React (ThemeProvider) and by everything that
- * paints outside the DOM (service-mesh canvas, WebGL field, cursor trail).
+ * paints outside the DOM (service-mesh canvas, WebGL field).
  * The `data-theme` attribute on <html> IS the state; this module only
  * changes it atomically and tells subscribers, synchronously.
  *

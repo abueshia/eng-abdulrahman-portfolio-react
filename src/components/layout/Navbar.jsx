@@ -19,7 +19,8 @@ import { useNavItems } from '@/hooks/useNavItems';
 /**
  * Fixed top navigation.
  *
- * - Transparent over the hero, glass once scrolled.
+ * - Transparent over the hero, a solid surface once scrolled (no backdrop
+ *   blur: over the animated canvases it was re-blurred every frame).
  * - Slides away on downward scroll and returns on upward scroll, giving
  *   content the full viewport while reading.
  * - Below `lg` the links collapse into a full-screen menu.
@@ -44,8 +45,8 @@ export function Navbar() {
       >
         <div
           className={cn(
-            'absolute inset-0 -z-10 border-b transition-[background-color,border-color,backdrop-filter] duration-500',
-            scrolled ? 'glass border-line/60' : 'border-transparent',
+            'absolute inset-0 -z-10 border-b transition-[background-color,border-color] duration-500',
+            scrolled ? 'nav-surface border-line/60' : 'border-transparent',
           )}
         />
         <nav

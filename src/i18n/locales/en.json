@@ -161,9 +161,6 @@
     "on": "Turn interface sound on",
     "off": "Turn interface sound off"
   },
-  "cursor": {
-    "view": "View"
-  },
   "stats": {
     "board": "observability / production",
     "lead": "A live board for a running system. Every panel reads the API; a metric without data says so instead of guessing.",

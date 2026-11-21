@@ -26,8 +26,7 @@ function trackPointer(event) {
  * One case file: a database record rendered as a cinematic row.
  *
  * - The visual: the cover, and (hover on a mouse) a clip-path reveal of the
- *   second screen with a metrics readout, opening from the pointer. The
- *   cursor becomes a "View" disc (`data-cursor="view"`).
+ *   second screen with a metrics readout, opening from the pointer.
  * - The record: row number and primary key, type, year, the title (the one
  *   focusable link), summary, role, stack and the descriptive metrics, all
  *   real text. Metrics without data say so.
@@ -56,8 +55,6 @@ export function CaseFile({ project, index }) {
         onClick={onOpen}
         onPointerMove={trackPointer}
         className="case__visual"
-        data-cursor="view"
-        data-cursor-label={t('cursor.view')}
         aria-hidden="true"
         tabIndex={-1}
       >

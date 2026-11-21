@@ -19,7 +19,7 @@
  * @property {string}  appVersion   Injected at build time from package.json.
  * @property {string}  commit       Short git hash injected at build time.
  * @property {boolean} fx           Client-only visual effects (intro, canvas/WebGL layers,
- *                                  GSAP scenes, custom cursor). Off in tests; content never
+ *                                  GSAP scenes). Off in tests; content never
  *                                  depends on it.
  */
 

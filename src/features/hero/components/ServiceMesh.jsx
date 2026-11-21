@@ -4,6 +4,7 @@ import { markBootReady } from '@/features/intro/boot-store';
 import { journeyStore } from '@/features/journey/journey-store';
 import { deviceTier } from '@/lib/device';
 import { EVENTS, on } from '@/lib/events';
+import { onScrollActivity } from '@/lib/scroll-activity';
 import { subscribeTheme } from '@/lib/theme';
 import { sfx } from '@/lib/sound/sfx';
 import { PROFILES, createMeshRenderer } from '../lib/mesh/renderer';
@@ -14,6 +15,12 @@ import { meshStats } from '../lib/mesh-stats';
  * client-only, mounted on idle). A fixed canvas behind the content: the hero
  * is its Gateway, and its camera follows the visitor's request down the
  * journey (see `lib/mesh/renderer.js`).
+ *
+ * Frame budget: the full show (profile frame rate, always moving) runs only
+ * while the hero is on screen. Below it the mesh is backdrop: it animates at
+ * 30 fps while the page scrolls (the camera follows the request), then rests
+ * on its last frame shortly after scrolling stops. A mesh that kept running
+ * at 60 fps behind every section was the main cost of the page (fans, jank).
  *
  * Decorative: `aria-hidden`, never focusable, never required to understand
  * the page.
@@ -53,7 +60,47 @@ export default function ServiceMesh({ animated, mobile, highTier }) {
     });
     markBootReady('mesh');
     if (!renderer) return undefined;
-    renderer.start();
+
+    const BACKDROP_FPS = Math.min(profile.fps, 30);
+    const REST_AFTER_MS = 900; // lets the camera finish gliding to its station
+    let heroVisible = true;
+    let scrolling = false;
+    let rest = 0;
+    const apply = () => {
+      window.clearTimeout(rest);
+      rest = 0;
+      if (document.hidden) {
+        renderer.stop();
+        return;
+      }
+      if (!animated || heroVisible) {
+        renderer.setFps(profile.fps);
+        renderer.start();
+        return;
+      }
+      renderer.setFps(BACKDROP_FPS);
+      if (scrolling) {
+        renderer.start();
+        return;
+      }
+      rest = window.setTimeout(() => {
+        rest = 0;
+        if (!heroVisible && !scrolling) renderer.stop();
+      }, REST_AFTER_MS);
+    };
+    const heroObserver =
+      hero && typeof IntersectionObserver !== 'undefined'
+        ? new IntersectionObserver(([entry]) => {
+            heroVisible = entry.isIntersecting;
+            apply();
+          })
+        : null;
+    if (hero) heroObserver?.observe(hero);
+    const offScroll = onScrollActivity((active) => {
+      scrolling = active;
+      if (!heroVisible) apply();
+    });
+    apply();
 
     const onPointer = (/** @type {PointerEvent} */ event) => {
       if (event.pointerType === 'mouse') renderer.setPointer(event.clientX, event.clientY);
@@ -65,7 +112,7 @@ export default function ServiceMesh({ animated, mobile, highTier }) {
       if (target.closest('a, button, input, textarea, select, label, [data-no-burst]')) return;
       if (renderer.burst(event.clientX, event.clientY)) sfx('packet');
     };
-    const onVisibility = () => (document.hidden ? renderer.stop() : renderer.start());
+    const onVisibility = apply;
 
     window.addEventListener('pointermove', onPointer, { passive: true });
     document.documentElement.addEventListener('pointerleave', onLeave);
@@ -90,6 +137,9 @@ export default function ServiceMesh({ animated, mobile, highTier }) {
     const offOutage = on(EVENTS.outage, () => renderer.outage());
 
     return () => {
+      window.clearTimeout(rest);
+      heroObserver?.disconnect();
+      offScroll();
       renderer.destroy();
       window.removeEventListener('pointermove', onPointer);
       document.documentElement.removeEventListener('pointerleave', onLeave);

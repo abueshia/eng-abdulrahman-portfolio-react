@@ -682,6 +682,9 @@ export function createMeshRenderer(canvas, input) {
     }
     running = true;
     lastDraw = 0;
+    // A paused stretch is not a slow device: restart the guard's window.
+    fpsFrames = 0;
+    fpsStart = 0;
     started ||= performance.now();
     frameId = requestAnimationFrame(loop);
   }
@@ -755,6 +758,17 @@ export function createMeshRenderer(canvas, input) {
         p.vy = -Math.random() * 120;
         p.life = 1;
       }
+    },
+    /**
+     * Changes the frame-rate target (the caller lowers it once the hero has
+     * scrolled away). The FPS guard judges against the new target.
+     * @param {number} target
+     */
+    setFps(target) {
+      if (quality.fps === target) return;
+      quality = { ...quality, fps: target };
+      fpsFrames = 0;
+      fpsStart = 0;
     },
     get fps() {
       return fps;

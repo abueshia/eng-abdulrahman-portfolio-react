@@ -31,12 +31,33 @@ export function SmoothScroll({ children }) {
     let instance = null;
     import('lenis').then(({ default: Lenis }) => {
       if (cancelled) return;
-      instance = new Lenis({ lerp: 0.1, anchors: false });
-      lenisRef.current = instance;
-      frame = requestAnimationFrame(function raf(time) {
-        instance?.raf(time);
-        frame = requestAnimationFrame(raf);
-      });
+      const lenis = new Lenis({ lerp: 0.1, anchors: false });
+      instance = lenis;
+      lenisRef.current = lenis;
+
+      // The loop sleeps while nothing scrolls: a perpetual rAF makes the
+      // browser build a full frame (style, layerize, commit) 60 times a
+      // second on a page at rest. Every Lenis scroll (wheel input included)
+      // goes through `scrollTo`, so wrapping it wakes the loop.
+      let idleFrames = 0;
+      const tick = (/** @type {number} */ time) => {
+        lenis.raf(time);
+        idleFrames = lenis.isScrolling ? 0 : idleFrames + 1;
+        frame = idleFrames > 20 ? 0 : requestAnimationFrame(tick);
+      };
+      const wake = () => {
+        idleFrames = 0;
+        if (frame) return;
+        lenis.time = 0; // first frame after a nap advances by 0, not by the nap
+        frame = requestAnimationFrame(tick);
+      };
+      const scrollTo = lenis.scrollTo.bind(lenis);
+      lenis.scrollTo = (...args) => {
+        wake();
+        return scrollTo(...args);
+      };
+      lenis.on('virtual-scroll', wake);
+      wake();
     });
     return () => {
       cancelled = true;

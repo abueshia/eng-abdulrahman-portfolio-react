@@ -19,14 +19,36 @@
  * resolves when the region is removed from the DOM (see `watchRemovals`).
  */
 
+import { onIdle } from './idle';
+
 let released = false;
 /** Pending waits, each with the prerendered element it watches. @type {Map<() => void, Element>} */
 const waiting = new Map();
 
+/**
+ * First interaction: every pending region is released, one per idle slot
+ * (nearest to the viewport first). Releasing them all in the same task loaded
+ * and hydrated the whole page at once on the first click, which is exactly
+ * when the visitor expects a response (a navbar jump stuttered on it).
+ */
 function releaseAll() {
   released = true;
-  for (const resolve of [...waiting.keys()]) resolve();
-  waiting.clear();
+  const viewport = window.innerHeight;
+  const queue = [...waiting]
+    .map(([done, element]) => {
+      const rect = element.getBoundingClientRect();
+      const distance = rect.bottom < 0 ? -rect.bottom : Math.max(0, rect.top - viewport);
+      return { done, distance };
+    })
+    .sort((a, b) => a.distance - b.distance)
+    .map((entry) => entry.done);
+  const next = () => {
+    const done = queue.shift();
+    if (!done) return;
+    done();
+    if (queue.length) onIdle(next, { timeout: 400 });
+  };
+  next();
 }
 
 let listening = false;

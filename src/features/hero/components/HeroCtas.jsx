@@ -31,7 +31,6 @@ export function HeroCtas({ cvUrl }) {
           <LocalizedLink
             to={paths.projects()}
             className="cta cta--ember"
-            data-cursor="stick"
             onPointerEnter={hover}
           >
             <span className="cta__fill" aria-hidden="true" />
@@ -45,7 +44,6 @@ export function HeroCtas({ cvUrl }) {
           <LocalizedLink
             to={paths.section(SECTION_IDS.contact)}
             className="cta cta--ion"
-            data-cursor="stick"
             onPointerEnter={hover}
           >
             <span className="cta__orbit" aria-hidden="true" />

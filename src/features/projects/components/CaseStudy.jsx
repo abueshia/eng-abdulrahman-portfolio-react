@@ -291,8 +291,6 @@ export function CaseStudy({ project, next }) {
           <LocalizedLink
             to={paths.project(next.slug)}
             className="cs-next__link"
-            data-cursor="view"
-            data-cursor-label={t('cursor.view')}
           >
             <span className="cs-next__label">
               {t('caseStudy.next')}{' '}

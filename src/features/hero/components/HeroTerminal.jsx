@@ -317,7 +317,6 @@ export function HeroTerminal({ general, hero }) {
             spellCheck={false}
             enterKeyHint="send"
             dir="ltr"
-            data-cursor="text"
           />
         </form>
         <p className="sr-only" aria-live="polite">

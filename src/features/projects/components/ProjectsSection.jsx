@@ -155,7 +155,7 @@ export default function ProjectsSection() {
                   initial="initial"
                   animate="animate"
                   exit="exit"
-                  onAnimationComplete={() => emit(EVENTS.layout)}
+                  onAnimationComplete={() => emit(EVENTS.casesMoved)}
                   className="case"
                   data-side={i % 2 === 0 ? 'start' : 'end'}
                   data-case

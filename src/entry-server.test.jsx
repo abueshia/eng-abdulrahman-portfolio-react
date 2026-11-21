@@ -304,9 +304,9 @@ describe('Prerendering (entry-server)', () => {
     expect(html).toContain('mailto:');
     expect(html).toContain('ls ~/socials');
     expect(html).toContain('data-station="response"');
-    // Footer: build signature, company role, and no link to a hidden section.
+    // Footer: build signature, job title, and no link to a hidden section.
     expect(html).toContain('Build signature');
-    expect(html).toContain('CEO of iCode Tech');
+    expect(html).toMatch(/class="foot__company">Full-Stack Software Engineer</);
     expect(html).not.toContain('#credentials');
   });
 

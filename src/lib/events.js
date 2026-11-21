@@ -3,8 +3,15 @@
  * Payloads travel in `CustomEvent.detail`.
  */
 export const EVENTS = Object.freeze({
-  /** Layout changed (pinning, lazy sections): scroll-position consumers re-measure. */
+  /**
+   * Layout changed (pinning, lazy sections): scroll-position consumers
+   * re-measure. Also emitted on every ScrollTrigger refresh, so a listener
+   * must never call `ScrollTrigger.refresh()` in response (that loop re-ran a
+   * full refresh every frame and pinned the CPU).
+   */
   layout: 'portfolio:layout',
+  /** Case-file records moved (filter enter/exit settled): their triggers re-measure. */
+  casesMoved: 'portfolio:cases-moved',
   /** The secret terminal command: the system "goes down", then reboots. */
   outage: 'portfolio:outage',
   /** The page-transition curtain fully covers the viewport (safe to reset scroll). */

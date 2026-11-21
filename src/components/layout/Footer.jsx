@@ -43,7 +43,7 @@ function useZonedClock(timeZone, locale) {
 /**
  * Footer, the BUILD SIGNATURE: the build that served the response.
  *
- * - Compact on purpose (one band plus a bar): logo, name and company role,
+ * - Compact on purpose (one band plus a bar): logo, name and job title,
  *   the owner's local time (settings timezone), a sitemap of the visible
  *   sections only (hidden ones are never linked) and socials as wrapping
  *   rows, then the rights and `v{version} · commit {hash}` injected at
@@ -78,8 +78,6 @@ export default function Footer() {
       ? [{ key: 'faq', label: t('footer.faq'), to: paths.section(SECTION_IDS.faq) }]
       : []),
   ];
-  const company = general?.company;
-
   return (
     <footer className="foot">
       <div className="container-fluid foot__inner">
@@ -89,11 +87,7 @@ export default function Footer() {
               <Logo />
               <div>
                 <p className="foot__name">{general?.owner_name ?? t('meta.siteName')}</p>
-                {company?.name && (
-                  <p className="foot__company">
-                    {t('about.companyLine', { role: company.role, company: company.name })}
-                  </p>
-                )}
+                {general?.job_title && <p className="foot__company">{general.job_title}</p>}
               </div>
             </div>
             <p className="foot__clock">

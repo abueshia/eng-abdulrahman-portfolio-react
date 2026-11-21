@@ -49,7 +49,7 @@ src/
   assets/         ملفات مولّدة يستوردها التطبيق (portrait/: صور AVIF/WebP + portrait.json · textures/grain.png)
   components/
     ui/           مكوّنات واجهة ذرية قابلة لإعادة الاستخدام (Button, LocalizedLink, Logo, Magnetic, SectionHeading, Seo, ErrorState, LineIcon...)
-    layout/       غلاف التطبيق والطبقات العامة (RootLayout, Navbar, MobileMenu, Footer, PageTransition, ScrollManager, SmoothScroll, Section, SectionFx, ThemeToggle, LocaleSwitch, SoundToggle, BackgroundLayer, AmbientField, RouteTrace, Cursor, GlobalFx)
+    layout/       غلاف التطبيق والطبقات العامة (RootLayout, Navbar, MobileMenu, Footer, PageTransition, ScrollManager, SmoothScroll, Section, SectionFx, ThemeToggle, LocaleSwitch, SoundToggle, BackgroundLayer, AmbientField, RouteTrace, GlobalFx)
   features/       مجلد لكل ميزة يحتوي على components/ و hooks/ و lib/ و fx/ (وحدات GSAP الكسولة)
     stats/        StatsSection (لوحة Observability) + lib/metrics (odometer وsparkline صادقة) + fx/StatsDirector
     about/        AboutSection (بوابة AUTH وREADME وبطاقة الكود) + lib/profile-code (كلاس PHP من البيانات) + fx/AboutDirector
@@ -172,8 +172,8 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
    - بدون director وبدون scrub أو pin.
    - الـ mesh إطار ثابت.
    - الـ Intro يتلاشى في 400ms.
-   - بدون مؤشر مخصص وبدون Lenis، و`<MotionConfig reducedMotion="user">`.
-10. **الأجهزة اللمسية:** أي تفاعل يعتمد على الماوس (المؤشر المخصص، Magnetic، Tilt، فك التشفير عند المرور) يُحصر عبر `usePointerFine()` أو `@custom-variant pointer-fine`، ويُستبدل على اللمس بانجراف ذاتي هادئ وparallax مرتبط بالتمرير.
+   - بدون Lenis، و`<MotionConfig reducedMotion="user">`.
+10. **الأجهزة اللمسية:** أي تفاعل يعتمد على الماوس (Magnetic، Tilt، فك التشفير عند المرور) يُحصر عبر `usePointerFine()` أو `@custom-variant pointer-fine`، ويُستبدل على اللمس بانجراف ذاتي هادئ وparallax مرتبط بالتمرير.
 
 ---
 
@@ -210,7 +210,7 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 - **الطبقات العامة (`components/layout/`):**
   - `BackgroundLayer`: إضاءة المحطات، و`AmbientField` (WebGL) على `high` فقط.
   - `RouteTrace`: يحل محل ScrollProgress.
-  - `Cursor`: للماوس فقط.
+  - المؤشر هو مؤشر المتصفح العادي (المؤشر المخصص حُذف لأنه يشتت الزائر).
   - `PageTransition`: ستارة Ember مع `GET /path`.
   - `SoundToggle`: صوت اختياري مطفأ افتراضياً، مولَّد بالـ Web Audio بدون ملفات.
   - `GlobalFx`: المحمّل الكسول.
@@ -265,6 +265,29 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 ---
 
 ## 9) سجل التغييرات (Changelog)
+
+### أداء — التهنيج وحمل المعالج أثناء التمرير
+- **العَرَض:** تهنيج عند التمرير وعند القفز لقسم من الـ Navbar، والمراوح تعمل.
+- **الأسباب:**
+  - الـ Service Mesh (canvas ثابت على كل الصفحة) كان يعمل بـ 60fps طوال الوقت خلف كل الأقسام.
+  - طبقة WebGL (`AmbientField`) فوقه بـ 30fps.
+  - `backdrop-filter: blur` في الـ Navbar فوق canvas يتغير كل إطار، فيُعاد حساب الـ blur كل إطار.
+  - القفز البعيد بـ Lenis يمر على كل الأقسام، فيحمّل كل directors وchunks الطريق أثناء الحركة.
+  - أول ضغطة (`pointerdown`) كانت تعمل hydrate لكل الأقسام في نفس اللحظة.
+- **الإصلاح:**
+  - `src/lib/scroll-activity.js`: إشارة مشتركة "الصفحة تتحرك الآن".
+  - الـ Mesh بكامل معدله فقط والـ Hero ظاهر. بعده يعمل بـ 30fps أثناء التمرير فقط، ثم يقف على آخر إطار بعد 900ms (`renderer.setFps`، وحارس الـ FPS يبدأ نافذته من جديد مع كل `start`).
+  - `AmbientField`: بـ 20fps ودقة 40%، ويثبت إطاره أثناء التمرير.
+  - الـ Navbar: `.nav-surface` شبه معتم بدون blur.
+  - `useSmoothScroll`: الهدف الأبعد من 1.5 شاشة = قفزة فورية لقبله بـ 0.75 شاشة ثم انزلاق.
+  - `whenNeeded`: الإطلاق عند التفاعل أصبح قسماً قسماً في الخمول، الأقرب أولاً.
+  - Projects: حقول السجل بـ transform/opacity بدل clip-path.
+- **السبب الأكبر (bug، مقاس بالـ trace):** حلقة لا نهائية. `HeroDirector` يحوّل كل `refresh` لـ ScrollTrigger إلى `EVENTS.layout`، و`ProjectsDirector` كان يرد على `EVENTS.layout` بـ `ScrollTrigger.refresh()`، فكان refresh كامل للصفحة يتكرر كل إطار للأبد (2.2 ثانية من كل 3 والصفحة واقفة). الإصلاح: حدث مستقل `EVENTS.casesMoved` لحركة سجلات المشاريع.
+- **إيقاف الحلقات خارج الشاشة:** `src/lib/offscreen-animations.js` يوقف حركات CSS اللانهائية (marquee، المدارات، النبضات) في أي قسم خارج الشاشة عبر Web Animations API، بدون كتابة attributes على عناصر React. ويعيد المسح عند توقف التمرير وعند `EVENTS.layout`، لأن الـ pin يعيد إنشاء الحركات.
+- **Lenis ينام:** حلقة الـ rAF في `SmoothScroll` تتوقف حين لا يوجد تمرير، وتستيقظ عبر `scrollTo` (والعجلة تمر به).
+- **المؤشر المخصص حُذف:** المؤشر العادي للمتصفح في كل الموقع (`Cursor.jsx` وأنماطه و`data-cursor` ومفتاح `cursor.view`).
+- **القياس (Chrome، Intel UHD، 1536×695):** المعالج والصفحة واقفة تحت الـ Hero من ≈560 إلى ≈300ms/s، والتمرير العميق من 30fps و21 long task (1.2s) إلى ≈53fps و3 (≈0.3s).
+- **قاعدة:** أي طبقة canvas/WebGL مستمرة لا تعمل بكامل معدلها إلا في قسمها، وخارجها تتبع `scroll-activity`. ممنوع `backdrop-filter` على عنصر ثابت فوق canvas متحرك. ممنوع أن يستدعي مستمع لـ `EVENTS.layout` الدالة `ScrollTrigger.refresh()`. ممنوع rAF دائم بدون سبب (الحلقة تنام حين لا شيء يتحرك).
 
 ### إصلاح — اختفاء الأقسام بعد الـ hydration
 - **العَرَض:** على `/` كانت كل الأقسام تحت الـ Hero تختفي بعد ثانية ولا ترجع، مع الوضع الفاتح، أو تقليل الحركة، أو أي بناء عمره أكثر من 5 دقائق (أي زائر حقيقي في الإنتاج).

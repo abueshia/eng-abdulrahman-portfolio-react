@@ -37,7 +37,7 @@ Only `VITE_*` variables reach the browser bundle: never put secrets in them. Set
 | `VITE_CONTACT_RELAY` | `true` in production builds | Only matters while `VITE_USE_MOCK` is not `false`. The contact form then opens WhatsApp (or the mail app) with the message pre-filled instead of posting to a mock. Set `false` to disable. |
 | `VITE_REVIEW_RELAY` | `true` in production builds | Same rule for the "Write a review" form: while `VITE_USE_MOCK` is not `false`, submitting opens WhatsApp (or the mail app) with the review pre-filled. The photo is not sent that way, and the form says so. Set `false` to disable (then `data:todo` blocks). |
 | `VITE_MOCK_LATENCY` | `350` | Simulated latency of the mock adapter (ms). |
-| `VITE_FX` | `on` | `off` disables every client-only visual layer (intro, canvas, WebGL, GSAP, custom cursor). Content never depends on it. The test suite uses `off`. |
+| `VITE_FX` | `on` | `off` disables every client-only visual layer (intro, canvas, WebGL, GSAP). Content never depends on it. The test suite uses `off`. |
 
 ## Scripts
 

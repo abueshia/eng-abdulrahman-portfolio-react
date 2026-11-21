@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 
+import { isScrolling } from '@/lib/scroll-activity';
 import { subscribeTheme } from '@/lib/theme';
 
 /**
@@ -9,7 +10,9 @@ import { subscribeTheme } from '@/lib/theme';
  * Why a shader: large soft gradients band badly on dark backgrounds; the
  * shader dithers them away, warps the light with slow noise so it smoulders
  * instead of sitting still, and adds a faint glow that trails the pointer.
- * It renders at half resolution and 30 fps (it is soft by nature), pauses
+ * It renders at 40% resolution and 20 fps (it is soft by nature), holds its
+ * last frame while the page scrolls (the fixed light does not need to move
+ * with the content, and the mesh camera has the frame budget then), pauses
  * with the tab, and on context loss hands back to the CSS masses.
  */
 
@@ -167,7 +170,7 @@ export default function AmbientField({ scene, onActive }) {
     readColors();
 
     const resize = () => {
-      const scale = 0.5;
+      const scale = 0.4;
       canvas.width = Math.max(1, Math.round(window.innerWidth * scale));
       canvas.height = Math.max(1, Math.round(window.innerHeight * scale));
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -232,7 +235,8 @@ export default function AmbientField({ scene, onActive }) {
     };
     const loop = (/** @type {number} */ now) => {
       frame = requestAnimationFrame(loop);
-      if (now - last >= 32) render(now); // ~30 fps is plenty for slow light
+      // ~20 fps is plenty for slow light; scrolling frames go to the content.
+      if (now - last >= 50 && !isScrolling()) render(now);
     };
     // Theme switch: new colours and a frame right now, in step with the DOM.
     const offTheme = subscribeTheme(() => {

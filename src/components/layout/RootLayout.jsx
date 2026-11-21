@@ -7,6 +7,7 @@ import { useBootPhase } from '@/features/intro/boot-store';
 import { trackJourney } from '@/features/journey/journey-store';
 import { useHydrated } from '@/hooks/useHydrated';
 import { whenNeeded } from '@/lib/hydrate-on-demand';
+import { pauseOffscreenAnimations } from '@/lib/offscreen-animations';
 import { BackgroundLayer } from './BackgroundLayer';
 import { GlobalFx } from './GlobalFx';
 import { Navbar } from './Navbar';
@@ -47,11 +48,12 @@ function BootGate() {
 function useJourneyTracking() {
   const { pathname } = useLocation();
   useEffect(() => trackJourney(), [pathname]);
+  useEffect(() => pauseOffscreenAnimations(), [pathname]);
 }
 
 /**
  * Application shell shared by every route: skip link, global layers
- * (background light, route trace, cursor), navbar, animated page outlet and
+ * (background light, route trace), navbar, animated page outlet and
  * footer. Landmarks: <header>, <main>, <footer>.
  *
  * `isolate` makes this the stacking context the fixed layers live in: the

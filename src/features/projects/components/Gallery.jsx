@@ -184,8 +184,6 @@ export function Gallery({ images }) {
                 total: images.length,
                 alt: item.alt,
               })}
-              data-cursor="view"
-              data-cursor-label={t('cursor.view')}
             >
               <img
                 src={item.image}

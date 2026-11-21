@@ -115,6 +115,12 @@
     -webkit-backdrop-filter: blur(14px) saturate(140%);
   }
 
+  /* Navbar once scrolled: near-opaque instead of glass. A backdrop blur over
+   * the live mesh/field canvases has to be recomputed on every frame. */
+  .nav-surface {
+    background: color-mix(in oklab, var(--surface) 94%, transparent);
+  }
+
   .text-outline {
     color: transparent;
     -webkit-text-stroke: 1px var(--text-muted);
