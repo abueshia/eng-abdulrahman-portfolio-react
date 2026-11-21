@@ -1,74 +1,65 @@
 import { t } from './helpers';
 
 // MOCK_UNTIL_API: sample testimonials, served by the mock adapter until the Laravel API
-// is connected. Every record is `is_sample: true`: no real people or companies, and the
-// wording says it is a sample, so nothing can be read as a real endorsement. The UI shows
-// a "Sample" badge and no Review JSON-LD is emitted. `npm run data:todo` blocks
-// publishing while a visible section still serves samples.
+// is connected. Every record is a sample (is_sample flag): no names, photos, logos,
+// ratings or figures, only a sample role and the review text. The UI shows a "Sample"
+// badge on the section and on every card, and no Review / AggregateRating JSON-LD is
+// emitted. `npm run data:todo` blocks publishing while the visible section serves samples.
 
 /**
- * GET /testimonials. Rendered as pull-request reviews:
- *  - `name`, `role`, `company`: who reviewed (here: placeholders).
+ * GET /testimonials. Rendered as pull-request reviews.
+ *  - `role`: who reviewed (here: a sample role, no name).
  *  - `quote`: the review body.
- *  - `scope`: what was reviewed (a short area label, e.g. "API handover").
- *  - `checks`: the aspects the review approves, shown as passed CI checks.
+ *  - `name`, `company`, `scope`, `checks`: optional; real records may add them.
  *  - `is_sample`: placeholder flag; real testimonials omit it or send `false`.
  */
 export const testimonials = [
   {
     id: 1,
     is_sample: true,
-    name: t('عميل نموذجي أ', 'Sample client A'),
-    role: t('دور نموذجي: مدير تقني', 'Sample role: CTO'),
-    company: t('شركة نموذجية', 'Sample company'),
+    name: null,
+    role: t('عميل نموذجي، مؤسس منتج رقمي', 'Sample client, digital product founder'),
+    company: null,
     avatar: null,
-    scope: t('تسليم الـ API', 'API handover'),
     quote: t(
-      'نص نموذجي: هنا تظهر توصية عميل حقيقي عن تسليم API موثّق وسهل الربط. هذا المكان محجوز للتوصية الحقيقية.',
-      'Sample text: a real client’s words about a documented, easy-to-integrate API handover will appear here. This slot is reserved for a real review.',
+      'كان واضحاً من أول نقاش إنه فاهم المشكلة قبل الحل. الـ API اتسلّم منظّم وموثّق، وسهّل على فريقنا الشغل عليه بعد كده.',
+      'He understood the problem before proposing the solution. The API came organised and documented, which made it easy for our team to build on afterwards.',
     ),
-    checks: t(['التوثيق', 'الاختبارات', 'التسليم'], ['docs', 'tests', 'handover']),
   },
   {
     id: 2,
     is_sample: true,
-    name: t('عميل نموذجي ب', 'Sample client B'),
-    role: t('دور نموذجي: مدير منتج', 'Sample role: Product manager'),
-    company: t('شركة نموذجية', 'Sample company'),
+    name: null,
+    role: t('عميل نموذجي، صاحب متجر إلكتروني', 'Sample client, online store owner'),
+    company: null,
     avatar: null,
-    scope: t('لوحة التحكم', 'Admin dashboard'),
     quote: t(
-      'نص نموذجي: مكان توصية حقيقية عن التواصل أثناء بناء لوحة تحكم ووضوح مراحل العمل. سيُستبدل بكلام عميل فعلي.',
-      'Sample text: the place for a real review about communication while building a dashboard and how clear the stages were. It will be replaced by an actual client’s words.',
+      'التواصل كان منتظم وصريح طول المشروع، وأي تعديل كنا بنتفق عليه الأول. حسّيت إني شريك في القرار مش مجرد عميل.',
+      'Communication stayed regular and honest throughout. Every change was agreed first, and I felt like a partner in the decisions, not just a client.',
     ),
-    checks: t(['التواصل', 'الواجهة', 'الصلاحيات'], ['communication', 'ui', 'permissions']),
   },
   {
     id: 3,
     is_sample: true,
-    name: t('عميل نموذجي ج', 'Sample client C'),
-    role: t('دور نموذجي: مؤسس', 'Sample role: Founder'),
-    company: t('شركة نموذجية', 'Sample company'),
+    name: null,
+    role: t('عميل نموذجي، مدير عمليات', 'Sample client, operations manager'),
+    company: null,
     avatar: null,
-    scope: t('التكامل مع الدفع', 'Payment integration'),
     quote: t(
-      'نص نموذجي: هنا توصية حقيقية عن تكامل بوابة دفع والتعامل مع الـ webhooks. لا يمثل هذا النص رأي أي شخص.',
-      'Sample text: a real review about a payment-gateway integration and webhook handling goes here. This text does not represent anyone’s opinion.',
+      'لوحة التحكم اللي اتبنت بسيطة ومريحة للفريق، والصلاحيات متظبطة صح. وفّرت علينا وقت كبير في الشغل اليومي.',
+      'The dashboard he built is simple and comfortable for the team, with permissions set up correctly. It saved us real time in daily work.',
     ),
-    checks: t(['الأمان', 'Webhooks', 'الاسترجاع'], ['security', 'webhooks', 'refunds']),
   },
   {
     id: 4,
     is_sample: true,
-    name: t('عميل نموذجي د', 'Sample client D'),
-    role: t('دور نموذجي: قائد فريق', 'Sample role: Engineering lead'),
-    company: t('شركة نموذجية', 'Sample company'),
+    name: null,
+    role: t('عميل نموذجي، قائد تقني', 'Sample client, technical lead'),
+    company: null,
     avatar: null,
-    scope: t('مراجعة الكود', 'Code review'),
     quote: t(
-      'نص نموذجي: مكان محجوز لتوصية فريق عمل عن مراجعات الكود وتحديث نظام قديم. سيظهر هنا كلام حقيقي فقط.',
-      'Sample text: a slot reserved for a team’s review about code reviews and modernising a legacy system. Only real words will appear here.',
+      'الكود نضيف ومترتب، وبعد التسليم قدر أي مطوّر يكمل عليه من غير ما يبدأ من الصفر. ده فرق كبير عندنا.',
+      'The code is clean and well organised, and after handover any developer could continue from it without starting over. That matters a lot to us.',
     ),
-    checks: t(['الجودة', 'إعادة الهيكلة', 'الأداء'], ['quality', 'refactoring', 'performance']),
   },
 ];

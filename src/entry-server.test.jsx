@@ -208,8 +208,12 @@ describe('Prerendering (entry-server)', () => {
 
     expect(keys).toEqual(expect.arrayContaining(['testimonials', 'blogs', 'faqs']));
     // Testimonials: every review (sample-flagged) is text, carousel or not.
-    expect(html).toContain('Sample client A');
-    expect(html).toContain('Sample client D');
+    expect(html).toContain('Sample client, digital product founder');
+    expect(html).toContain('Sample client, technical lead');
+    expect(html).toContain('which made it easy for our team to build on afterwards.');
+    // No names, photos, ratings or Review markup for samples.
+    expect(html).not.toContain('review__avatar');
+    expect(html).not.toContain('AggregateRating');
     expect(html).toContain('approved these changes');
     // Blog: the changelog on the home page links the notes.
     expect(html).toContain('Idempotent Payment Webhooks');

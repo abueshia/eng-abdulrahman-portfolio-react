@@ -16,22 +16,14 @@ import { useTestimonials } from '../hooks/useTestimonials';
 const CarouselEngine = lazy(() => import('./CarouselEngine'));
 const TestimonialsDirector = lazy(() => import('../fx/TestimonialsDirector'));
 
-/** Initials for the reviewer avatar (no photos for samples). */
-const initials = (/** @type {string} */ name) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(-2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase();
-
 /**
  * Testimonials, the REVIEW station ("Code Review"): every testimonial is a
  * pull-request review that approved the work.
  *
- * - The PR header aggregates the real data: reviewers (initials), approvals
- *   count and the checks the reviews passed. The director runs the checks
+ * - The PR header aggregates the real data: approvals count and, when the
+ *   records carry them, the checks the reviews passed. No names, photos,
+ *   logos, stars or ratings: a review is its role and its words. Sample
+ *   records say so (badge on the section and on every card). The director runs the checks
  *   with the scroll and flips the state to "Approved" once they all pass.
  * - The reviews are a carousel. Prerendered as a native scroll-snap row
  *   (swipe works with no JS, every review is text in the HTML); near the
@@ -51,6 +43,7 @@ export default function TestimonialsSection() {
   const [selected, setSelected] = useState(0);
 
   const checks = useMemo(() => [...new Set(items.flatMap((item) => item.checks ?? []))], [items]);
+  const hasSamples = items.some((item) => item.is_sample);
 
   // Selected slide: from embla when it runs, from the native scroller before.
   useEffect(() => {
@@ -134,32 +127,32 @@ export default function TestimonialsSection() {
               </span>
             </p>
             <div className="pr__meta">
-              <span className="pr__avatars" aria-hidden="true">
-                {items.map((item) => (
-                  <span key={item.id} className="pr__avatar">
-                    {initials(item.name)}
-                  </span>
-                ))}
-              </span>
               <span>{t('testimonials.reviewers', { count: items.length })}</span>
-              <span className="pr__sep" aria-hidden="true">
-                ·
-              </span>
-              <span className="pr__passed">
-                {t('testimonials.checksPassed')} ·{' '}
-                {t('testimonials.checks', { count: checks.length })}
-              </span>
-            </div>
-            <ul className="pr__checks" aria-label={t('testimonials.checksPassed')}>
-              {checks.map((check) => (
-                <li key={check} className="pr__check" data-pr-check>
-                  <span className="pr__tick" aria-hidden="true">
-                    <LineIcon name="check" />
+              {checks.length > 0 && (
+                <>
+                  <span className="pr__sep" aria-hidden="true">
+                    ·
                   </span>
-                  <bdi>{check}</bdi>
-                </li>
-              ))}
-            </ul>
+                  <span className="pr__passed">
+                    {t('testimonials.checksPassed')} ·{' '}
+                    {t('testimonials.checks', { count: checks.length })}
+                  </span>
+                </>
+              )}
+              {hasSamples && <SampleBadge className="pr__badge" />}
+            </div>
+            {checks.length > 0 && (
+              <ul className="pr__checks" aria-label={t('testimonials.checksPassed')}>
+                {checks.map((check) => (
+                  <li key={check} className="pr__check" data-pr-check>
+                    <span className="pr__tick" aria-hidden="true">
+                      <LineIcon name="check" />
+                    </span>
+                    <bdi>{check}</bdi>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div
@@ -182,41 +175,42 @@ export default function TestimonialsSection() {
                   >
                     <article className="review__card">
                       <header className="review__head">
-                        <span className="review__avatar" aria-hidden="true">
-                          {initials(item.name)}
-                        </span>
                         <p className="review__who">
-                          <b className="review__name">{item.name}</b>{' '}
+                          <b className="review__name">{item.name || item.role}</b>{' '}
                           <span className="review__verb">
                             <LineIcon name="check" /> {t('testimonials.approved')}
                           </span>
                         </p>
                         {item.is_sample && <SampleBadge className="review__badge" />}
                       </header>
-                      <p className="review__role">
-                        {item.role}
-                        {item.company && <> · {item.company}</>}
-                      </p>
+                      {item.name && item.role && (
+                        <p className="review__role">
+                          {item.role}
+                          {item.company && <> · {item.company}</>}
+                        </p>
+                      )}
                       <blockquote className="review__quote">
                         <p>{item.quote}</p>
                       </blockquote>
-                      <footer className="review__foot">
-                        {item.scope && (
-                          <p className="review__scope">
-                            <span className="review__scope-key">{t('testimonials.scope')}:</span>{' '}
-                            {item.scope}
-                          </p>
-                        )}
-                        {item.checks?.length > 0 && (
-                          <ul className="review__checks">
-                            {item.checks.map((check) => (
-                              <li key={check}>
-                                <LineIcon name="check" /> <bdi>{check}</bdi>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </footer>
+                      {(item.scope || item.checks?.length > 0) && (
+                        <footer className="review__foot">
+                          {item.scope && (
+                            <p className="review__scope">
+                              <span className="review__scope-key">{t('testimonials.scope')}:</span>{' '}
+                              {item.scope}
+                            </p>
+                          )}
+                          {item.checks?.length > 0 && (
+                            <ul className="review__checks">
+                              {item.checks.map((check) => (
+                                <li key={check}>
+                                  <LineIcon name="check" /> <bdi>{check}</bdi>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </footer>
+                      )}
                     </article>
                   </li>
                 ))}
