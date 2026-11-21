@@ -15,16 +15,17 @@
  *
  * It resolves immediately when there is nothing to wait for: on the server
  * (prerendering), when the region is not in the DOM (client-side navigation,
- * fresh render, hidden section), and without IntersectionObserver.
+ * fresh render, hidden section), and without IntersectionObserver. It also
+ * resolves when the region is removed from the DOM (see `watchRemovals`).
  */
 
 let released = false;
-/** @type {Set<() => void>} */
-const waiting = new Set();
+/** Pending waits, each with the prerendered element it watches. @type {Map<() => void, Element>} */
+const waiting = new Map();
 
 function releaseAll() {
   released = true;
-  for (const resolve of [...waiting]) resolve();
+  for (const resolve of [...waiting.keys()]) resolve();
   waiting.clear();
 }
 
@@ -36,6 +37,31 @@ function listenForIntent() {
   for (const type of ['pointerdown', 'touchstart', 'keydown']) {
     window.addEventListener(type, releaseAll, options);
   }
+}
+
+/*
+ * React may give up on the server HTML of a boundary that has not hydrated
+ * yet: when something above it changes first (theme or reduced-motion store,
+ * a refetched query), it deletes that markup and renders the boundary on the
+ * client. The client render waits for this very chunk, while the
+ * IntersectionObserver keeps watching the deleted element and never fires:
+ * a deadlock that left the page empty below the hero. So a wait also ends as
+ * soon as its element leaves the document.
+ */
+/** @type {MutationObserver | null} */
+let removals = null;
+function watchRemovals() {
+  if (removals || typeof MutationObserver === 'undefined') return;
+  removals = new MutationObserver(() => {
+    for (const [done, element] of [...waiting]) {
+      if (!element.isConnected) done();
+    }
+    if (waiting.size === 0) {
+      removals?.disconnect();
+      removals = null;
+    }
+  });
+  removals.observe(document.documentElement, { childList: true, subtree: true });
 }
 
 /**
@@ -61,6 +87,7 @@ export function whenNeeded(selector, { rootMargin = '100% 0px' } = {}) {
       { rootMargin },
     );
     observer.observe(element);
-    waiting.add(done);
+    waiting.set(done, element);
+    watchRemovals();
   });
 }

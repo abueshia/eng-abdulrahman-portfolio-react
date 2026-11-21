@@ -266,6 +266,16 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 
 ## 9) سجل التغييرات (Changelog)
 
+### إصلاح — اختفاء الأقسام بعد الـ hydration
+- **العَرَض:** على `/` كانت كل الأقسام تحت الـ Hero تختفي بعد ثانية ولا ترجع، مع الوضع الفاتح، أو تقليل الحركة، أو أي بناء عمره أكثر من 5 دقائق (أي زائر حقيقي في الإنتاج).
+- **السبب:** أي re-render فوق قسم لم يعمل له hydrate بعد يجعل React يحذف الـ HTML المولّد ويرسمه في العميل. الرسم ينتظر `whenNeeded()`، و`whenNeeded()` كان يراقب العنصر المحذوف، فلا ينتهي أبداً (deadlock). المسببات: `ThemeContext` (قيمته تتغير من `dark` إلى `light` بعد الـ hydration)، و`PageTransition` (كان يشترك في `useReducedMotion`)، والـ refetch لأن `dataUpdatedAt` في بيانات الـ prerender هو وقت البناء.
+- **الإصلاح:**
+  - `whenNeeded()` ينتهي أيضاً عند خروج عنصره من الـ DOM.
+  - `ThemeContext` يحمل الدوال الثابتة فقط، و`useTheme()` يقرأ الثيم من الـ store مباشرة.
+  - `PageTransition` بلا اشتراك في تقليل الحركة (MotionConfig يكفي).
+  - `markFresh()` يجعل بيانات الـ prerender حديثة عند التحميل، فلا refetch.
+- **قاعدة:** ممنوع أي مكوّن فوق الأقسام (Providers، `RootLayout`، `PageTransition`، `HomePage`) يشترك في قيمة تختلف بين الخادم والعميل. مكانها المكوّن الذي يحتاجها نفسه.
+
 ### تعديل — مراجعات الزوار في Testimonials
 - **الزر:** "اكتب مراجعتك / Write a review" في آخر صندوق الـ PR بأسلوب "Review changes" في GitHub (Ember)، وهو `<button>` حقيقي في الـ HTML المولّد مع `aria-haspopup="dialog"`.
 - **الـ modal (`ReviewModal`):** chunk كسول (react-hook-form + zod داخله) يُحمَّل عند اقتراب الزر من الشاشة أو المرور/التركيز عليه أو الضغط، ولا يدخل الـ HTML المولّد أبداً.

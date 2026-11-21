@@ -4,10 +4,10 @@ import { readStorage } from '@/utils/storage';
 
 /**
  * @typedef {'dark' | 'light'} Theme
- * @typedef {Object} ThemeContextValue
- * @property {Theme} theme
+ * @typedef {Object} ThemeActions  Context value: stable setters only.
  * @property {(theme: Theme) => void} setTheme
  * @property {() => void} toggleTheme
+ * @typedef {ThemeActions & { theme: Theme }} ThemeContextValue  What `useTheme()` returns.
  */
 
 export const THEME_STORAGE_KEY = 'portfolio.theme';
@@ -22,7 +22,7 @@ export const DEFAULT_THEME = /** @type {Theme} */ ('dark');
 /** Theme assumed by prerendered HTML (the pre-paint script corrects it before paint). */
 export const SERVER_THEME = DEFAULT_THEME;
 
-/** @type {import('react').Context<ThemeContextValue | null>} */
+/** @type {import('react').Context<ThemeActions | null>} */
 export const ThemeContext = createContext(null);
 
 /**

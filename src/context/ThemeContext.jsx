@@ -1,36 +1,28 @@
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
-import { applyTheme, readTheme, subscribeTheme } from '@/lib/theme';
+import { applyTheme, readTheme } from '@/lib/theme';
 import { writeStorage } from '@/utils/storage';
-import {
-  SERVER_THEME,
-  THEME_STORAGE_KEY,
-  ThemeContext,
-  resolveInitialTheme,
-} from './theme-context';
+import { THEME_STORAGE_KEY, ThemeContext, resolveInitialTheme } from './theme-context';
 
 /**
  * The theme lives on `<html data-theme>` (set before first paint by the inline
- * script in index.html), so the DOM attribute is the store and React only
- * subscribes to it through `lib/theme.js`, the same store the canvas layers use.
+ * script in index.html), so the DOM attribute is the store: `useTheme()` reads
+ * it through `useSyncExternalStore` (server snapshot `dark`, so a light-mode
+ * visitor never triggers a hydration mismatch), the same store the canvas
+ * layers use.
  *
- * Why `useSyncExternalStore`: prerendered HTML is always produced with the
- * server snapshot (`dark`). During hydration React renders that same snapshot,
- * then re-renders with the real one, so a light-mode visitor never triggers a
- * hydration mismatch.
- */
-const getServerSnapshot = () => SERVER_THEME;
-
-/**
- * Provides the colour theme and persists explicit user choices.
- * @param {{ children: import('react').ReactNode }} props
+ * Why the provider holds only the setters (stable): a context value that
+ * changes right after hydration (dark snapshot → the visitor's light theme)
+ * is propagated by React into every Suspense boundary below that has not
+ * hydrated yet, and React then discards their prerendered HTML and renders
+ * them on the client: the page went blank for a moment on load. Keeping the
+ * value constant leaves those boundaries alone; only `useTheme()` callers
+ * (already hydrated) re-render.
  */
 export function ThemeProvider({ children }) {
-  const theme = useSyncExternalStore(subscribeTheme, resolveInitialTheme, getServerSnapshot);
-
   // Make sure the attribute exists even if the pre-paint script did not run
   // (tests, embedded previews). Never overwrite an existing value: during
-  // hydration `theme` is the server snapshot, not the visitor's choice.
+  // hydration the rendered theme is the server snapshot, not the visitor's choice.
   useEffect(() => {
     if (!document.documentElement.dataset.theme) applyTheme(resolveInitialTheme());
   }, []);
@@ -47,7 +39,7 @@ export function ThemeProvider({ children }) {
     [setTheme],
   );
 
-  const value = useMemo(() => ({ theme, setTheme, toggleTheme }), [theme, setTheme, toggleTheme]);
+  const value = useMemo(() => ({ setTheme, toggleTheme }), [setTheme, toggleTheme]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

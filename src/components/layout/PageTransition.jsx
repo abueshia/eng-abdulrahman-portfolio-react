@@ -3,10 +3,12 @@ import { useLocation, useOutlet } from 'react-router-dom';
 
 import { stripLocale } from '@/config/routes';
 import { useLocale } from '@/hooks/useLocale';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { EVENTS, emit } from '@/lib/events';
 import { sfx } from '@/lib/sound/sfx';
 import { EASE } from '@/utils/motion';
+
+/** Read at event time only: subscribing would re-render the page (see below). */
+const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 /** Reads the CURRENT location, so a leaving page's curtain names the destination. */
 function CurtainRequest() {
@@ -30,7 +32,13 @@ function CurtainRequest() {
  * `useOutlet()` is captured per render so the leaving page keeps its content
  * during the exit. The key ignores the locale prefix: switching language
  * re-renders in place, no curtain. First load: no curtain (the boot intro
- * owns that moment). Reduced motion: instant swap.
+ * owns that moment). Reduced motion: instant swap (MotionConfig), with the
+ * same tree.
+ *
+ * This component must not subscribe to anything that changes right after
+ * hydration (reduced motion, theme...). Re-rendering it re-renders the page
+ * through `useOutlet()`, and React then discards the prerendered HTML of
+ * every section that has not hydrated yet: the page emptied below the hero.
  *
  * View Transitions: a navigation carrying `state.viewTransition` (case file →
  * case study, see useCaseNavigation) is animated by the browser, which morphs
@@ -41,12 +49,11 @@ function CurtainRequest() {
 export function PageTransition() {
   const location = useLocation();
   const outlet = useOutlet();
-  const reduced = useReducedMotion();
   const { dir } = useLocale();
   const key = stripLocale(location.pathname);
-  const viewTransition = Boolean(location.state?.viewTransition);
-
-  if (reduced) return outlet;
+  // View Transitions skip the curtain. Reduced motion needs nothing here:
+  // `MotionConfig reducedMotion="user"` already makes its transform instant.
+  const skip = Boolean(location.state?.viewTransition);
 
   const start = dir === 'rtl' ? 1 : 0;
   const instant = { duration: 0 };
@@ -71,17 +78,19 @@ export function PageTransition() {
     <AnimatePresence
       mode="wait"
       initial={false}
-      custom={viewTransition}
+      custom={skip}
       onExitComplete={() => emit(EVENTS.covered)}
     >
       <m.div key={key} initial="initial" animate="enter" exit="exit">
         {outlet}
         <m.div
           className="curtain"
-          custom={viewTransition}
+          custom={skip}
           variants={curtain}
           aria-hidden="true"
-          onAnimationStart={(definition) => definition === 'exit' && sfx('whoosh')}
+          onAnimationStart={(definition) => {
+            if (definition === 'exit' && !skip && !prefersReducedMotion()) sfx('whoosh');
+          }}
         >
           <span className="curtain__edge" />
           <CurtainRequest />

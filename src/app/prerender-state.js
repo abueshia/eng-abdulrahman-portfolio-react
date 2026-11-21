@@ -21,3 +21,14 @@ export const PRERENDER_GLOBAL = '__PRERENDER__';
  */
 export const normalizePath = (pathname) =>
   pathname.length > 1 ? pathname.replace(/\/+$/, '') || '/' : pathname;
+
+/**
+ * Stamps every successful query in the cache as fetched now.
+ * @param {import('@tanstack/react-query').QueryClient} queryClient
+ */
+export function markFresh(queryClient) {
+  const now = Date.now();
+  for (const query of queryClient.getQueryCache().getAll()) {
+    if (query.state.status === 'success') query.setState({ dataUpdatedAt: now });
+  }
+}

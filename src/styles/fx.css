@@ -516,6 +516,31 @@ html[data-cursor='custom'] * {
 html[data-cursor-visible='true'] .cursor {
   opacity: 1;
 }
+/*
+ * A modal <dialog> lives in the top layer, above the custom cursor, which
+ * would leave no cursor at all. While one is open, hide the custom cursor and
+ * hand back the native one (pointer on controls, I-beam in text fields).
+ */
+html[data-cursor='custom']:has(dialog[open]) .cursor {
+  display: none;
+}
+html[data-cursor='custom']:has(dialog[open]),
+html[data-cursor='custom']:has(dialog[open]) * {
+  cursor: auto !important;
+}
+html[data-cursor='custom']
+  dialog[open]
+  :is(
+    button,
+    a[href],
+    label,
+    select,
+    summary,
+    [role='button'],
+    input:is([type='radio'], [type='checkbox'], [type='file'])
+  ) {
+  cursor: pointer !important;
+}
 .cursor__trail {
   position: absolute;
   inset: 0;

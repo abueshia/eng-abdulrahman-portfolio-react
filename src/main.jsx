@@ -6,7 +6,7 @@ import '@/styles/fonts';
 import '@/styles/index.css';
 
 import App from '@/app/App';
-import { PRERENDER_GLOBAL, normalizePath } from '@/app/prerender-state';
+import { PRERENDER_GLOBAL, markFresh, normalizePath } from '@/app/prerender-state';
 import { createQueryClient } from '@/app/query-client';
 import { createAppRouter } from '@/app/router';
 import { env } from '@/config/env';
@@ -91,6 +91,11 @@ function start() {
     // Seed the cache with the data the HTML was rendered from, so the first
     // client render matches the markup exactly.
     hydrate(queryClient, prerendered.queryState);
+    // The embedded data is as current as the HTML it rendered (every publish
+    // rebuilds the site). Its timestamp is the build time, though, so after
+    // `staleTime` every query would refetch on mount: axios on first load,
+    // and state changes above sections that have not hydrated yet.
+    markFresh(queryClient);
     hydrateRoot(container, app);
   } else {
     // HTML (if any) belongs to another URL: discard it and render fresh.
