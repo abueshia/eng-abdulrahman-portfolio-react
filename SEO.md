@@ -93,7 +93,7 @@ Every page renders exactly one `<Seo>` (`src/components/ui/Seo.jsx`). The tags a
 | Open Graph | `og:type` (`profile` on home, `article` on case studies and posts), `og:title`, `og:description`, `og:url`, `og:image`, `og:site_name`, `og:locale` + `og:locale:alternate` |
 | Twitter | `summary_large_image` card mirroring OG |
 
-**OG images:** 1200×630 JPG/PNG under 300 KB, with safe margins for the cropped square previews. Default: `/images/og-cover.jpg` (**missing, see `TODO_REAL_DATA.md`**). Case studies and posts use their `cover_image`. Phase 6 may generate per-page OG images at build time.
+**OG images:** 1200×630 JPG/PNG under 300 KB, with safe margins for the cropped square previews. Default: `/images/og-cover.jpg` (1200×630, final). Case studies and posts use their `cover_image`. Phase 6 may generate per-page OG images at build time.
 
 ---
 

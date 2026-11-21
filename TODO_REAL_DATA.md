@@ -27,12 +27,12 @@ It also lists the sections hidden through `settings.sections_visibility`.
 | CV | `public/cv/Abdulrahman_abu_eisha_CV.pdf` (one file for both languages) |
 | Portrait | `public/images/profile-cutout.png`: transparent PNG cutout ✓ (hero runs in `cutout` mode) |
 | Company | CEO of **iCode Tech** (`settings.general.company`): shown in About and in JSON-LD (`jobTitle`, `worksFor`) |
+| OG image | `public/images/og-cover.jpg`: 1200×630 JPEG (final social preview) ✓ |
 
 JSON-LD `sameAs` lists identity profiles only (GitHub, LinkedIn, Facebook). WhatsApp is a contact channel, so it stays out.
 
 ## ✗ Required before publishing
 
-- [ ] `public/images/og-cover.jpg`: currently a copy of the portrait (848×1024). It needs a **1200×630** social preview image (see `SEO.md` §4).
 - [ ] Final domain: update `VITE_SITE_URL` (see `SEO.md` §10). Not detectable by the script.
 
 ## ◇ Recommended (not blocking)
