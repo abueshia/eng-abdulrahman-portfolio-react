@@ -206,7 +206,8 @@ describe('Prerendering (entry-server)', () => {
     const { html, queryState } = await renderPage('/en');
     const keys = /** @type {any} */ (queryState).queries.map((q) => q.queryKey[0]);
 
-    expect(keys).toEqual(expect.arrayContaining(['testimonials', 'blogs', 'faqs']));
+    expect(keys).toEqual(expect.arrayContaining(['testimonials', 'faqs']));
+    expect(keys).not.toContain('blogs');
     // Testimonials: every review (sample-flagged) is text, carousel or not.
     expect(html).toContain('Sample client, digital product founder');
     expect(html).toContain('Sample client, technical lead');
@@ -215,8 +216,9 @@ describe('Prerendering (entry-server)', () => {
     expect(html).not.toContain('review__avatar');
     expect(html).not.toContain('AggregateRating');
     expect(html).toContain('approved these changes');
-    // Blog: the changelog on the home page links the notes.
-    expect(html).toContain('Idempotent Payment Webhooks');
+    // No blog: the section and every link to it are gone.
+    expect(html).not.toContain('id="blog"');
+    expect(html).not.toMatch(/href="[^"]*\/blog/);
     // FAQ: every answer is in the HTML, including the closed ones.
     expect(html).toContain('name="faq"');
     expect(html).toContain('it does not guarantee them');
@@ -232,35 +234,7 @@ describe('Prerendering (entry-server)', () => {
     expect(html).not.toContain('#credentials');
   });
 
-  it('prerenders an article with sanitised, Shiki-highlighted HTML and its TOC', async () => {
-    const result = await renderPage('/en/blog/sample-idempotent-payment-webhooks');
-    const head = headToHtml(/** @type {any} */ (result.head));
-
-    expect(result.status).toBe(200);
-    expect(result.html).toContain('id="post-title"');
-    // Build-time highlighting: dual-theme token colours, file tab, copy button.
-    expect(result.html).toContain('--shiki-dark');
-    expect(result.html).toContain('app/Http/Controllers/PaymentWebhookController.php');
-    expect(result.html).toContain('data-copy');
-    // Headings got ids, and the TOC links to them.
-    expect(result.html).toMatch(/<h2 id="what-idempotency-means"/);
-    expect(result.html).toContain('href="#what-idempotency-means"');
-    // Sample: badge, noindex, and no BlogPosting JSON-LD.
-    expect(result.html).toContain('sample-badge');
-    expect(head).toContain('content="noindex, follow"');
-    expect(head).not.toContain('application/ld+json');
-  });
-
-  it('keeps the all-sample blog index out of the index but renders it', async () => {
-    const result = await renderPage('/en/blog');
-    const head = headToHtml(/** @type {any} */ (result.head));
-
-    expect(result.status).toBe(200);
-    expect(head).toContain('content="noindex, follow"');
-    expect(result.html).toContain('Laravel Queues That Recover From Failure');
-  });
-
-  it('lists home and every project for generation, skipping the hidden blog', async () => {
+  it('lists home and every project for generation', async () => {
     const { routes, locales } = await getPrerenderRoutes();
     const routePaths = routes.map((route) => route.path);
 
@@ -270,16 +244,12 @@ describe('Prerendering (entry-server)', () => {
     const sample = routes.find((route) => route.path === `/projects/${SLUG}`);
     expect(sample?.sitemap).toBe(false);
     expect(routes.find((route) => route.path === '/')?.sitemap).not.toBe(false);
-    // The blog is visible: its index and posts are generated, but while they
-    // are samples none of them is listed in the sitemap.
-    const blogRoutes = routes.filter((route) => route.path.startsWith('/blog'));
-    expect(blogRoutes.map((route) => route.path)).toEqual(
-      expect.arrayContaining(['/blog', '/blog/sample-core-web-vitals-react']),
-    );
-    expect(blogRoutes.every((route) => route.sitemap === false)).toBe(true);
+    // The blog was removed: nothing under /blog is generated or listed.
+    expect(routePaths.some((path) => path.startsWith('/blog'))).toBe(false);
   });
 
-  it('renders unknown articles as 404', async () => {
-    expect((await renderPage('/en/blog/does-not-exist')).status).toBe(404);
+  it('renders the removed blog URLs as plain 404s', async () => {
+    expect((await renderPage('/en/blog')).status).toBe(404);
+    expect((await renderPage('/blog/sample-laravel-queues-that-recover')).status).toBe(404);
   });
 });

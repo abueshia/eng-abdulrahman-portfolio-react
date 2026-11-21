@@ -21,7 +21,7 @@ import { routes } from '@/app/router';
 import { env } from '@/config/env';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES, getLocaleFromPath, paths } from '@/config/routes';
 import i18n from '@/i18n';
-import { blogsService, projectsService, settingsService } from '@/services/api';
+import { projectsService } from '@/services/api';
 
 // Re-exported for scripts/prerender.js (it only imports this bundle).
 export { env };
@@ -129,45 +129,29 @@ async function fetchAll(list) {
 
 /**
  * @typedef {Object} PrerenderRoute
- * @property {string} path      Locale-agnostic path ("/blog/my-post").
+ * @property {string} path      Locale-agnostic path ("/projects/my-project").
  * @property {string} [lastmod] ISO date for the sitemap.
  * @property {boolean} [sitemap] False for pages that are generated but not
- *   listed (noindex samples: case studies, posts, and the blog index while
- *   every post is a sample).
+ *   listed (noindex samples: sample case studies).
  */
 
 /**
  * Lists every indexable, locale-agnostic route. Each one is rendered once
- * per supported locale. The blog is skipped entirely while
- * `sections_visibility.blog` is false (no pages, no sitemap entries).
+ * per supported locale.
  * @returns {Promise<{ routes: PrerenderRoute[], locales: readonly string[] }>}
  */
 export async function getPrerenderRoutes() {
-  const settings = await settingsService.get({ lang: DEFAULT_LOCALE });
-  const blogVisible = settings.data?.sections_visibility?.blog !== false;
-  const [projects, posts] = await Promise.all([
-    fetchAll(projectsService.list),
-    blogVisible ? fetchAll(blogsService.list) : Promise.resolve([]),
-  ]);
+  const projects = await fetchAll(projectsService.list);
 
   return {
     locales: SUPPORTED_LOCALES,
     routes: [
       { path: paths.home() },
-      // The index is listed only once at least one post is real.
-      ...(blogVisible
-        ? [{ path: paths.blog(), sitemap: posts.some((post) => !post.is_sample) }]
-        : []),
       ...projects.map((project) => ({
         path: paths.project(project.slug),
         lastmod: project.updated_at ?? project.published_at,
         // Samples are prerendered (deep links work) but noindex: never listed.
         sitemap: !project.is_sample,
-      })),
-      ...posts.map((post) => ({
-        path: paths.post(post.slug),
-        lastmod: post.updated_at ?? post.published_at,
-        sitemap: !post.is_sample,
       })),
     ],
   };

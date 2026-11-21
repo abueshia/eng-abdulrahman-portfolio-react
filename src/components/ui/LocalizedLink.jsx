@@ -6,7 +6,7 @@ import { useLocale } from '@/hooks/useLocale';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 
 /**
- * Router link that accepts locale-agnostic paths (`/blog`, `/#contact`) and
+ * Router link that accepts locale-agnostic paths (`/projects/x`, `/#contact`) and
  * prefixes the active locale. Hash links pointing at the current page
  * smooth-scroll instead of navigating, keeping history clean.
  *

@@ -69,7 +69,6 @@ export const settings = {
     credentials: false,
     // Visible with clearly flagged sample content (`is_sample`) until real data exists.
     testimonials: true,
-    blog: true,
     faq: true,
     contact: true,
   },

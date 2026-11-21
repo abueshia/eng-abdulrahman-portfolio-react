@@ -31,7 +31,6 @@
     "@tanstack/react-query": "^5.108.0",
     "axios": "^1.21.1",
     "clsx": "^2.1.1",
-    "dompurify": "^3.4.18",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
     "gsap": "^3.15.1",
@@ -44,7 +43,6 @@
     "react-i18next": "^18.0.1",
     "react-icons": "^5.7.0",
     "react-router-dom": "^7.18.5",
-    "shiki": "^4.6.0",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.7"
   },

@@ -25,7 +25,6 @@ const SECTION_COMPONENTS = {
   projects: lazy(() => import('@/features/projects/components/ProjectsSection')),
   services: lazy(() => import('@/features/services/components/ServicesSection')),
   testimonials: lazy(() => import('@/features/testimonials/components/TestimonialsSection')),
-  blog: lazy(() => import('@/features/blog/components/BlogSection')),
   faq: lazy(() => import('@/features/faq/components/FaqSection')),
   contact: lazy(() => import('@/features/contact/components/ContactSection')),
 };
@@ -40,7 +39,6 @@ const SECTIONS = [
   { id: 'services', phase: 4 },
   { id: 'credentials', phase: 4 },
   { id: 'testimonials', phase: 5 },
-  { id: 'blog', phase: 5 },
   { id: 'faq', phase: 5 },
   { id: 'contact', phase: 5 },
 ];

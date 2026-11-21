@@ -12,6 +12,5 @@ export const NAV_ITEMS = Object.freeze([
   { key: 'nav.experience', to: paths.section(SECTION_IDS.experience), section: 'experience' },
   { key: 'nav.projects', to: paths.section(SECTION_IDS.projects), section: 'projects' },
   { key: 'nav.services', to: paths.section(SECTION_IDS.services), section: 'services' },
-  { key: 'nav.blog', to: paths.blog(), section: 'blog' },
   { key: 'nav.contact', to: paths.section(SECTION_IDS.contact), section: 'contact' },
 ]);

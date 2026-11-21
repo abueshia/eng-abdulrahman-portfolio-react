@@ -9,16 +9,12 @@ import { RouteError } from './RouteError';
 // Route-level code splitting: each page is its own chunk.
 const HomePage = lazy(() => import('@/pages/HomePage'));
 const ProjectDetailsPage = lazy(() => import('@/pages/ProjectDetailsPage'));
-const BlogListPage = lazy(() => import('@/pages/BlogListPage'));
-const BlogDetailsPage = lazy(() => import('@/pages/BlogDetailsPage'));
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
 
 /** Page routes, shared by every locale tree. */
 const pageRoutes = () => [
   { index: true, element: <HomePage /> },
   { path: 'projects/:slug', element: <ProjectDetailsPage /> },
-  { path: 'blog', element: <BlogListPage /> },
-  { path: 'blog/:slug', element: <BlogDetailsPage /> },
   { path: '*', element: <NotFoundPage /> },
 ];
 

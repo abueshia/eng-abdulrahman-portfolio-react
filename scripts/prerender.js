@@ -46,8 +46,6 @@ const assetFiles = readdirSync(join(distDir, 'assets'));
 const PAGE_MODULES = [
   [/^\/$/, 'src/pages/HomePage.jsx'],
   [/^\/projects\/[^/]+$/, 'src/pages/ProjectDetailsPage.jsx'],
-  [/^\/blog$/, 'src/pages/BlogListPage.jsx'],
-  [/^\/blog\/[^/]+$/, 'src/pages/BlogDetailsPage.jsx'],
 ];
 
 /** Display-font file whose glyphs render the name, per language. */

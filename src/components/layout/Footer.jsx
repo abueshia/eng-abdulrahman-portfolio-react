@@ -1,9 +1,10 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LuArrowUp, LuArrowUpRight } from 'react-icons/lu';
 
 import '@/i18n/sections';
 import { LocalizedLink } from '@/components/ui/LocalizedLink';
+import { Logo } from '@/components/ui/Logo';
 import { env } from '@/config/env';
 import { paths, SECTION_IDS } from '@/config/routes';
 import { useNavItems } from '@/hooks/useNavItems';
@@ -40,35 +41,13 @@ function useZonedClock(timeZone, locale) {
 }
 
 /**
- * The giant outline wordmark fills when it is reached, and empties again when
- * the visitor scrolls back up (state, not a one-shot entrance).
- * @param {import('react').RefObject<HTMLElement | null>} ref
- */
-function useReached(ref) {
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return undefined;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        el.dataset.reached = entry.isIntersecting ? 'true' : 'false';
-      },
-      { threshold: 0.6 },
-    );
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-      delete el.dataset.reached;
-    };
-  }, [ref]);
-}
-
-/**
  * Footer, the BUILD SIGNATURE: the build that served the response.
  *
- * - A giant outline wordmark (the owner's name) that fills when reached.
- * - Sitemap of the visible sections only (hidden ones are never linked),
- *   socials, the owner's local time (settings timezone), the company role,
- *   and `v{version} · commit {hash}` injected at build time.
+ * - Compact on purpose (one band plus a bar): logo, name and company role,
+ *   the owner's local time (settings timezone), a sitemap of the visible
+ *   sections only (hidden ones are never linked) and socials as wrapping
+ *   rows, then the rights and `v{version} · commit {hash}` injected at
+ *   build time.
  *
  * A lazy chunk like the home sections: prerendered in full, hydrated when it
  * arrives, never part of the initial bundle.
@@ -81,9 +60,7 @@ export default function Footer() {
   const faqVisible = useSectionVisible('faq');
   const reviewsVisible = useSectionVisible('testimonials');
   const general = data?.data?.general;
-  const wordmarkRef = useRef(/** @type {HTMLParagraphElement | null} */ (null));
   const clock = useZonedClock(general?.timezone ?? 'Africa/Cairo', i18n.language);
-  useReached(wordmarkRef);
 
   const sitemap = [
     { key: 'home', label: t('footer.home'), to: paths.home() },
@@ -106,20 +83,19 @@ export default function Footer() {
   return (
     <footer className="foot">
       <div className="container-fluid foot__inner">
-        <p ref={wordmarkRef} className="foot__wordmark" aria-hidden="true">
-          <span className="foot__ghost">{general?.owner_name}</span>
-          <span className="foot__fill">{general?.owner_name}</span>
-        </p>
-
         <div className="foot__grid">
           <div className="foot__id">
-            <p className="foot__name">{general?.owner_name ?? t('meta.siteName')}</p>
-            <p className="foot__role">{general?.job_title}</p>
-            {company?.name && (
-              <p className="foot__company">
-                {t('about.companyLine', { role: company.role, company: company.name })}
-              </p>
-            )}
+            <div className="foot__brand">
+              <Logo />
+              <div>
+                <p className="foot__name">{general?.owner_name ?? t('meta.siteName')}</p>
+                {company?.name && (
+                  <p className="foot__company">
+                    {t('about.companyLine', { role: company.role, company: company.name })}
+                  </p>
+                )}
+              </div>
+            </div>
             <p className="foot__clock">
               <span className="foot__dot" aria-hidden="true" />
               <time dir="ltr" className="foot__time">

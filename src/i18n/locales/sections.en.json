@@ -19,24 +19,6 @@
     "next": "Next review",
     "goTo": "Go to review {{index}}"
   },
-  "blog": {
-    "copy": "Copy",
-    "copied": "Copied",
-    "changelog": "CHANGELOG.md",
-    "lead": "Notes the system wrote about itself: patterns, trade-offs and lessons, versioned like a changelog.",
-    "all": "All notes",
-    "filter": "Filter by category",
-    "allCategories": "All",
-    "published": "Published",
-    "toc": "On this page",
-    "progress": "Reading progress",
-    "related": "Related notes",
-    "back": "All notes",
-    "empty": "No notes in this category yet.",
-    "count_one": "{{count}} entry",
-    "count_other": "{{count}} entries",
-    "sampleNotice": "Sample article: illustrative content until real articles are published. Search engines do not index it."
-  },
   "faq": {
     "command": "man faq",
     "header": "FAQ(1)",
@@ -49,9 +31,7 @@
     "pager": "Manual page faq(1)"
   },
   "contact": {
-    "command": "curl -X POST /contact",
-    "cta": "The request has crossed {{count}} stations. One step left: you write it.",
-    "route": "Route so far",
+    "command": "POST /contact",
     "builder": "Request builder",
     "fields": {
       "name": "Name",

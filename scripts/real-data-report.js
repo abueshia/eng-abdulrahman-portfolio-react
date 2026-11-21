@@ -159,7 +159,6 @@ const hidden = [...visibilityBlock.matchAll(/(\w+):\s*false/g)].map(([, key]) =>
 const SAMPLE_SOURCES = {
   projects: 'src/data/mock/projects.js',
   testimonials: 'src/data/mock/testimonials.js',
-  blog: 'src/data/mock/blogs.js',
 };
 for (const [section, file] of Object.entries(SAMPLE_SOURCES)) {
   if (hidden.includes(section) || !existsSync(join(root, file))) continue;

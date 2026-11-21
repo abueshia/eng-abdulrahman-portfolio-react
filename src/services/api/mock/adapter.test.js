@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   ApiError,
-  blogsService,
   contactService,
   projectsService,
   settingsService,
@@ -64,14 +63,6 @@ describe('Axios mock adapter & resource services', () => {
 
     expect(categories).toEqual(['backend', 'frontend', 'database', 'devops', 'architecture']);
     expect(res.data[0].technologies.some((t) => t.slug === 'laravel')).toBe(true);
-  });
-
-  it('returns blog categories and posts, filtering by category', async () => {
-    const categories = await blogsService.categories({ lang: 'en' });
-    expect(categories.data.some((c) => c.slug === 'laravel')).toBe(true);
-
-    const filtered = await blogsService.list({ category: 'laravel' }, { lang: 'ar' });
-    expect(filtered.data.every((post) => post.category?.slug === 'laravel')).toBe(true);
   });
 
   it('validates POST /contact (422), handles honeypot, and returns 201 on valid input', async () => {

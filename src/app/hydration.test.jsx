@@ -61,12 +61,6 @@ describe('Hydration of prerendered pages', () => {
     expect(errors).toEqual([]);
   });
 
-  it('hydrates a prerendered article (processed HTML, TOC) without mismatches', async () => {
-    const title = 'Laravel Queues That Recover From Failure';
-    const errors = await hydrateUrl('/en/blog/sample-laravel-queues-that-recover', title);
-    expect(errors).toEqual([]);
-  });
-
   it('hydrates the Arabic home page without mismatches', async () => {
     const errors = await hydrateUrl('/', /عبدالرحمن/);
     expect(errors).toEqual([]);

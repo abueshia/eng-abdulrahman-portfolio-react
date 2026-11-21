@@ -14,7 +14,6 @@ describe('journey stations', () => {
       'projects:database',
       'services:endpoints',
       'testimonials:review',
-      'blog:docs',
       'faq:man',
       'contact:request',
       'contact:response',

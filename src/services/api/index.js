@@ -11,7 +11,6 @@ export { experiencesService } from './experiences.service';
 export { credentialsService } from './credentials.service';
 export { servicesService } from './services.service';
 export { testimonialsService } from './testimonials.service';
-export { blogsService } from './blogs.service';
 export { faqsService } from './faqs.service';
 export { statsService } from './stats.service';
 export { contactService } from './contact.service';

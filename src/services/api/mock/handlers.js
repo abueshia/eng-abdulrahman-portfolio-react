@@ -5,8 +5,6 @@
  * built with `ok()` / `fail()`, so payloads match the real API envelope.
  */
 import {
-  blogCategories,
-  blogs,
   credentials,
   experiences,
   faqs,
@@ -30,7 +28,6 @@ import { fail, localize, ok, paginate } from './response';
  */
 
 const techBySlug = new Map(technologies.map((tech) => [tech.slug, tech]));
-const categoryBySlug = new Map(blogCategories.map((c) => [c.slug, c]));
 
 /** Expands technology slugs into lightweight objects, like an eager-loaded relation. */
 const expandTechs = (slugs) =>
@@ -66,29 +63,6 @@ const servicesWithGroups = () =>
   services
     .map((service) => ({ ...service, group: groupBySlug.get(service.group) ?? null }))
     .sort((a, b) => (a.group?.sort ?? 99) - (b.group?.sort ?? 99) || a.id - b.id);
-
-const blogSummary = (b) => ({
-  id: b.id,
-  slug: b.slug,
-  is_sample: b.is_sample,
-  title: b.title,
-  excerpt: b.excerpt,
-  cover_image: b.cover_image,
-  cover_alt: b.cover_alt,
-  category: categoryBySlug.get(b.category) ?? null,
-  tags: b.tags,
-  reading_time: b.reading_time,
-  published_at: b.published_at,
-  updated_at: b.updated_at,
-});
-
-/** Related posts: same category first, then the most recent others. */
-const relatedPosts = (post, limit = 2) =>
-  blogs
-    .filter((b) => b.slug !== post.slug)
-    .sort((a, b) => Number(b.category === post.category) - Number(a.category === post.category))
-    .slice(0, limit)
-    .map(blogSummary);
 
 /** Related projects: shared type first, then most shared technologies. */
 function relatedProjects(project, limit = 3) {
@@ -147,7 +121,6 @@ export const routes = [
             featured_projects: projects.filter((p) => p.is_featured).map(projectSummary),
             services: servicesWithGroups(),
             testimonials,
-            latest_blogs: blogs.slice(0, 3).map(blogSummary),
           },
           lang,
         ),
@@ -216,35 +189,6 @@ export const routes = [
     method: 'get',
     pattern: '/testimonials',
     handler: ({ lang }) => ok(localize(testimonials, lang)),
-  },
-  // Static segment must be registered before the `:slug` route.
-  {
-    method: 'get',
-    pattern: '/blogs/categories',
-    handler: ({ lang }) => ok(localize(blogCategories, lang)),
-  },
-  {
-    method: 'get',
-    pattern: '/blogs',
-    handler: ({ lang, query }) => {
-      const list = query.category ? blogs.filter((b) => b.category === query.category) : blogs;
-      const { items, pagination } = paginate(list, query, 9);
-      return ok(localize(items.map(blogSummary), lang), { pagination });
-    },
-  },
-  {
-    method: 'get',
-    pattern: '/blogs/:slug',
-    handler: ({ lang, params }) => {
-      const post = blogs.find((b) => b.slug === params.slug);
-      if (!post) return fail(404, 'Post not found.');
-      return ok(
-        localize(
-          { ...blogSummary(post), content: post.content, related_posts: relatedPosts(post) },
-          lang,
-        ),
-      );
-    },
   },
   { method: 'get', pattern: '/faqs', handler: ({ lang }) => ok(localize(faqs, lang)) },
   { method: 'get', pattern: '/stats', handler: ({ lang }) => ok(localize(stats, lang)) },

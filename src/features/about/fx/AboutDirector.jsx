@@ -5,10 +5,10 @@ import { sectionTrigger, useDirector } from '@/lib/use-director';
 /**
  * About director: the AUTH moment, then the README is read.
  *
- * 1. AUTH (strong moment after the quiet board): the gate is a sticky scene
- *    scrubbed by the scroll. The bearer token is verified glyph by glyph,
- *    the status flips to 200, the lock opens and the doors part on the
- *    welcome. Scrolling back re-locks it.
+ * 1. AUTH (strong moment after the quiet board): the gate is scrubbed by the
+ *    scroll as it crosses the viewport. The bearer token is verified glyph
+ *    by glyph, the status flips to 200, the lock opens and the doors part
+ *    on the welcome. Scrolling back re-locks it.
  * 2. Reading: each block reveals word by word as it crosses the viewport
  *    (words in both languages: Arabic is never split below the word).
  * 3. The code card follows the reader: the line linked to the block being
@@ -29,13 +29,16 @@ export default function AboutDirector() {
       /* ---------- 1. AUTH ---------- */
       const gate = q('[data-auth]');
       if (gate) {
+        // The stage hugs its payload (no sticky hold, no empty band): the
+        // scrub spans the gate's passage, from entering low in the viewport
+        // to its middle, so the doors part around the centre of the screen.
         const tl = gsap.timeline({
           defaults: { ease: 'none' },
           scrollTrigger: {
             ...base,
             trigger: gate,
-            start: 'top top',
-            end: 'bottom bottom',
+            start: 'top 88%',
+            end: 'bottom 45%',
             scrub: 0.7,
           },
         });

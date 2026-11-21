@@ -27,28 +27,6 @@
     "next": "المراجعة التالية",
     "goTo": "اذهب إلى المراجعة {{index}}"
   },
-  "blog": {
-    "copy": "نسخ",
-    "copied": "تم النسخ",
-    "changelog": "CHANGELOG.md",
-    "lead": "ملاحظات كتبها النظام عن نفسه: أنماط، ومفاضلات، ودروس، بإصدارات كسجل تغييرات.",
-    "all": "كل الملاحظات",
-    "filter": "تصفية حسب التصنيف",
-    "allCategories": "الكل",
-    "published": "نُشر",
-    "toc": "في هذه الصفحة",
-    "progress": "تقدم القراءة",
-    "related": "ملاحظات ذات صلة",
-    "back": "كل الملاحظات",
-    "empty": "لا توجد ملاحظات في هذا التصنيف بعد.",
-    "count_zero": "لا مدخلات",
-    "count_one": "مدخل واحد",
-    "count_two": "مدخلان",
-    "count_few": "{{count}} مدخلات",
-    "count_many": "{{count}} مدخلاً",
-    "count_other": "{{count}} مدخل",
-    "sampleNotice": "مقال نموذجي: محتوى توضيحي لحين نشر المقالات الحقيقية، ولا تفهرسه محركات البحث."
-  },
   "faq": {
     "command": "man faq",
     "header": "FAQ(1)",
@@ -61,9 +39,7 @@
     "pager": "صفحة الدليل faq(1)"
   },
   "contact": {
-    "command": "curl -X POST /contact",
-    "cta": "عبر الطلب {{count}} محطة. بقيت خطوة واحدة: أنت تكتبه.",
-    "route": "المسار حتى الآن",
+    "command": "POST /contact",
     "builder": "بناء الطلب",
     "fields": {
       "name": "الاسم",

@@ -101,8 +101,16 @@
   --dur-slow: 640ms;
   --dur-cinematic: 1100ms;
 
-  /* Layout rhythm */
-  --space-section: clamp(5rem, 4rem + 6vw, 11rem);
+  /* Layout rhythm (home sections; the hero keeps its own scene).
+   * --section-gap: distance from the last content of one section to the
+   *   first content of the next (≈ 112px desktop, 64px phone).
+   * --section-pad: each section carries half of it on each side, so a
+   *   station anchor (the section edge) always sits in the middle of the
+   *   gap, never in a screen of its own.
+   * --section-head: heading → content inside a section. */
+  --section-gap: clamp(4rem, 8vw, 7rem);
+  --section-pad: calc(var(--section-gap) / 2);
+  --section-head: clamp(2rem, 1.5rem + 1.5vw, 3rem);
   --gutter: clamp(1.25rem, 0.75rem + 2.5vw, 3rem);
   --nav-height: 4.5rem;
 

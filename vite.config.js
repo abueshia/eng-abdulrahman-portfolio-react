@@ -79,8 +79,8 @@ export default defineConfig(({ isSsrBuild }) => ({
     css: false,
     env: { VITE_USE_MOCK: 'true', VITE_MOCK_LATENCY: '0', VITE_FX: 'off' },
     include: ['src/**/*.test.{js,jsx}'],
-    // Prerender, hydration and form tests render whole pages (and load jsdom +
-    // Shiki for articles the first time): 5 s is too tight for them.
+    // Prerender, hydration and form tests render whole pages: 5 s is too
+    // tight for them.
     testTimeout: 20_000,
   },
 }));

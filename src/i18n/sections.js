@@ -1,5 +1,5 @@
 /**
- * Strings of the phase-5 sections (testimonials, blog, FAQ, contact, footer),
+ * Strings of the phase-5 sections (testimonials, FAQ, contact, footer),
  * split out of the main locale bundles so they ship with the lazy chunks that
  * use them. Same contract as `work.js`: importing registers both languages
  * (deep-merged into the default namespace) before anything renders.

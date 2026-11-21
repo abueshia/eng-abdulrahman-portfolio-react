@@ -33,7 +33,7 @@
 .stats__layout {
   display: flex;
   flex-direction: column;
-  gap: clamp(2.5rem, 1.5rem + 3vw, 4.5rem);
+  gap: var(--section-head);
 }
 .stats__board {
   position: relative;
@@ -323,7 +323,7 @@
   padding-top: 0;
 }
 .auth {
-  padding-block: clamp(3.5rem, 2rem + 6vw, 7rem) clamp(2rem, 1rem + 3vw, 4rem);
+  padding-block: var(--section-pad) var(--section-head);
 }
 .auth__stage {
   position: relative;
@@ -407,18 +407,15 @@
   color: color-mix(in oklab, var(--signal) calc(var(--v, 1) * 100%), var(--text-dim));
 }
 
-/* The scroll scene, unlocked by the running director. */
-.about[data-fx='on'] .auth {
-  height: 165svh;
-  padding: 0;
-}
+/* The scrubbed scene, unlocked by the running director. The layers (doors,
+ * lock and token, welcome) stack in one grid cell, so the stage is exactly
+ * as tall as its tallest layer: no sticky hold, no screen-sized band. The
+ * scrub runs while the gate crosses the viewport, with its neighbours
+ * still in view. */
 .about[data-fx='on'] .auth__stage {
-  position: sticky;
-  top: 0;
-  height: 100svh;
   place-items: center;
   overflow: hidden;
-  padding: 0;
+  padding: clamp(1.25rem, 0.75rem + 1.5vw, 2rem) 0;
 }
 .about[data-fx='on'] .auth__stage > * {
   grid-area: 1 / 1;
@@ -436,8 +433,9 @@
   z-index: 1;
   display: flex;
   align-items: center;
+  align-self: stretch;
   width: 50%;
-  height: 100%;
+  margin-block: calc(-1 * clamp(1.25rem, 0.75rem + 1.5vw, 2rem));
   padding-inline: clamp(1rem, 3vw, 3rem);
   background:
     linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 100% 2.5rem,
@@ -721,7 +719,7 @@
 .skills__layout {
   display: flex;
   flex-direction: column;
-  gap: clamp(2.5rem, 1.5rem + 3vw, 4.5rem);
+  gap: var(--section-head);
 }
 .skills__stage {
   display: grid;
@@ -1036,7 +1034,7 @@
 .experience__layout {
   display: flex;
   flex-direction: column;
-  gap: clamp(2.5rem, 1.5rem + 3vw, 4.5rem);
+  gap: var(--section-head);
 }
 .gl {
   --lane-w: 1rem;
@@ -1138,6 +1136,10 @@
 .gl__commit {
   min-width: 0;
   padding-bottom: clamp(2.5rem, 1.5rem + 3vw, 4.5rem);
+}
+/* The log ends on its last commit: the section padding takes over. */
+.gl__row:last-child .gl__commit {
+  padding-bottom: 0;
 }
 .gl__meta,
 .gl__merge {

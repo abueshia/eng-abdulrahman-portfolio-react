@@ -4,7 +4,6 @@
     "defaultTitle": "Eng. Abdulrahman Abu Eisha | Full-Stack Software Engineer",
     "titleTemplate": "%s | Abdulrahman Abu Eisha",
     "defaultDescription": "Full-Stack Software Engineer specialising in PHP 8.3, Laravel, React and clean, scalable REST APIs.",
-    "blogTitle": "Engineering Notes",
     "notFoundTitle": "Page not found"
   },
   "a11y": {
@@ -25,7 +24,6 @@
     "experience": "Experience",
     "projects": "Work",
     "services": "Services",
-    "blog": "Blog",
     "contact": "Contact",
     "cta": "Start a project"
   },
@@ -49,7 +47,6 @@
     "services": "Services",
     "credentials": "Credentials",
     "testimonials": "Testimonials",
-    "blog": "Blog",
     "faq": "FAQ",
     "contact": "Contact",
     "placeholder": "This section is under construction (phase {{phase}}).",
@@ -59,14 +56,8 @@
     "loading": "Loading…",
     "retry": "Retry",
     "backHome": "Back to home",
-    "readMore": "Read more",
     "viewProject": "View project",
-    "minRead": "{{count}} min read",
     "error": "Something went wrong while loading this content."
-  },
-  "blog": {
-    "title": "Engineering notes",
-    "subtitle": "Writing about architecture, Laravel, React and the craft of shipping software."
   },
   "project": {
     "backToWork": "Back to work"
@@ -162,7 +153,6 @@
       "response": "Response",
       "endpoints": "Endpoints",
       "review": "Review",
-      "docs": "Docs",
       "man": "Manual",
       "request": "Request"
     }

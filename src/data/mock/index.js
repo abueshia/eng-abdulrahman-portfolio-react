@@ -9,6 +9,5 @@ export { experiences } from './experiences';
 export { credentials } from './credentials';
 export { services, serviceGroups } from './services';
 export { testimonials } from './testimonials';
-export { blogs, blogCategories } from './blogs';
 export { faqs } from './faqs';
 export { stats } from './stats';

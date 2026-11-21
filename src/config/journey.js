@@ -4,7 +4,7 @@
  *
  *   Gateway (hero) → [Observability (stats)] → Auth (about) → Services
  *   (skills) → Queue (experience) → Database (projects) → Endpoints
- *   (services) → Review (testimonials) → Docs (blog) → Man (faq) → Request
+ *   (services) → Review (testimonials) → Man (faq) → Request
  *   builder (contact) → Response 201 (an inner anchor at the end of contact)
  *
  * Observability is a *tap*: monitoring watches the request go by without
@@ -127,21 +127,10 @@ export const STATIONS = Object.freeze([
     },
   },
   {
-    // The changelog / docs: what the system has written about itself.
-    id: 'docs',
-    section: SECTION_IDS.blog,
-    code: '09',
-    scene: {
-      ember: { x: 70, y: 12, s: 0.8, a: 0.45 },
-      ion: { x: 22, y: 86, s: 0.9, a: 0.4 },
-      grid: 0.45,
-    },
-  },
-  {
     // man faq: the manual, read before building the request.
     id: 'man',
     section: SECTION_IDS.faq,
-    code: '10',
+    code: '09',
     scene: {
       ember: { x: -8, y: 60, s: 0.7, a: 0.35 },
       ion: { x: 64, y: 20, s: 0.95, a: 0.45 },
@@ -152,7 +141,7 @@ export const STATIONS = Object.freeze([
     // The visitor builds the request themselves (the contact form).
     id: 'request',
     section: SECTION_IDS.contact,
-    code: '11',
+    code: '10',
     scene: {
       ember: { x: 46, y: 50, s: 1.3, a: 0.8 },
       ion: { x: 90, y: 10, s: 0.7, a: 0.35 },
@@ -165,7 +154,7 @@ export const STATIONS = Object.freeze([
     id: 'response',
     section: SECTION_IDS.contact,
     inner: true,
-    code: '12',
+    code: '11',
     scene: {
       ember: { x: 82, y: 92, s: 0.6, a: 0.22 },
       ion: { x: 18, y: 30, s: 1.4, a: 0.9 },

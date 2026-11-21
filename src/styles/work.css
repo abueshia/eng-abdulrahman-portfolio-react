@@ -74,7 +74,7 @@
 .services__layout {
   display: flex;
   flex-direction: column;
-  gap: clamp(2.5rem, 1.5rem + 3vw, 4.5rem);
+  gap: var(--section-head);
 }
 
 .query {
@@ -588,6 +588,8 @@
 
 .routes {
   display: grid;
+  /* minmax(0, …): the index strip scrolls inside, never widens the page. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 2rem;
   interpolate-size: allow-keywords;
 }

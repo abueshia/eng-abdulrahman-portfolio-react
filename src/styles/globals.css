@@ -92,7 +92,7 @@
   }
 
   .section-y {
-    padding-block: var(--space-section);
+    padding-block: var(--section-pad);
   }
 
   .glass {

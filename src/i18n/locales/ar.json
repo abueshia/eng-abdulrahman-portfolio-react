@@ -4,7 +4,6 @@
     "defaultTitle": "م. عبدالرحمن أبو عيشة | مهندس برمجيات Full-Stack",
     "titleTemplate": "%s | عبدالرحمن أبو عيشة",
     "defaultDescription": "مهندس برمجيات Full-Stack متخصص في PHP 8.3 وLaravel وReact وبناء واجهات REST نظيفة وقابلة للتوسع.",
-    "blogTitle": "ملاحظات هندسية",
     "notFoundTitle": "الصفحة غير موجودة"
   },
   "a11y": {
@@ -25,7 +24,6 @@
     "experience": "الخبرات",
     "projects": "الأعمال",
     "services": "الخدمات",
-    "blog": "المدونة",
     "contact": "تواصل",
     "cta": "ابدأ مشروعك"
   },
@@ -49,7 +47,6 @@
     "services": "الخدمات",
     "credentials": "الشهادات",
     "testimonials": "آراء العملاء",
-    "blog": "المدونة",
     "faq": "الأسئلة الشائعة",
     "contact": "تواصل",
     "placeholder": "هذا القسم قيد البناء (المرحلة {{phase}}).",
@@ -59,14 +56,8 @@
     "loading": "جارٍ التحميل…",
     "retry": "إعادة المحاولة",
     "backHome": "العودة للرئيسية",
-    "readMore": "اقرأ المزيد",
     "viewProject": "عرض المشروع",
-    "minRead": "{{count}} دقائق قراءة",
     "error": "حدث خطأ أثناء تحميل هذا المحتوى."
-  },
-  "blog": {
-    "title": "ملاحظات هندسية",
-    "subtitle": "كتابات عن المعمارية وLaravel وReact وحرفة بناء البرمجيات."
   },
   "project": {
     "backToWork": "العودة إلى الأعمال"
@@ -166,7 +157,6 @@
       "response": "الاستجابة",
       "endpoints": "نقاط النهاية",
       "review": "المراجعة",
-      "docs": "التوثيق",
       "man": "الدليل",
       "request": "بناء الطلب"
     }

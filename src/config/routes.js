@@ -29,7 +29,6 @@ export const SECTION_IDS = Object.freeze({
   services: 'services',
   credentials: 'credentials',
   testimonials: 'testimonials',
-  blog: 'blog',
   faq: 'faq',
   contact: 'contact',
 });
@@ -87,6 +86,4 @@ export const paths = Object.freeze({
   section: (/** @type {string} */ id) => `/#${id}`,
   projects: () => '/#projects',
   project: (/** @type {string} */ slug) => `/projects/${slug}`,
-  blog: () => '/blog',
-  post: (/** @type {string} */ slug) => `/blog/${slug}`,
 });

@@ -19,7 +19,7 @@ function LocaleProbe() {
       <span data-testid="dir">{dir}</span>
       <span data-testid="rtl">{String(isRTL)}</span>
       <span data-testid="path">{pathname}</span>
-      <span data-testid="localized-blog">{localize('/blog')}</span>
+      <span data-testid="localized-project">{localize('/projects/x')}</span>
       <span data-testid="nav-projects">{t('nav.projects')}</span>
       <LocaleSwitch />
     </div>
@@ -37,8 +37,8 @@ describe('Locale & RTL/LTR routing system', () => {
     expect(stripLocale('/en')).toBe('/');
     expect(stripLocale('/projects/nexus')).toBe('/projects/nexus');
 
-    expect(localizePath('ar', '/blog')).toBe('/blog');
-    expect(localizePath('en', '/blog')).toBe('/en/blog');
+    expect(localizePath('ar', '/projects/x')).toBe('/projects/x');
+    expect(localizePath('en', '/projects/x')).toBe('/en/projects/x');
     expect(localizePath('en', '/')).toBe('/en');
   });
 
@@ -59,7 +59,7 @@ describe('Locale & RTL/LTR routing system', () => {
     expect(screen.getByTestId('locale')).toHaveTextContent('en');
     expect(screen.getByTestId('dir')).toHaveTextContent('ltr');
     expect(screen.getByTestId('rtl')).toHaveTextContent('false');
-    expect(screen.getByTestId('localized-blog')).toHaveTextContent('/en/blog');
+    expect(screen.getByTestId('localized-project')).toHaveTextContent('/en/projects/x');
     expect(screen.getByTestId('nav-projects')).toHaveTextContent('Work');
     expect(document.documentElement.lang).toBe('en');
     expect(document.documentElement.dir).toBe('ltr');

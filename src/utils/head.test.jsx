@@ -55,19 +55,19 @@ describe('<Seo> in the browser', () => {
   it('writes title, canonical and hreflang alternates for the current locale URL', async () => {
     renderWithProviders(
       <>
-        <Seo title="Engineering Notes" />
+        <Seo title="Case Study" />
         <span>page</span>
       </>,
-      { initialEntries: ['/en/blog'] },
+      { initialEntries: ['/en/projects/x'] },
     );
     await screen.findByText('page');
 
-    expect(document.title).toBe('Engineering Notes | Abdulrahman Abu Eisha');
+    expect(document.title).toBe('Case Study | Abdulrahman Abu Eisha');
     expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute('href')).toMatch(
-      /\/en\/blog$/,
+      /\/en\/projects\/x$/,
     );
     expect(document.head.querySelector('link[hreflang="ar"]')?.getAttribute('href')).toMatch(
-      /[^n]\/blog$/,
+      /[^n]\/projects\/x$/,
     );
   });
 });

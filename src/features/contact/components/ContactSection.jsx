@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, m } from 'motion/react';
-import { lazy, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, useEffect, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
@@ -9,7 +9,7 @@ import { Section } from '@/components/layout/Section';
 import { SectionFx } from '@/components/layout/SectionFx';
 import { LineIcon } from '@/components/ui/LineIcon';
 import { env } from '@/config/env';
-import { STATIONS, getStation, stationForSection } from '@/config/journey';
+import { getStation, stationForSection } from '@/config/journey';
 import { useLocale } from '@/hooks/useLocale';
 import { useSettings } from '@/hooks/useSettings';
 import { contactService } from '@/services/api';
@@ -71,8 +71,8 @@ function Field({ name, label, error, children }) {
 /**
  * Contact, the REQUEST BUILDER station, then RESPONSE 201.
  *
- * - A kinetic headline (the director moves it word by word with the
- *   scroll), then the route the request has travelled so far.
+ * - A compact intro: the `POST /contact` line, one headline (revealed word
+ *   by word by the director) and the reply promise right under it.
  * - The form (react-hook-form + zod) beside a live preview of the exact
  *   `POST /contact` it will send, updated on every keystroke.
  * - Submitting turns the button into a progress bar; then "201 Created", or
@@ -89,7 +89,6 @@ export default function ContactSection() {
   const { data } = useSettings();
   const settings = data?.data;
   const general = settings?.general;
-  const visibility = settings?.sections_visibility;
   const [phase, setPhase] = useState(/** @type {Phase} */ ('idle'));
   const [response, setResponse] = useState(/** @type {any} */ (null));
   const [sentKey, setSentKey] = useState(/** @type {string | null} */ (null));
@@ -109,14 +108,6 @@ export default function ContactSection() {
     reValidateMode: 'onChange',
   });
   const values = useWatch({ control, defaultValue: EMPTY_CONTACT });
-
-  // Stations the request has crossed before reaching the builder.
-  const route = useMemo(() => {
-    const end = STATIONS.findIndex((station) => station.id === 'request');
-    return STATIONS.slice(0, end).filter(
-      (station) => !station.inner && visibility?.[station.section] !== false,
-    );
-  }, [visibility]);
 
   useEffect(() => {
     if (phase === 'success' || phase === 'failure') resultRef.current?.focus();
@@ -194,28 +185,6 @@ export default function ContactSection() {
             <p className="contact__subtitle">{settings.contact.subtitle}</p>
           )}
         </header>
-
-        <div className="contact__route">
-          <p className="contact__route-lead">{t('contact.cta', { count: route.length })}</p>
-          <ol className="hops" aria-label={t('contact.route')}>
-            {route.map((station) => (
-              <li
-                key={station.id}
-                className="hops__stop"
-                data-tap={station.tap ? 'true' : undefined}
-              >
-                <span dir="ltr">{station.code}</span> {t(`journey.stations.${station.id}`)}
-              </li>
-            ))}
-            <li className="hops__stop hops__stop--here" aria-current="step">
-              <span dir="ltr">{getStation('request')?.code}</span> {t('journey.stations.request')}
-            </li>
-          </ol>
-          <a href="#contact-form" className="contact__cta">
-            <span dir="ltr">POST /contact</span>
-            <LineIcon name="arrow" className="contact__cta-icon" />
-          </a>
-        </div>
 
         <div id="contact-form" className="contact__grid">
           <div className="contact__builder">
