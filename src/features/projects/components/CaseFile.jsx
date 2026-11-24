@@ -5,7 +5,6 @@ import { LuArrowUpRight } from 'react-icons/lu';
 import { LocalizedLink } from '@/components/ui/LocalizedLink';
 import { paths } from '@/config/routes';
 import { useCaseNavigation } from '../hooks/useCaseNavigation';
-import { SampleBadge } from './SampleBadge';
 
 const pad = (/** @type {number} */ n, size = 3) => String(n).padStart(size, '0');
 
@@ -33,7 +32,7 @@ function trackPointer(event) {
  * - Clicking either the title or the visual morphs the cover into the case
  *   study's header (View Transitions, see useCaseNavigation).
  *
- * @param {{ project: any, index: number }} props
+ * @param {{ project: import('@/services/api/mappers/projects').Project, index: number }} props
  */
 export function CaseFile({ project, index }) {
   const { t } = useTranslation();
@@ -63,7 +62,7 @@ export function CaseFile({ project, index }) {
             <img
               ref={coverRef}
               className="case__cover"
-              src={project.cover_image}
+              src={project.cover_image ?? undefined}
               alt={project.cover_alt ?? ''}
               width={1600}
               height={1000}
@@ -112,12 +111,13 @@ export function CaseFile({ project, index }) {
           <span className="case__pk">projects.id = {project.id}</span>
         </p>
         <p className="case__tags" data-case-field>
-          <span className="case__type">
-            {t(`projects.types.${project.type}`, { defaultValue: project.type })}
-          </span>
-          <span aria-hidden="true">·</span>
-          <span dir="ltr">{project.year}</span>
-          {project.is_sample && <SampleBadge />}
+          <span className="case__type">{project.type_label}</span>
+          {project.year && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span dir="ltr">{project.year}</span>
+            </>
+          )}
         </p>
         <h3 id={`case-${project.slug}`} className="case__title">
           <LocalizedLink to={to} onClick={onOpen} className="case__link">

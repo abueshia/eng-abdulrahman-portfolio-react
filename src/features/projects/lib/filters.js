@@ -12,13 +12,14 @@ export const FILTER_PARAMS = Object.freeze({ type: 'type', tech: 'tech' });
 
 /**
  * @typedef {{ type: string | null, tech: string | null }} ProjectFilters
- * @typedef {{ slug: string, type: string, technologies?: Array<{ slug: string, name: string }> }} FilterableProject
+ * @typedef {{ slug: string, type: string, type_label?: string,
+ *   technologies?: Array<{ slug: string, name: string }> }} FilterableProject
  */
 
 /** @type {ProjectFilters} */
 export const NO_FILTERS = Object.freeze({ type: null, tech: null });
 
-const SLUG = /^[a-z0-9][a-z0-9-]{0,40}$/;
+const SLUG = /^[a-z0-9][a-z0-9_.-]{0,80}$/;
 const clean = (/** @type {string | null} */ value) => (value && SLUG.test(value) ? value : null);
 
 /**
@@ -71,12 +72,18 @@ export function filterProjects(projects, filters) {
  * @param {FilterableProject[]} projects
  */
 export function facets(projects) {
-  /** @type {Map<string, number>} */
+  /** @type {Map<string, { slug: string, label: string, count: number }>} */
   const types = new Map();
   /** @type {Map<string, { slug: string, name: string, count: number }>} */
   const techs = new Map();
   for (const project of projects) {
-    types.set(project.type, (types.get(project.type) ?? 0) + 1);
+    const type = types.get(project.type) ?? {
+      slug: project.type,
+      label: project.type_label || project.type,
+      count: 0,
+    };
+    type.count += 1;
+    types.set(project.type, type);
     for (const tech of project.technologies ?? []) {
       const entry = techs.get(tech.slug) ?? { slug: tech.slug, name: tech.name, count: 0 };
       entry.count += 1;
@@ -84,7 +91,7 @@ export function facets(projects) {
     }
   }
   return {
-    types: [...types].map(([slug, count]) => ({ slug, count })),
+    types: [...types.values()],
     techs: [...techs.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)),
   };
 }
@@ -98,7 +105,7 @@ export function describeQuery(filters) {
     filters.type && `type = '${filters.type}'`,
     filters.tech && `'${filters.tech}' IN stack`,
   ].filter(Boolean);
-  return `SELECT * FROM projects${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY year DESC;`;
+  return `SELECT * FROM projects${where.length ? ` WHERE ${where.join(' AND ')}` : ''} ORDER BY sort_order;`;
 }
 
 /** Stable key for a filter state (animation and director re-runs). */

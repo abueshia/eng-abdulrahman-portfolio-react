@@ -2,10 +2,28 @@
 import { describe, expect, it } from 'vitest';
 
 import { getPrerenderRoutes, renderPage } from '@/entry-server';
+import { FIXTURE_SLUG } from '@/test/api-fixtures';
 import { headToHtml } from '@/utils/head';
+import experiencesEn from '../docs/api-fixtures/experiences.index.en.json';
+import faqsEn from '../docs/api-fixtures/faqs.index.en.json';
+import projectsAr from '../docs/api-fixtures/projects.index.ar.json';
+import projectsAr2 from '../docs/api-fixtures/projects.index.page2.ar.json';
+import projectsEn from '../docs/api-fixtures/projects.index.per_page50.en.json';
+import showEn from '../docs/api-fixtures/projects.show.en.json';
+import testimonialsEn from '../docs/api-fixtures/testimonials.index.en.json';
 
-const SLUG = 'sample-delivery-dispatch';
-const TITLE = 'Delivery &amp; Booking API with Live Dispatch';
+/** Text as React writes it into HTML. */
+const escape = (/** @type {string} */ value) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+
+// Live resources come from the real captured API responses (docs/api-fixtures).
+const SLUG = FIXTURE_SLUG;
+const TITLE = escape(showEn.data.title);
 
 describe('Prerendering (entry-server)', () => {
   it('renders a case study with its data, final <head> and no deferred boundaries', async () => {
@@ -20,33 +38,44 @@ describe('Prerendering (entry-server)', () => {
     expect(result.html).not.toContain('Loading');
 
     expect(head).toContain(`<title>${TITLE} | Abdulrahman Abu Eisha</title>`);
-    expect(head).toMatch(/rel="canonical" href="[^"]*\/en\/projects\/sample-delivery-dispatch"/);
-    expect(head).toMatch(/hreflang="ar" href="[^"]*\/projects\/sample-delivery-dispatch"/);
-    expect(head).toMatch(/hreflang="x-default" href="[^"]*\/projects\/sample-delivery-dispatch"/);
+    expect(head).toContain(`/en/projects/${SLUG}"`);
+    expect(head).toMatch(new RegExp(`rel="canonical" href="[^"]*/en/projects/${SLUG}"`));
+    expect(head).toMatch(new RegExp(`hreflang="ar" href="[^"]*/projects/${SLUG}"`));
+    expect(head).toMatch(new RegExp(`hreflang="x-default" href="[^"]*/projects/${SLUG}"`));
   });
 
-  it('keeps sample case studies out of the index: noindex, no CreativeWork, but a real 200', async () => {
+  it('indexes every API case study: index, follow + CreativeWork and BreadcrumbList JSON-LD', async () => {
     const result = await renderPage(`/en/projects/${SLUG}`);
-    const head = headToHtml(/** @type {any} */ (result.head));
-
-    expect(result.status).toBe(200);
-    expect(head).toContain('name="robots" content="noindex, follow"');
-    expect(head).not.toContain('application/ld+json');
-    // The badge and the notice say so on the page itself.
-    expect(result.html).toContain('sample-badge');
-    expect(result.html).toContain('Sample case study');
+    const head = /** @type {any} */ (result.head);
+    const robots = head.tags.find((tag) => tag.attrs.name === 'robots')?.attrs.content;
+    expect(robots ?? 'index, follow').not.toContain('noindex');
+    const ld = head.tags.find((tag) => tag.attrs.type === 'application/ld+json');
+    const graph = JSON.parse(ld?.content ?? '{}')['@graph'];
+    const [work, crumbs] = graph;
+    expect(work['@type']).toBe('CreativeWork');
+    expect(work.name).toBe(showEn.data.title);
+    expect(work.dateCreated).toBe(showEn.data.completed_at);
+    expect(work.image).toBe(showEn.data.cover_image);
+    expect(work.sameAs).toEqual([showEn.data.live_url]);
+    expect(crumbs['@type']).toBe('BreadcrumbList');
+    // No sample markers anywhere.
+    expect(result.html).not.toContain('sample-badge');
+    expect(result.html).not.toMatch(/Sample case study/);
   });
 
-  it('prerenders the whole case study: architecture, decisions, gallery and next case', async () => {
-    const { html } = await renderPage(`/en/projects/${SLUG}`);
+  it('prerenders the whole case study: brief, challenges, gallery, related and next case', async () => {
+    const { html: page } = await renderPage(`/en/projects/${SLUG}`);
 
-    expect(html).toContain('WebSocket Server'); // a diagram node, as SVG text
-    expect(html).toContain('Every status change is an event'); // a decision
-    expect(html).toContain('Courier app screens'); // gallery alt
-    expect(html).toContain('data-vt-cover'); // the View Transition target
-    expect(html).toContain('Next case');
-    expect(html).toContain('No data'); // a null metric never becomes a number
-    expect(html).not.toContain('data-fx="on"');
+    for (const challenge of showEn.data.challenge) expect(page).toContain(escape(challenge.title));
+    // Gallery: every image, with alt text numbered under the title.
+    expect(page).toContain(escape(`${showEn.data.title} (1/${showEn.data.gallery.length})`));
+    for (const related of showEn.data.related_projects)
+      expect(page).toContain(escape(related.title));
+    // Editor citation artefacts never reach the page.
+    expect(page).not.toContain('[cite:');
+    expect(page).toContain('data-vt-cover'); // the View Transition target
+    expect(page).toContain('Next case');
+    expect(page).not.toContain('data-fx="on"');
   });
 
   it('dehydrates the fetched queries so the client hydrates identical data', async () => {
@@ -54,7 +83,7 @@ describe('Prerendering (entry-server)', () => {
     const keys = /** @type {any} */ (queryState).queries.map((q) => q.queryKey);
 
     expect(keys).toContainEqual(['settings', 'ar']);
-    expect(keys).toContainEqual(['projects', {}, 'ar']);
+    expect(keys).toContainEqual(['projects', 'ar']);
   });
 
   it('emits ProfilePage/Person/WebSite JSON-LD on the home page', async () => {
@@ -169,20 +198,16 @@ describe('Prerendering (entry-server)', () => {
     });
   });
 
-  it('prerenders every case file and every service contract as real text', async () => {
+  it('prerenders every API case file and every service contract as real text', async () => {
     const { html, queryState } = await renderPage('/en');
     const keys = /** @type {any} */ (queryState).queries.map((q) => q.queryKey[0]);
 
     expect(keys).toEqual(expect.arrayContaining(['projects', 'services']));
-    for (const title of [
-      'Multi-tenant SaaS Subscription Platform',
-      'Inventory &amp; Point-of-Sale System',
-      TITLE,
-    ]) {
-      expect(html).toContain(title);
+    for (const project of projectsEn.data) {
+      expect(html).toContain(escape(project.title));
+      expect(html).toContain(`href="/en/projects/${project.slug}"`);
     }
-    expect(html).toContain('sample-badge');
-    expect(html).toContain('Single DB · tenant_id scoping'); // a descriptive metric
+    expect(html).not.toContain('sample-badge');
     // Services: endpoints, titles, deliverables (closed contracts included).
     expect(html).toContain('/services/payment-integration');
     expect(html).toContain('Paymob');
@@ -225,9 +250,8 @@ describe('Prerendering (entry-server)', () => {
 
     // Their data is dehydrated for an identical hydration.
     expect(keys).toEqual(expect.arrayContaining(['stats', 'technologies', 'experiences']));
-    // Stats: the real figure as text; zeroed samples say "No data", never "0".
+    // Stats: the real figures as text (every metric has a value in settings data).
     expect(html).toMatch(/Years of experience[\s\S]*?4\+/);
-    expect(html).toContain('No data');
     // About: statement, story, company title and the PHP class.
     expect(html).toMatch(/<h2[^>]*id="about-title"[^>]*>I write code that outlives the project\./);
     expect(html).toContain('Team Lead of iCode Tech');
@@ -239,10 +263,12 @@ describe('Prerendering (entry-server)', () => {
       expect(html).toContain(skill);
     }
     expect(html).toContain('role="tablist"');
-    // Experience: every role, the side branch and its merge.
-    expect(html).toContain('Senior Full-Stack Software Engineer');
-    expect(html).toContain('Junior Back-end Developer');
-    expect(html).toContain('Merge branch');
+    // Experience: every API role and company, achievements as diff lines.
+    for (const job of experiencesEn.data) {
+      expect(html).toContain(escape(job.role_title));
+      expect(html).toContain(escape(job.company_name));
+    }
+    expect(html).toContain(escape(experiencesEn.data[0].achievements.split('\n')[0].trim()));
     expect(html).toContain('HEAD -&gt; main');
     // Journey: the observability tap is a route stop.
     expect(html).toContain('data-station="observability"');
@@ -262,11 +288,12 @@ describe('Prerendering (entry-server)', () => {
     const ld = head?.tags.find((tag) => tag.attrs.type === 'application/ld+json');
     const faq = JSON.parse(ld?.content ?? '{}')['@graph'].find((n) => n['@type'] === 'FAQPage');
 
-    expect(faq.mainEntity).toHaveLength(13);
+    // Generated from GET /faqs: the same records as the visible section.
+    expect(faq.mainEntity).toHaveLength(faqsEn.data.length);
     expect(faq.mainEntity[0]).toMatchObject({
       '@type': 'Question',
-      name: 'How do you usually work?',
-      acceptedAnswer: { '@type': 'Answer' },
+      name: faqsEn.data[0].question,
+      acceptedAnswer: { '@type': 'Answer', text: faqsEn.data[0].answer },
     });
   });
 
@@ -276,12 +303,14 @@ describe('Prerendering (entry-server)', () => {
 
     expect(keys).toEqual(expect.arrayContaining(['testimonials', 'faqs']));
     expect(keys).not.toContain('blogs');
-    // Testimonials: every review (sample-flagged) is text, carousel or not.
-    expect(html).toContain('Sample client, digital product founder');
-    expect(html).toContain('Sample client, technical lead');
-    expect(html).toContain('which made it easy for our team to build on afterwards.');
+    // Testimonials: every approved API review is text, carousel or not.
+    for (const review of testimonialsEn.data) {
+      expect(html).toContain(escape(review.name));
+      expect(html).toContain(escape(review.description));
+    }
+    expect(html).toContain('Featured review');
     // Ratings are visible stars with a text label, avatars are generated
-    // monograms (no photos for samples), and there is no Review markup at all.
+    // monograms (the API has no photos yet), and there is no Review markup at all.
     expect(html).toContain('aria-label="Rated 5 out of 5"');
     expect(html).toContain('class="avatar"');
     expect(html).not.toContain('avatar--photo');
@@ -297,7 +326,7 @@ describe('Prerendering (entry-server)', () => {
     expect(html).not.toMatch(/href="[^"]*\/blog/);
     // FAQ: every answer is in the HTML, including the closed ones.
     expect(html).toContain('name="faq"');
-    expect(html).toContain('it does not guarantee them');
+    for (const faq of faqsEn.data) expect(html).toContain(escape(faq.answer));
     // Contact: the form, the live request preview and the real direct channels.
     expect(html).toContain('id="contact-name"');
     expect(html).toContain('POST /api/v1/contact?lang=en HTTP/1.1');
@@ -315,10 +344,14 @@ describe('Prerendering (entry-server)', () => {
     const routePaths = routes.map((route) => route.path);
 
     expect(locales).toEqual(['ar', 'en']);
-    expect(routePaths).toEqual(expect.arrayContaining(['/', `/projects/${SLUG}`]));
-    // Sample case studies are generated (links work) but never listed in the sitemap.
-    const sample = routes.find((route) => route.path === `/projects/${SLUG}`);
-    expect(sample?.sitemap).toBe(false);
+    // Every published API project, listed in the sitemap with completed_at as lastmod.
+    const published = [...projectsAr.data, ...projectsAr2.data];
+    expect(routePaths).toEqual(['/', ...published.map((project) => `/projects/${project.slug}`)]);
+    for (const project of published) {
+      const route = routes.find((r) => r.path === `/projects/${project.slug}`);
+      expect(route?.sitemap).toBe(true);
+      expect(route?.lastmod).toBe(project.completed_at ?? undefined);
+    }
     expect(routes.find((route) => route.path === '/')?.sitemap).not.toBe(false);
     // The blog was removed: nothing under /blog is generated or listed.
     expect(routePaths.some((path) => path.startsWith('/blog'))).toBe(false);

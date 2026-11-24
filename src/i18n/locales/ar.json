@@ -228,7 +228,8 @@
       "full_time": "دوام كامل",
       "part_time": "دوام جزئي",
       "contract": "تعاقد",
-      "freelance": "عمل حر"
+      "freelance": "عمل حر",
+      "remote": "عن بُعد"
     }
   }
 }

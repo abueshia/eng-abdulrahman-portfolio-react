@@ -216,7 +216,8 @@
       "full_time": "full-time",
       "part_time": "part-time",
       "contract": "contract",
-      "freelance": "freelance"
+      "freelance": "freelance",
+      "remote": "remote"
     }
   }
 }

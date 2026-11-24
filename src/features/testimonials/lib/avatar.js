@@ -48,9 +48,9 @@ export function safeAvatarUrl(value) {
 }
 
 /**
- * Only approved reviews are shown. Records without a status (the samples, or
- * an API that already filters) count as approved; `pending` and `rejected`
- * never render, even if an API returned them by mistake.
+ * Only approved reviews are shown. Records without a status (the API lists
+ * approved reviews only) count as approved; `pending` and `rejected` never
+ * render, even if a response carried them by mistake.
  * @param {{ status?: string | null }} item
  */
 export const isApproved = (item) => !item.status || item.status === 'approved';

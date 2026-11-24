@@ -1,0 +1,5 @@
+{
+    "message": "The route api/v1/categories could not be found.",
+    "exception": "Symfony\\Component\\HttpKernel\\Exception\\NotFoundHttpException",
+    "_note": "file/line/trace removed: present only because APP_DEBUG=true locally"
+}

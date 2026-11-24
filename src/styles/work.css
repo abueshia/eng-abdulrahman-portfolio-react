@@ -34,38 +34,10 @@
     .case__fields dt,
     .cs__fact dt,
     .cs-metric dt,
-    .sample-badge,
     .arch__layer
   ) {
   letter-spacing: 0;
   text-transform: none;
-}
-
-/* ───────────────────────── Sample badge ───────────────────────── */
-
-.sample-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.2rem 0.6rem;
-  border: 1px dashed var(--border-strong);
-  border-radius: 999px;
-  color: var(--text-muted);
-  font: 500 0.68rem/1.4 var(--ff-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-:root[lang='ar'] .sample-badge {
-  font-family: var(--ff-body);
-  font-size: 0.75rem;
-}
-.sample-badge__dot {
-  width: 0.4rem;
-  height: 0.4rem;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--glow-accent);
 }
 
 /* ───────────────────────── Projects: query console ───────────────────────── */
@@ -1050,9 +1022,6 @@
   text-wrap: balance;
   color: var(--text);
 }
-.cs__badge {
-  margin-top: 0.75rem;
-}
 .cs__summary {
   max-width: 62ch;
   color: var(--text-muted);
@@ -1117,14 +1086,6 @@
   flex-direction: column;
   gap: clamp(4rem, 2.5rem + 5vw, 8rem);
   padding-block: clamp(3rem, 2rem + 4vw, 6rem);
-}
-.cs__notice {
-  padding: 0.9rem 1.1rem;
-  border: 1px dashed var(--border-strong);
-  border-inline-start: 3px solid var(--accent);
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  font-size: 0.92rem;
 }
 .cs-block__head {
   display: flex;

@@ -1,0 +1,59 @@
+{
+    "code": 200,
+    "success": true,
+    "message": "Testimonials retrieved successfully",
+    "data": [
+        {
+            "id": 5,
+            "name": "م. خالد المنصور",
+            "client_name": "م. خالد المنصور",
+            "name_job": "المدير التقني (CTO)",
+            "client_role": "المدير التقني (CTO)",
+            "company_name": "شركة النخبة للحلول الرقمية",
+            "description": "المهندس عبدالرحمن أبو عيشة من أفضل مهندسي البرمجيات الذين تعاملنا معهم؛ كود Laravel و React منظم للغاية ومكتوب بمعايير SOLID واضحة سهّلت على فريقنا التوسع في المشروع.",
+            "testimonial": "المهندس عبدالرحمن أبو عيشة من أفضل مهندسي البرمجيات الذين تعاملنا معهم؛ كود Laravel و React منظم للغاية ومكتوب بمعايير SOLID واضحة سهّلت على فريقنا التوسع في المشروع.",
+            "rating": 5,
+            "is_featured": true,
+            "sort_order": 1,
+            "source": "dashboard",
+            "avatar": null,
+            "project": null
+        },
+        {
+            "id": 6,
+            "name": "أ. طارق عبد العزيز",
+            "client_name": "أ. طارق عبد العزيز",
+            "name_job": "مدير المنتجات الرقمية (Product Manager)",
+            "client_role": "مدير المنتجات الرقمية (Product Manager)",
+            "company_name": "منصة فاست كومرس",
+            "description": "التزام تام بالمواعيد، فهم عميق لمعمارية قواعد البيانات والـ APIs، واهتمام رائع بأدق التفاصيل في لوحة التحكم وتجربة المستخدم.",
+            "testimonial": "التزام تام بالمواعيد، فهم عميق لمعمارية قواعد البيانات والـ APIs، واهتمام رائع بأدق التفاصيل في لوحة التحكم وتجربة المستخدم.",
+            "rating": 5,
+            "is_featured": true,
+            "sort_order": 2,
+            "source": "dashboard",
+            "avatar": null,
+            "project": {
+                "id": 11,
+                "title": "موقع تعريفي ومنصة منتجات لشركة Steel Tech للمعدات الصناعية",
+                "slug": "high-throughput-ecommerce-api"
+            }
+        },
+        {
+            "id": 7,
+            "name": "م. أحمد علي",
+            "client_name": "م. أحمد علي",
+            "name_job": "Senior Software Engineer",
+            "client_role": "Senior Software Engineer",
+            "company_name": "Tech Solutions Corp",
+            "description": "مهندس برمجيات محترف، التسليم كان في الوقت المحدد وبأعلى جودة.",
+            "testimonial": "مهندس برمجيات محترف، التسليم كان في الوقت المحدد وبأعلى جودة.",
+            "rating": 5,
+            "is_featured": false,
+            "sort_order": 3,
+            "source": "website",
+            "avatar": null,
+            "project": null
+        }
+    ]
+}

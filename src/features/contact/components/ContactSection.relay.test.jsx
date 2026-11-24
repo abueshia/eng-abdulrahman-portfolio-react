@@ -5,15 +5,15 @@ import { contactService } from '@/services/api';
 import { renderWithProviders } from '@/test/renderWithProviders';
 import ContactSection from './ContactSection';
 
-// A production build still on the mock adapter: the form relays to WhatsApp.
-vi.mock('@/config/env', async (importOriginal) => {
+// A production build where `contact` is not a live API resource: the form relays to WhatsApp.
+vi.mock('@/config/api', async (importOriginal) => {
   const actual = /** @type {any} */ (await importOriginal());
-  return { ...actual, env: { ...actual.env, useMock: true, contactRelay: true } };
+  return { ...actual, api: { ...actual.api, contactRelay: true } };
 });
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('Contact form in relay mode (production without the API)', () => {
+describe('Contact form in relay mode (production, contact not a live resource)', () => {
   it('says up front that sending opens WhatsApp, then opens it pre-filled', async () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(/** @type {any} */ ({ opener: {} }));
     const send = vi.spyOn(contactService, 'send');

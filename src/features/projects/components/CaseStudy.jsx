@@ -9,7 +9,6 @@ import { LocalizedLink } from '@/components/ui/LocalizedLink';
 import { paths } from '@/config/routes';
 import { ArchitectureDiagram } from './ArchitectureDiagram';
 import { Gallery } from './Gallery';
-import { SampleBadge } from './SampleBadge';
 import { COVER_TRANSITION } from '../hooks/useCaseNavigation';
 
 const CaseStudyDirector = lazy(() => import('../fx/CaseStudyDirector'));
@@ -35,6 +34,18 @@ function Block({ id, label, title, children, className = '' }) {
 }
 
 /**
+ * Paragraphs of a mapped text field (one `<p>` per line from the API).
+ * @param {{ items: string[], className: string }} props
+ */
+function Paragraphs({ items, className }) {
+  return items.map((item, i) => (
+    <p key={i} className={className}>
+      {item}
+    </p>
+  ));
+}
+
+/**
  * The case study, read like the record it is: the cover becomes the page's
  * header (it is the View Transition target from the case file), then the
  * request (problem) and the response (solution), the architecture drawn from
@@ -43,7 +54,10 @@ function Block({ id, label, title, children, className = '' }) {
  * a giant "Next case →".
  *
  * Everything is prerendered text; the director adds the scroll scenes.
- * @param {{ project: any, next?: any }} props
+ * @param {{
+ *   project: import('@/services/api/mappers/projects').Project,
+ *   next?: import('@/services/api/mappers/projects').Project,
+ * }} props
  */
 export function CaseStudy({ project, next }) {
   const { t } = useTranslation();
@@ -76,13 +90,12 @@ export function CaseStudy({ project, next }) {
           <h1 id="case-title" className="cs__title" data-cs-title>
             {project.title}
           </h1>
-          {project.is_sample && <SampleBadge className="cs__badge" />}
         </div>
         <p className="cs__summary">{project.summary}</p>
         <dl className="cs__facts">
           {[
             ['role', project.role],
-            ['type', t(`projects.types.${project.type}`, { defaultValue: project.type })],
+            ['type', project.type_label],
             ['year', project.year],
             ['duration', project.duration],
             ['client', project.client],
@@ -100,7 +113,7 @@ export function CaseStudy({ project, next }) {
       <figure className="cs__cover" data-cs-cover>
         <div className="cs__cover-frame" data-cs-cover-frame>
           <img
-            src={project.cover_image}
+            src={project.cover_image ?? undefined}
             alt={project.cover_alt ?? ''}
             width={1600}
             height={1000}
@@ -114,12 +127,6 @@ export function CaseStudy({ project, next }) {
       </figure>
 
       <div className="cs__body container-fluid">
-        {project.is_sample && (
-          <p className="cs__notice" role="note">
-            {t('caseStudy.sampleNotice')}
-          </p>
-        )}
-
         <section
           className="cs-brief"
           aria-label={`${t('caseStudy.problem')} / ${t('caseStudy.solution')}`}
@@ -129,7 +136,7 @@ export function CaseStudy({ project, next }) {
               → request
             </p>
             <h2 className="cs-brief__title">{t('caseStudy.problem')}</h2>
-            <p className="cs-brief__text">{project.problem}</p>
+            <Paragraphs items={project.problem} className="cs-brief__text" />
           </div>
           <span className="cs-brief__wire" aria-hidden="true">
             <span data-cs-wire />
@@ -139,7 +146,13 @@ export function CaseStudy({ project, next }) {
               ← 200 response
             </p>
             <h2 className="cs-brief__title">{t('caseStudy.solution')}</h2>
-            <p className="cs-brief__text">{project.solution}</p>
+            <Paragraphs items={project.solution} className="cs-brief__text" />
+            {project.results.length > 0 && (
+              <>
+                <h3 className="cs-brief__title">{t('caseStudy.results')}</h3>
+                <Paragraphs items={project.results} className="cs-brief__text" />
+              </>
+            )}
           </div>
         </section>
 
@@ -178,7 +191,7 @@ export function CaseStudy({ project, next }) {
           <Block id="cs-challenges" label="incidents.log" title={t('caseStudy.challenges')}>
             <ol className="incidents">
               {project.challenges.map((challenge, i) => (
-                <li key={challenge.title} className="incident" data-cs-incident>
+                <li key={`${i}-${challenge.title}`} className="incident" data-cs-incident>
                   <p className="incident__id" dir="ltr">
                     INC-{String(i + 1).padStart(2, '0')}
                     <span className="incident__state">
@@ -186,8 +199,8 @@ export function CaseStudy({ project, next }) {
                       resolved
                     </span>
                   </p>
-                  <h3 className="incident__title">{challenge.title}</h3>
-                  <p className="incident__body">{challenge.body}</p>
+                  {challenge.title && <h3 className="incident__title">{challenge.title}</h3>}
+                  {challenge.body && <p className="incident__body">{challenge.body}</p>}
                 </li>
               ))}
             </ol>
@@ -267,7 +280,7 @@ export function CaseStudy({ project, next }) {
                 <li key={item.slug}>
                   <LocalizedLink to={paths.project(item.slug)} className="cs-related__card">
                     <img
-                      src={item.cover_image}
+                      src={item.cover_image ?? undefined}
                       alt=""
                       width={1600}
                       height={1000}
@@ -275,7 +288,8 @@ export function CaseStudy({ project, next }) {
                       decoding="async"
                     />
                     <span className="cs-related__meta" dir="ltr">
-                      {t(`projects.types.${item.type}`, { defaultValue: item.type })} · {item.year}
+                      {item.type_label}
+                      {item.year ? ` · ${item.year}` : ''}
                     </span>
                     <span className="cs-related__title">{item.title}</span>
                   </LocalizedLink>
@@ -288,10 +302,7 @@ export function CaseStudy({ project, next }) {
 
       {next && next.slug !== project.slug && (
         <nav className="cs-next" aria-label={t('caseStudy.next')}>
-          <LocalizedLink
-            to={paths.project(next.slug)}
-            className="cs-next__link"
-          >
+          <LocalizedLink to={paths.project(next.slug)} className="cs-next__link">
             <span className="cs-next__label">
               {t('caseStudy.next')}{' '}
               <span aria-hidden="true" className="cs-next__arrow">

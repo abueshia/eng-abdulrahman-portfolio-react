@@ -19,6 +19,11 @@ export class ApiError extends Error {
     this.errors = errors;
   }
 
+  /** Throttled (429): wait before retrying (see `retryAfterSeconds`). */
+  get isRateLimited() {
+    return this.status === 429;
+  }
+
   /** @returns {boolean} */
   get isValidation() {
     return this.status === 422;

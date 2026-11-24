@@ -1,0 +1,16 @@
+{
+    "code": 422,
+    "success": false,
+    "message": "The name field is required.",
+    "errors": {
+        "name": [
+            "The name field is required."
+        ],
+        "email": [
+            "The email address field is required."
+        ],
+        "message": [
+            "The message content field is required."
+        ]
+    }
+}

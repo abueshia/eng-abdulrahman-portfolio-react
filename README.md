@@ -4,7 +4,7 @@ Bilingual (Arabic RTL / English LTR) portfolio of **Abdulrahman Abu Eisha**, Ful
 
 Live: <https://eng-abdulrahman-abu-eisha.vercel.app>
 
-The site is a React SPA that is **prerendered at build time** (static HTML for every page and language, then hydrated). Content comes from a Laravel REST API. Until the API is connected, an in-app mock adapter serves the same responses.
+The site is a React SPA that is **prerendered at build time** (static HTML for every page and language, then hydrated). Projects, experiences, testimonials, FAQs and both forms run on the Laravel REST API (fetched at build time, see [The Laravel API](#the-laravel-api-phase-7)); the remaining content is static data served by an in-app mock adapter with the same envelope.
 
 - Concept: *"The Visitor Is The Request"*. Scrolling moves an HTTP request through a live system, one station per section (`src/config/journey.js`).
 - Engineering rules, design system and phase history: [`AGENTS.md`](AGENTS.md) (Arabic).
@@ -22,7 +22,7 @@ Requirements: Node.js ≥ 20.19.
 ```bash
 npm ci
 cp .env.example .env.local   # optional: defaults work for local development
-npm run dev                  # http://localhost:5173 (mock API)
+npm run dev                  # http://localhost:5173 (live API for the connected resources)
 ```
 
 ## Environment variables
@@ -31,29 +31,28 @@ Only `VITE_*` variables reach the browser bundle: never put secrets in them. Set
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `VITE_API_URL` | `http://localhost:8000/api/v1` | Base URL of the Laravel API (versioned prefix included). |
-| `VITE_USE_MOCK` | `true` | `true`: requests are answered by the mock adapter (`src/services/api/mock`). `false`: requests go to `VITE_API_URL`. |
+| `VITE_API_URL` | `https://eng-abdelrahman.dr-krok.com/api/v1` | Base URL of the Laravel API (versioned prefix included, no trailing slash). |
+| `VITE_API_RESOURCES` | all five | Comma list of the resources fetched from the live API: `projects,experiences,testimonials,faqs,contact`. Unset means all five; an empty value means none (the test suite). Everything else (settings, services, stats, About, skills…) stays static/mock data in the same build. |
 | `VITE_SITE_URL` | `https://eng-abdulrahman-abu-eisha.vercel.app` | Canonical production origin, no trailing slash. Used for canonical, hreflang, Open Graph, JSON-LD, `sitemap.xml`, `robots.txt` and `llms.txt`. Always the production domain, even for local builds. |
-| `VITE_CONTACT_RELAY` | `true` in production builds | Only matters while `VITE_USE_MOCK` is not `false`. The contact form then opens WhatsApp (or the mail app) with the message pre-filled instead of posting to a mock. Set `false` to disable. |
-| `VITE_REVIEW_RELAY` | `true` in production builds | Same rule for the "Write a review" form: while `VITE_USE_MOCK` is not `false`, submitting opens WhatsApp (or the mail app) with the review pre-filled. The photo is not sent that way, and the form says so. Set `false` to disable (then `data:todo` blocks). |
-| `VITE_MOCK_LATENCY` | `350` | Simulated latency of the mock adapter (ms). |
+| `VITE_CONTACT_RELAY` | `true` in production builds | Only matters when `contact` is **not** in `VITE_API_RESOURCES`: the contact form then opens WhatsApp (or the mail app) pre-filled. With `contact` live it is ignored. |
+| `VITE_REVIEW_RELAY` | `true` in production builds | Same rule for "Write a review" when `testimonials` is not live (the photo is not sent that way). |
+| `VITE_MOCK_LATENCY` | `350` | Simulated latency of the mock adapter (ms), for the static resources. |
 | `VITE_FX` | `on` | `off` disables every client-only visual layer (intro, canvas, WebGL, GSAP). Content never depends on it. The test suite uses `off`. |
 
 ## Scripts
 
 | Command | What it does |
 | --- | --- |
-| `npm run dev` | Dev server with the mock API. |
-| `npm run build` | Client build, then server build, then prerendering of every page (`scripts/prerender.js`), then output verification (`scripts/verify-dist.js`). Output: `dist/`. |
+| `npm run dev` | Dev server. Live resources come from `VITE_API_URL` (the API allows `http://localhost:5173` in CORS). |
+| `npm run build` | Client build, then server build, then prerendering of every page from the API (`scripts/prerender.js`), then output verification (`scripts/verify-dist.js`). Output: `dist/`. Fails if the API fails. |
 | `npm run build:spa` | Client build only (no prerendering). |
 | `npm run preview` | Serves `dist/` locally (run after `build`). |
 | `npm run lint` | ESLint, zero warnings allowed. |
-| `npm run test` | Vitest (unit, component, prerender, hydration and build-verifier tests). |
+| `npm run test` | Vitest (unit, component, mapping, prerender, hydration and build-verifier tests). Hermetic: no network. |
 | `npm run size` | Initial-JS budget report (gzip) for the home page. Run after `build`. Budget: 170 KB. |
 | `npm run verify:dist` | Re-runs the post-build checks on `dist/`. |
-| `npm run data:todo` | Lists what still blocks publishing (samples on visible sections, missing real data). Exits 1 while anything blocks. |
+| `npm run data:todo` | Lists what still blocks publishing (a visible section without a data source, a form that reaches nobody, missing real data). Exits 1 while anything blocks. |
 | `npm run images` | Regenerates the portrait variants (AVIF/WebP) from `public/images/profile-cutout.png`. Also runs automatically in `dev` and `build`. |
-| `npm run visuals` | Regenerates the SVG screens of the sample case studies. |
 | `npm run format` | Prettier. |
 
 Before merging, `npm run lint`, `npm run test` and `npm run build` must all pass with no warnings.
@@ -68,11 +67,15 @@ src/
   components/        ui/ (atoms) and layout/ (shell, navbar, footer, global layers)
   features/          One folder per section: components/ hooks/ lib/ fx/ (lazy GSAP directors)
   pages/             Route pages (lazy)
-  services/api/      HTTP layer: lazy axios client, envelope unwrapping, services, mock adapter
-  data/mock/         Bilingual mock data mirroring the Laravel responses
+  services/api/      HTTP layer: lazy axios client (live or mock per resource), envelope
+                     unwrapping, services, mappers/ (API → app shapes), mock adapter
+  data/mock/         Static/mock data for the resources the API does not serve
   i18n/              i18next setup; base strings per language load as separate chunks
-  lib/ hooks/ context/ utils/ config/ styles/
-scripts/             prerender, verify-dist, images, bundle report, data report, visuals
+  config/            env.js (site settings) · api.js (API URL, live resources, form relays) · routes, journey
+  test/              setup, render helper, api-fixtures.js (serves the captured API responses)
+  lib/ hooks/ context/ utils/ styles/
+docs/api-fixtures/   Real responses captured from the Laravel API: the reference for data shapes and tests
+scripts/             prerender, verify-dist, images, bundle report, data report
 public/              Static files served as is (CV, images, Search Console verification file)
 ```
 
@@ -83,92 +86,42 @@ public/              Static files served as is (CV, images, Search Console verif
 - Framework preset: none (`"framework": null`). Install `npm ci`, build `npm run build`, output `dist`.
 - Every route is a static file: `/` → `dist/index.html`, `/en` → `dist/en/index.html`, `/projects/:slug` → `dist/projects/:slug/index.html`. There is **no catch-all rewrite**: unknown URLs get `dist/404.html` with a real `404` status, and files under `public/` (CV, images, the `google….html` verification file) are served as they are.
 - Headers: hashed `/assets/*` files are cached for a year (`immutable`); HTML revalidates on every request. Security headers apply site-wide: `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`.
-- The build fails if any generated page is missing its stylesheet or module script, references a file that is not in `dist/`, lacks its SEO head, or if the sitemap lists a URL that is not indexable.
+- The build fails if the API does not answer, if any generated page is missing its stylesheet or module script, references a file that is not in `dist/`, lacks its SEO head, mentions `localhost`, or if the sitemap lists a URL that is not indexable.
 
 Deployment checklist:
 
-1. Set the environment variables in Vercel (Production): `VITE_SITE_URL` (the domain verified in Search Console), plus `VITE_USE_MOCK=false` and `VITE_API_URL` once the API is live.
-2. Content is baked in at build time. Every publish in the Laravel admin must trigger a rebuild through a **Vercel Deploy Hook** (see `SEO.md` §8).
+1. Environment variables in Vercel (Production): `VITE_SITE_URL` (the domain verified in Search Console), `VITE_API_URL=https://eng-abdelrahman.dr-krok.com/api/v1` and `VITE_API_RESOURCES=projects,experiences,testimonials,faqs,contact`.
+2. Content is baked in at build time. The backend triggers a rebuild through a **Vercel Deploy Hook** (below).
 3. After deploying, run through the post-deploy checklist in `SEO.md` §10.
 
-## Connecting the Laravel API (phase 7)
+## The Laravel API (phase 7)
 
-Components never call axios or import mock data. They use hooks, which call the services in `src/services/api/*.service.js`, which call one HTTP client. Going live is a configuration change:
+The contract is [`API_CONTRACT.md`](API_CONTRACT.md) (Arabic, full) and [`FRONTEND_HANDOFF.md`](FRONTEND_HANDOFF.md) (summary), both copied from the backend repository. The real responses in [`docs/api-fixtures/`](docs/api-fixtures/) are the only reference for data shapes.
 
-1. Implement the endpoints the mock serves, with the same envelope:
-   `{ code, success, message, data, pagination? }`. Errors use the same envelope; `422` carries `errors: { field: [message] }`.
-   Endpoints: `GET /settings`, `/home`, `/projects`, `/projects/{slug}`, `/technologies`, `/experiences`, `/credentials`, `/services`, `/testimonials`, `/faqs`, `/stats`, `POST /contact` and `POST /testimonials` (see the testimonials contract below).
-   The fields each one must return (including the SEO contract) are listed in `SEO.md` §7. The mock handlers in `src/services/api/mock/handlers.js` and the data in `src/data/mock/` are the reference responses.
-2. Every request carries `?lang=ar|en` and `Accept-Language`. Return localized fields for that language.
-3. Set `VITE_API_URL` and `VITE_USE_MOCK=false` in Vercel and rebuild. The contact form then posts to `POST /contact` and the review form to `POST /testimonials` (both WhatsApp relays switch off by themselves).
-4. Replace the sample content (`is_sample: true` on projects and testimonials) with real records, or hide those sections through `settings.sections_visibility`. `npm run data:todo` must report nothing blocking.
-5. Add the Vercel Deploy Hook call to the backend's publish events.
+**Live resources.** Five resources come from the API: `GET /projects` (all pages), `GET /projects/{slug}`, `GET /experiences`, `GET /testimonials`, `GET /faqs`, plus `POST /testimonials` and `POST /contact`. Each is switched on by `VITE_API_RESOURCES`; the transport (`services/api/axios-client.js`) sends a request to the API when its first path segment is live and to the mock adapter otherwise, in the same build. Every request carries `?lang=ar|en` and `Accept-Language`.
 
-## Testimonials API contract
+**Mapping.** Components never see the API's field names. Each service passes the unwrapped envelope through a mapper (`services/api/mappers/*.js`, one lazy chunk) that returns the app's shape:
 
-Visitors can submit a review from the Testimonials section ("Write a review"). A submission is **never published directly**: it is stored as `pending`, the owner moderates it, and only `approved` reviews are listed (and prerendered, after the Deploy Hook rebuild).
-
-### Endpoints
-
-| Method | Path | Purpose |
-| --- | --- | --- |
-| `GET` | `/testimonials?lang=ar\|en` | Approved reviews only, localized. Pending and rejected records must never appear here (the client also drops any record whose `status` is not `approved`). |
-| `POST` | `/testimonials` | A visitor submission, `multipart/form-data`. Creates a `pending` record. |
-
-### `GET /testimonials` item
-
-| Field | Type | Notes |
-| --- | --- | --- |
-| `id` | int | |
-| `name` | string \| null | Plain text. |
-| `role` | string | Job title, plain text. |
-| `company` | string \| null | |
-| `quote` | string | The review text (`message` on submission), plain text. |
-| `rating` | int 1-5 | Shown as stars on the card. Never emitted as structured data. |
-| `avatar` | string \| null | Absolute `https://` or root-relative URL of the moderated, re-encoded photo. Without it the card shows a generated monogram. |
-| `status` | `approved` | Always `approved` in this listing. |
-| `is_sample` | bool | Only for placeholder records. |
-| `scope`, `checks[]` | optional | Display extras. |
-
-### `POST /testimonials` request
-
-| Field | Rules (Laravel) |
+| Resource | Notable normalisation |
 | --- | --- |
-| `name` | `required\|string\|min:2\|max:60`, plain text (reject markup) |
-| `role` | `required\|string\|min:2\|max:80`, plain text |
-| `company` | `nullable\|string\|max:80`, plain text |
-| `rating` | `required\|integer\|between:1,5` |
-| `message` | `required\|string\|min:20\|max:600`, plain text |
-| `avatar` | `nullable\|file\|mimes:jpg,jpeg,png,webp\|max:5120` (kilobytes) plus `dimensions:max_width=4096,max_height=4096`. The browser already sends a 256×256 WebP (JPEG fallback) with EXIF stripped, but the server must not trust it: decode, re-encode (e.g. Intervention Image) to drop metadata, store under a random name outside the web root or on a private disk, and expose only after approval. |
-| `consent` | `accepted` (the client sends `"1"`). Store the consent timestamp and wording version with the record. |
-| `hp` | Honeypot. When non-empty: answer `201` with the normal body and store nothing. |
+| Projects | `short_description` → `summary`, `project_type(_label)` → `type`/`type_label`, `challenge[{title, description}]` → `challenges[{title, body}]`, texts split into paragraphs (`\r\n`), editor `[cite: …]` artefacts removed, `gallery` URLs → `{image, alt}` (alt numbered under the title), `repo_url` → `github_url`, `completed_at` → `year`, pagination `total_pages`/`total_items` → `last_page`/`total`. |
+| Experiences | `company_name`/`role_title` → `company`/`role`, `achievements` (one `\n`-separated string, or an array) → trimmed list items without bullet markers, `end_date` forced to `null` while `is_current`, `employment_type_label` shown as is. |
+| Testimonials | Alias fields read as fallbacks (`client_name`, `client_role`, `testimonial`), `rating` clamped to 1-5 (0 hides the stars), `avatar` kept only if it is an http(s) URL (otherwise the generated two-letter monogram), `project` `{id, title, slug}` linked to its case study, `is_featured` marked on the card. |
+| FAQs | Trimmed `question`/`answer`. The same records feed the visible section and the `FAQPage` JSON-LD. |
 
-The request also carries `?lang=` and `Accept-Language`; messages in the response should be in that language.
+**Build time.** The prerender fetches through the same services. If any request fails (network, 5xx, 429, malformed envelope), the build stops with the request that failed: no empty pages and no silent fallback to mock data (there is no mock data for the live resources). A 404 for an unknown slug is the only expected failure. Identical GET requests are sent once per build (the API allows 120 reads per minute per IP, and a Vercel build is one IP). Every published project is generated in both languages and listed in the sitemap with `completed_at` as `lastmod` (the API exposes no update date), with `CreativeWork` + `BreadcrumbList` JSON-LD.
 
-### Responses
+**Forms.**
 
-- `201 Created`: `{ "code": 201, "success": true, "message": "…", "data": { "id": 123, "status": "pending" } }`. Never return the record as published.
-- `422`: `{ "code": 422, "success": false, "message": "The given data was invalid.", "data": null, "errors": { "rating": ["…"], "avatar": ["…"] } }`. The form shows each message on its field (including `avatar`).
-- `429`: rate limited. Any status other than 201 and 422 shows "500 — Retry".
+- `POST /contact` sends `name`, `email`, `phone?`, `message`, `type` (`project_inquiry`, `consultation` or `general_contact`, from the chosen project type) and `service` (the project type's label).
+- `POST /testimonials` sends `multipart/form-data`: `name[<locale>]`, `name_job[<locale>]?`, `company_name[<locale>]?`, `description[<locale>]`, `rating`, `project_id?`, `image?` (256×256 WebP/JPEG re-encoded in the browser), `consent=1` and `locale`. The honeypot field is `website`: when a bot fills it, the form looks accepted and nothing is sent. `hp` is never sent (the API rejects it).
+- Both forms show the confirmation after a `201`, place `422` errors on their fields (`name.ar` lands on the name), say "try again shortly" on `429`, and offer Retry on network or server errors. What the visitor typed is never lost.
 
-### Moderation states
+**CORS.** The API allows `https://eng-abdulrahman-abu-eisha.vercel.app`, `http://localhost:5173` and `http://127.0.0.1:5173` only (no Vercel preview URLs: forms and client refetches on previews are blocked until the backend adds a pattern). Requests send only `Accept`, `Accept-Language`, `Content-Type` and `X-Requested-With`, all allowed.
 
-| `status` | Meaning | Listed by `GET`? |
-| --- | --- | --- |
-| `pending` | New submission, waiting for the owner. | No |
-| `approved` | Published. Approving (or editing) one triggers the Vercel Deploy Hook. | Yes |
-| `rejected` | Kept for audit or deleted; the photo is deleted. | No |
+**Deploy Hook.** The backend posts to a Vercel Deploy Hook (`VERCEL_DEPLOY_HOOK_URL` on the server, never in this repository) when a project, experience or FAQ is saved or deleted, or when an approved testimonial changes. At most one rebuild per minute; reordering in the dashboard does not trigger one (rebuild by hand). Create the hook in Vercel → Project → Settings → Git → Deploy Hooks (branch `main`).
 
-### Abuse protection (required in Laravel)
-
-- **Rate limiting:** `RateLimiter::for('testimonials')`: e.g. 3 submissions per hour and 10 per day per IP, applied with `throttle:testimonials` on the route. Answer `429` with `Retry-After`.
-- **Honeypot** (`hp`) as above, plus a minimum fill time (e.g. reject submissions faster than 3 s after the form was opened, if a signed timestamp is added later).
-- **Duplicates:** reject the same `name` + `message` hash within 24 hours (`422` on `message`).
-- **Content:** strip or reject HTML on every field; escape on output; limit links in `message` (e.g. none, or flag for review).
-- **Files:** validate MIME by content, not by extension; enforce the size and dimension limits; re-encode; never serve the original upload.
-- Optionally add Cloudflare Turnstile or similar if spam gets through; the client needs one extra field for it.
-
-While the API is not connected, production builds relay the review to WhatsApp (`VITE_REVIEW_RELAY`, photo not included), and development builds answer from the mock adapter with the same contract and a visible "Mock mode: not delivered" notice. The mock never stores submissions.
+**Tests** never touch the network: `VITE_API_RESOURCES` is empty in the test env, and `src/test/api-fixtures.js` registers the captured responses on the mock adapter, so every test runs the real envelope through the real mappers.
 
 ## License
 

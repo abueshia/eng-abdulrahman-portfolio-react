@@ -6,3 +6,4 @@ public
 *.md
 
 dist-ssr
+docs/api-fixtures

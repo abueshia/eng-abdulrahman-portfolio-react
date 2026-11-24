@@ -2,7 +2,7 @@
 
 هذا الملف هو المرجع الإلزامي لأي مطوّر أو وكيل ذكاء اصطناعي يعمل على مشروع البورتفوليو الشخصي لـ **م. عبدالرحمن أبو عيشة (Eng. Abdulrahman Abu Eisha)** — مهندس برمجيات Full-Stack (PHP 8.3 · Laravel · React · Clean Architecture/SOLID).
 
-**قرارات المالك الملزمة:** التهجئة المعتمدة للاسم هي **Abdulrahman Abu Eisha** فقط. الصورة المعتمدة هي `public/images/profile-cutout.png`. ملف CV واحد لكل اللغات تحت `public/cv/`. بيانات الملف الشخصي حقيقية. أي قيمة ناقصة ضرورية قبل النشر تُعلَّم بـ `TODO_REAL_DATA`، وأي ملف mock مؤقت لحين ربط الـ API يُعلَّم في رأسه بـ `MOCK_UNTIL_API` ويجب أن يكون محتواه نموذجياً واضحاً (بدون أسماء شركات حقيقية ولا أرقام تبدو حقيقية). راجع `TODO_REAL_DATA.md` والأمر `npm run data:todo`. وتحسين محركات البحث أولوية قصوى (راجع `SEO.md`).
+**قرارات المالك الملزمة:** التهجئة المعتمدة للاسم هي **Abdulrahman Abu Eisha** فقط. الصورة المعتمدة هي `public/images/profile-cutout.png`. ملف CV واحد لكل اللغات تحت `public/cv/`. بيانات الملف الشخصي حقيقية. أي قيمة ناقصة ضرورية قبل النشر تُعلَّم بـ `TODO_REAL_DATA`، وأي ملف mock مؤقت لمورد لا يخدمه الـ API بعد يُعلَّم في رأسه بـ `MOCK_UNTIL_API`. المشاريع والخبرات والتوصيات والأسئلة الشائعة ونموذجا التواصل والمراجعة تأتي من الـ Laravel API الحقيقي (المرحلة 7)، والمرجع الوحيد لشكل بياناتها هو `docs/api-fixtures/` و`API_CONTRACT.md`. راجع `TODO_REAL_DATA.md` والأمر `npm run data:todo`. وتحسين محركات البحث أولوية قصوى (راجع `SEO.md`).
 
 ---
 
@@ -55,7 +55,7 @@ src/
     about/        AboutSection (بوابة AUTH وREADME وبطاقة الكود) + lib/profile-code (كلاس PHP من البيانات) + fx/AboutDirector
     skills/       SkillsSection (التبويبات + الـ constellation) + lib/constellation + fx/SkillsDirector
     experience/   ExperienceSection (git log --graph) + lib/git-log + fx/ExperienceDirector
-    projects/     ProjectsSection (Case Files) + QueryConsole + CaseFile + CaseStudy + ArchitectureDiagram + Gallery (lightbox) + SampleBadge · hooks/{useProjects, useCaseNavigation (View Transitions), useFlip} · lib/{filters, architecture} · fx/{ProjectsDirector, CaseStudyDirector}
+    projects/     ProjectsSection (Case Files) + QueryConsole + CaseFile + CaseStudy + ArchitectureDiagram + Gallery (lightbox) · hooks/{useProjects (كل الصفحات من الـ API), useCaseNavigation (View Transitions), useFlip} · lib/{filters, architecture} · fx/{ProjectsDirector, CaseStudyDirector}
     services/     ServicesSection (API Contracts, route:list) + lib/contract + fx/ServicesDirector
     testimonials/ TestimonialsSection (Code Review) + CarouselEngine (embla كسول) + ReviewModal (نموذج "اكتب مراجعتك"، chunk كسول) + Avatar + Stars · lib/{review-schema, avatar, avatar-image (canvas), review-relay} + fx/TestimonialsDirector
     faq/          FaqSection (man faq، `<details name>`) + fx/FaqDirector
@@ -67,14 +67,15 @@ src/
   pages/          صفحات التطبيق المقسمة بـ React.lazy (HomePage, ProjectDetailsPage, NotFoundPage)
   hooks/          خطافات عامة (useTheme, useLocale, useApiQuery, useSettings, useMediaQuery, useReducedMotion, usePointerFine, useInView, useScrollState, useSmoothScroll, useHydrated/useIdleReady, useMagnetic, usePointerParallax)
   context/        سياقات React (ThemeContext, LocaleContext, lenis-context, head-context)
-  services/api/   client.js (unwrap/requestConfig بدون axios) · axios-client.js (كسول) · http.js (واجهة كسولة) · endpoints.js · errors.js + خدمات الموارد (*.service.js) + محول البيانات الوهمية (mock/adapter.js, handlers.js, response.js)
-  data/mock/      بيانات وهمية ثنائية اللغة ({ ar, en }) تحاكي استجابات Laravel تماماً
+  services/api/   client.js (unwrap/unwrapMapped/requestConfig بدون axios) · axios-client.js (كسول، يختار الـ API أو الـ mock لكل مورد) · http.js (واجهة كسولة + ذاكرة طلبات GET وقت البناء فقط) · endpoints.js · errors.js · rate-limit.js (Retry-After، كسول) + خدمات الموارد (*.service.js) + mappers/ (تحويل رد الـ API لشكل داخلي، chunk كسول) + محول البيانات الوهمية (mock/adapter.js, handlers.js, response.js)
+  data/mock/      بيانات ثابتة ثنائية اللغة ({ ar, en }) للموارد التي لا يخدمها الـ API بعد فقط (settings, services, stats, technologies, credentials)
   i18n/           إعداد i18next (loadLocale/changeLocale: نصوص كل لغة chunk مستقل) وملفات الترجمة locales/{ar,en}.json · work.js + locales/work.{ar,en}.json (نصوص Projects/CaseStudy/Services) · sections.js + locales/sections.{ar,en}.json (نصوص Testimonials/FAQ/Contact/Footer)، وكلها تُشحن مع الـ chunks الكسولة
   styles/         tokens.css · globals.css · fx.css (الطبقات العامة) · hero.css · sections.css (أقسام المرحلة 3) · work.css (Projects وCase Study وServices) · content.css (Testimonials وFAQ وContact وFooter) · fonts.js · index.css
   utils/          cn.js (clsx فقط) · storage.js · motion.js · head.js (إدارة <head>) · structured-data.js (JSON-LD) · llms.js (/llms.txt)
-  config/         env.js · routes.js · navigation.js · journey.js (محطات الرحلة)
-  test/           setup.js · renderWithProviders.jsx
-scripts/          prerender.js (الصفحات الثابتة + sitemap + robots + llms.txt + resource hints) · verify-dist.js (فحص ما بعد البناء) · images.js (sharp) · bundle-report.js · real-data-report.js · project-visuals.js (شاشات المشاريع النموذجية SVG)
+  config/         env.js (إعدادات الموقع) · api.js (رابط الـ API والموارد الحية والـ relay، لا يدخل الحزمة الأولية) · routes.js · navigation.js · journey.js (محطات الرحلة)
+  test/           setup.js · renderWithProviders.jsx · api-fixtures.js (يخدم ردود الـ API الحقيقية المسجلة للاختبارات)
+docs/api-fixtures/ ردود حقيقية من الـ Laravel API: المرجع الوحيد لشكل البيانات وأساس اختبارات الـ mapping
+scripts/          prerender.js (الصفحات الثابتة + sitemap + robots + llms.txt + resource hints) · verify-dist.js (فحص ما بعد البناء) · images.js (sharp) · bundle-report.js · real-data-report.js
 ```
 
 ---
@@ -82,9 +83,11 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 ## 4) طبقة البيانات وعقد الـ Laravel API (قاعدة صارمة)
 
 1. **فصل صارم:** المكوّنات للعرض فقط، ولا تستورد من `src/data/mock` ولا تستدعي `axios` مباشرة. الجلب يتم عبر خطافات (`useApiQuery` / feature hooks) التي تستدعي خدمات `src/services/api/*.service.js`.
-2. **التبديل بين Mock والـ API الحقيقي في طبقة النقل (HTTP Transport):**
-   - عندما يكون `VITE_USE_MOCK=true`، يستخدم عميل `axios` المحوّل `mockAdapter` (يُحمَّل كـ chunk منفصل عبر dynamic import).
-   - عندما يكون `VITE_USE_MOCK=false`، يرسل نفس العميل الطلبات إلى `VITE_API_URL` دون تغيير سطر واحد في المكوّنات أو الخدمات.
+2. **التبديل بين Mock والـ API الحقيقي لكل مورد في طبقة النقل (HTTP Transport):**
+   - `VITE_API_RESOURCES` (افتراضياً: `projects,experiences,testimonials,faqs,contact`) يحدد الموارد الحية. أي طلب أول جزء في مساره مورد حي يذهب إلى `VITE_API_URL`، والباقي إلى `mockAdapter` (chunk كسول) في نفس الـ build.
+   - إعدادات الـ API في `src/config/api.js` وليس `env.js`، لأن الكود الكسول فقط يحتاجها. ويُقرأ كل متغير بالاسم (`import.meta.env.VITE_X`)، ولا يُقرأ `import.meta.env` ككائن، حتى لا تنسخ Vite كل الـ env في الحزمة الأولية.
+   - **طبقة الـ mapping (إلزامية):** كل خدمة لمورد حي تمرر الرد عبر mapper في `services/api/mappers/` (chunk كسول واحد) يعيد شكلاً داخلياً ثابتاً. المكوّنات لا تعرف أسماء حقول الـ API أبداً، وأي تغيير في الـ API يُعالج في الـ mapper واختباره (`mappers.test.js` على الـ fixtures الحقيقية).
+   - الموارد الحية بلا بيانات mock: الاختبارات تعمل بـ `VITE_API_RESOURCES=''` وتخدم الـ fixtures الحقيقية عبر `registerMockRoutes` (`src/test/api-fixtures.js`)، فلا تلمس الشبكة.
 3. **غلاف الاستجابة الموحد (Laravel Envelope):**
    جميع المسارات تُرجع الغلاف:
    ```json
@@ -93,14 +96,15 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
      "success": true,
      "message": "OK",
      "data": {},
-     "pagination": { "current_page": 1, "per_page": 12, "total": 6, "last_page": 1 }
+     "pagination": { "current_page": 1, "per_page": 9, "total_items": 14, "total_pages": 2 }
    }
    ```
-   وتفك الدالة `unwrap()` هذا الغلاف وتحوّل أي خطأ (بما فيه `422` و`404`) إلى كائن `ApiError` موحد.
+   وتفك الدالة `unwrap()` هذا الغلاف وتحوّل أي خطأ (بما فيه `422` و`404` و`429`) إلى كائن `ApiError` موحد (`isValidation`، `isNotFound`، `isRateLimited`، `isNetwork`). والـ mapper يحوّل ترقيم الـ API إلى `{ current_page, per_page, total, last_page }`. أخطاء 404-route و429 و500 تأتي بشكل Laravel الافتراضي `{ message }` بدون `code`.
 4. **اللغة في الطلبات:** كل طلب يمرر `?lang=ar|en` وترويسة `Accept-Language`، ومفتاح التخزين المؤقت في TanStack Query يتضمن اللغة النشطة دائماً.
-5. **المحتوى النموذجي (`is_sample`):** ينطبق على المشاريع والتوصيات. أي سجل يحمل `is_sample: true` يظهر بشارة "نموذجي / Sample"، ولا يأخذ JSON-LD (CreativeWork / Review)، وصفحته (إن وُجدت) `noindex, follow` وخارج الـ sitemap. ممنوع أسماء أشخاص أو شركات حقيقية أو اقتباسات تبدو حقيقية. و`npm run data:todo` يفشل إذا كان قسم ظاهر يعرض محتوى نموذجياً، أو إذا كان نموذج التواصل mock خالصاً (`VITE_CONTACT_RELAY=false` بدون API). وضع الـ relay (واتساب) يظهر كـ "موصى به" فقط.
-   - **تفاصيل المشاريع:** أي مشروع يحمل `is_sample: true` يظهر بشارة "Sample / نموذجي"، وصفحته `noindex, follow` (تُولَّد مسبقاً لكن لا تدخل الـ sitemap)، ولا يأخذ JSON-LD من نوع CreativeWork. المقاييس وصفية فقط أو `null` (تظهر "No data")، ولا أرقام مخترعة. الشاشات SVG مولّدة بـ `npm run visuals`، واستبدالها بلقطات حقيقية = تغيير المسار فقط. الحقول الكاملة موثقة في رأس `src/data/mock/projects.js` وفي `SEO.md` §7.
-6. **مراجعات الزوار (`POST /testimonials`):** الإرسال `multipart/form-data` عبر `testimonialsService.submit()`، والاستجابة `201` بحالة `pending` دائماً. القائمة (`GET /testimonials`) تعرض `approved` فقط، والواجهة تُسقط أي سجل حالته غير ذلك. ممنوع إظهار مراجعة جديدة فوراً. في الإنتاج بدون API يتحول الإرسال إلى واتساب (`VITE_REVIEW_RELAY`) والصورة لا تُرسل، وفي الـ dev يظهر "Mock mode: not delivered". العقد الكامل في README.
+5. **المحتوى الحقيقي من الـ API:** منطق `is_sample` وشارات "نموذجي" حُذفت. كل مشروع من الـ API عمل حقيقي: صفحته `index, follow` وداخل الـ sitemap (`lastmod` = `completed_at`) ولها JSON-LD من نوع CreativeWork. المقاييس كما يرسلها الـ API فقط (حالياً `[]`)، ولا أرقام مخترعة. و`npm run data:todo` يفشل إذا كان قسم ظاهر لا مورده حي ولا له mock، أو إذا كان نموذج لا يصل لأحد.
+   - **البناء يفشل عند فشل الـ API:** أي طلب فاشل وقت التوليد (شبكة، 5xx، 429، غلاف غير صالح) يوقف البناء برسالة فيها الطلب الفاشل. ممنوع توليد صفحات فارغة أو الرجوع للـ mock بصمت. 404 لـ slug غير موجود هو الفشل الوحيد المتوقع.
+   - الطلبات المتطابقة وقت البناء تُرسل مرة واحدة (الحد 120 قراءة في الدقيقة لكل IP، والـ build على Vercel IP واحد).
+6. **النموذجان (`POST /contact` و`POST /testimonials`):** بحقول العقد كما هي (`API_CONTRACT.md` §5 و§7). المراجعة `multipart/form-data` والنصوص تحت مفتاح لغة الصفحة (`name[ar]`، `description[ar]`…) مع `rating` و`project_id` و`image` و`consent` و`locale`. الـ honeypot هو `website`: إن امتلأ يظهر النجاح ولا يُرسل شيء، و`hp` لا يُرسل أبداً (الـ API يرفضه). بعد `201` تظهر رسالة التأكيد الإلزامية، وأخطاء `422` على حقولها (`name.ar` على حقل الاسم)، و`429` "حاول بعد قليل"، وخطأ الشبكة أو الخادم مع Retry، ولا يضيع ما كتبه الزائر أبداً. القائمة (`GET /testimonials`) تعرض المعتمد فقط، وممنوع إظهار مراجعة جديدة فوراً. الـ relay إلى واتساب يعمل فقط إذا لم يكن المورد حياً.
 7. **إظهار/إخفاء الأقسام:** يعتمد كل قسم في الصفحة الرئيسية على `<Section id="...">` الذي يقرأ `settings.sections_visibility[id]`. والقسم المخفي يُحذف أيضاً من التنقل (`useNavItems`) ومن الـ FAQPage ومن `llms.txt`.
 
 ---
@@ -265,6 +269,18 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 ---
 
 ## 9) سجل التغييرات (Changelog)
+
+### المرحلة 7 (الجزء 1) — ربط الفرونت بالـ Laravel API الحقيقي
+- **النطاق:** المشاريع (القائمة والتفاصيل)، والخبرات، والتوصيات (GET وPOST)، والأسئلة الشائعة، والتواصل (POST). الباقي (settings والخدمات والإحصائيات والـ About والمهارات) بقي static كما هو.
+- **الإعداد:** `VITE_API_RESOURCES` لكل مورد، و`VITE_API_URL` (الافتراضي: الإنتاج). النقل يختار الـ API أو الـ mock لكل طلب في نفس الـ build. والإعدادات في `src/config/api.js`.
+- **الـ mapping:** `services/api/mappers/` لكل مورد مع اختبارات على الـ fixtures الحقيقية. تطبيع الإنجازات (نص بأسطر أو مصفوفة، trim، حذف علامات القوائم)، والفقرات (`\r\n`)، وحذف `[cite: …]`، وروابط الصور، والتقييم، والترقيم.
+- **التوليد المسبق:** المشاريع وكل الـ slugs من الـ API وقت البناء، والـ sitemap فيه كل مشروع حقيقي بلغتين (`lastmod` = `completed_at`)، وCreativeWork لكل مشروع، وFAQPage من `GET /faqs`. البناء يفشل برسالة واضحة إذا فشل الـ API.
+- **التنظيف:** حذف بيانات الـ mock للمشاريع والخبرات والتوصيات والأسئلة، و`SampleBadge`، والشاشات النموذجية SVG، والأمر `npm run visuals`.
+- **الأقسام:** الخبرات بتسمية نوع التوظيف من الـ API، والـ director يعيد بناء الـ ScrollTrigger عند تغير الصفوف (`graphKey`)، ومختبرة بـ 1 و2 و4 و8 سجلات ونصوص طويلة. التوصيات تعرض التقييم والأفاتار (أو الحرفين) والمشروع المرتبط (رابط لصفحته) وشارة "مراجعة مميزة". نموذج المراجعة بحقول العقد مع اختيار المشروع.
+- **رسائل ما بعد الإرسال:** "تم استلام طلبك وسيتم الرد عليك في أقرب وقت." و"شكراً لك! تم استلام رأيك وسيظهر في الموقع بعد المراجعة." مع 422 على الحقول، و429، وخطأ الشبكة مع Retry.
+- **الأداء:** الـ JS الأولي 172,646 ← 172,628 بايت gzip (168.6 KB، بدون زيادة): الـ mappers وحلقة الترقيم وتحليل `Retry-After` كسولة، وذاكرة طلبات البناء تُحذف من حزمة المتصفح، وإعدادات الـ API خارج `env.js`.
+- **قاعدة:** ممنوع قراءة `import.meta.env` ككائن. وممنوع أن يعتمد مكوّن على أسماء حقول الـ API. وأي مورد حي جديد يحتاج mapper واختباراً على fixture حقيقي.
+- التفاصيل والفروقات ونواقص الباك إند في `INTEGRATION_REPORT.md`.
 
 ### أداء — التهنيج وحمل المعالج أثناء التمرير
 - **العَرَض:** تهنيج عند التمرير وعند القفز لقسم من الـ Navbar، والمراوح تعمل.

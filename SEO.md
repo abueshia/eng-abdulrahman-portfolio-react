@@ -110,13 +110,13 @@ Every page renders exactly one `<Seo>` (`src/components/ui/Seo.jsx`). The tags a
 | --- | --- |
 | `<title>` | Home: `settings.seo.meta_title` used as is (`fullTitle`), ≤ ~60 characters, fallback `meta.defaultTitle`. Other pages: `meta.titleTemplate` (`%s \| عبدالرحمن أبو عيشة` / `%s \| Abdulrahman Abu Eisha`). Unique per page and language (tested). |
 | `meta description` | Home: `settings.seo.meta_description` (≈ 155 characters: name, 4 years, Laravel/PHP, React, payments, REST APIs, Cairo). Case studies: `summary`. Fallback `meta.defaultDescription`. |
-| `robots` | `index, follow, max-image-preview:large`; `noindex, follow` on sample case studies (`is_sample`); `noindex, nofollow` on the 404 page |
-| HTTP status (prerender) | `<Seo status>`: 200 by default, `404` on the not-found page. Not derived from `noindex` (sample pages are noindex but real 200 pages). |
+| `robots` | `index, follow, max-image-preview:large` (every page, every case study from the API); `noindex, nofollow` on the 404 page |
+| HTTP status (prerender) | `<Seo status>`: 200 by default, `404` on the not-found page. Not derived from `noindex`. |
 | `link canonical` / `alternate hreflang` | See §3 |
 | Open Graph | `og:type` (`profile` on home, `article` on case studies), `og:title`, `og:description`, `og:url`, `og:image`, `og:site_name`, `og:locale` + `og:locale:alternate` |
 | Twitter | `summary_large_image` card mirroring OG |
 
-**OG images:** 1200×630 JPG/PNG under 300 KB. Default: `/images/og-cover.jpg` (final). Case studies use their `cover_image` when it is a raster image; the generated SVG sample covers fall back to the default, since social scrapers do not render SVG.
+**OG images:** 1200×630 JPG/PNG under 300 KB. Default: `/images/og-cover.jpg` (final). Case studies use their `cover_image` (from the API) when it is a raster image; an SVG cover falls back to the default, since social scrapers do not render SVG.
 
 ---
 
@@ -131,8 +131,8 @@ Passed to `<Seo jsonLd={…}>`. Builders live in `src/utils/structured-data.js` 
 | Home | `WebSite` (name, description, publisher → Person) | ✅ |
 | Home | `ProfessionalService` (founded by the Person, `address` Cairo/EG, `areaServed`) with `hasOfferCatalog`: one `OfferCatalog` per service group, each service an `Offer` → `Service` (name, description, `serviceType`, provider → Person) | ✅ |
 | Home | `FAQPage` (every visible question with its `acceptedAnswer`), only while the FAQ section is visible | ✅ (13 questions) |
-| Case study | `CreativeWork` (or `SoftwareSourceCode` with `codeRepository` when `github_url` is public) authored by the Person + `BreadcrumbList`. **Real projects only**: `is_sample` projects get none. | ✅ |
-| Testimonials | None on purpose: self-serving reviews are ignored by Google (and against its review snippet guidelines), and samples must never be marked up. Cards show star ratings, but there is no `Review`, no `AggregateRating`, no `reviewRating`/`ratingValue` anywhere, ever (tested on the JSON-LD graph and on the whole HTML). | — |
+| Case study | `CreativeWork` (or `SoftwareSourceCode` with `codeRepository` when `repo_url` is public) authored by the Person + `BreadcrumbList`, for every published API project. `dateCreated` = `completed_at` (the API exposes no publish/update date), `genre` = the category name. | ✅ |
+| Testimonials | None on purpose: self-serving reviews are ignored by Google (and against its review snippet guidelines), and the reviews are about the owner. Cards show star ratings, but there is no `Review`, no `AggregateRating`, no `reviewRating`/`ratingValue` anywhere, ever (tested on the JSON-LD graph and on the whole HTML). | — |
 
 `Person` fields:
 
@@ -159,11 +159,11 @@ Rules:
 
 ## 6. Crawling & indexing
 
-- **`sitemap.xml`** is generated from the same route list that is prerendered: every route × locale, with `xhtml:link` alternates (ar, en, x-default) and `lastmod` (from `updated_at` / `published_at`, else the build date). Routes flagged `sitemap: false` are generated but not listed: sample case studies (`is_sample: true`), which are also `noindex`. Today it lists `/` and `/en`.
-- **Sample projects:** reachable (links work, pages are prerendered) but invisible to search engines. When the API returns a project without `is_sample`, it is indexed, listed and described with JSON-LD automatically.
+- **`sitemap.xml`** is generated from the same route list that is prerendered: every route × locale, with `xhtml:link` alternates (ar, en, x-default) and `lastmod`. Projects come from `GET /projects` (every page) at build time, so every published project is listed in both languages with `lastmod` = its `completed_at` (the API has no `updated_at`; the build date is used when `completed_at` is null). Home pages use the build date. With the current data: 30 URLs (2 home + 14 projects × 2).
+- **Build failure, never silent:** if the API cannot be reached (or answers 429/5xx), the build stops with the failing request; it never writes empty sections or falls back to mock data.
 - **Hidden sections** (`settings.sections_visibility`) are not rendered, not linked and not in the FAQPage.
 - **`robots.txt`:** allow all, plus the sitemap location.
-- **`/llms.txt`** (GEO): a short, factual Markdown brief generated from the API data at build time (`src/utils/llms.js`): a one-sentence definition ("Abdulrahman Abu Eisha (عبدالرحمن أبو عيشة) is a Full-Stack Software Engineer based in Cairo, Egypt, with 4 years of experience, and CEO of iCode Tech."), identity, pages, services, FAQ, profiles and contact. Sample projects and phone numbers are never listed.
+- **`/llms.txt`** (GEO): a short, factual Markdown brief generated from the API data at build time (`src/utils/llms.js`): a one-sentence definition ("Abdulrahman Abu Eisha (عبدالرحمن أبو عيشة) is a Full-Stack Software Engineer based in Cairo, Egypt, with 4 years of experience, and CEO of iCode Tech."), identity, pages (every API project), services, FAQ (from the API), profiles and contact. Phone numbers are never listed.
 - **404:** `dist/404.html` (Arabic, `noindex`) is served by Vercel with a real `404` status for any URL that was not generated. There is no catch-all rewrite, so there are no soft 404s.
 - **Internal linking:** real `<a href>` links (`LocalizedLink`) for every page. Never navigate with `onClick` alone. Case studies link to related projects and the next case.
 - **Images:**
@@ -181,13 +181,14 @@ The backend must provide, per locale:
 | Resource | Fields needed for SEO |
 | --- | --- |
 | `GET /settings` | `general.owner_name`, `general.site_name`, `general.job_title`, `general.avatar`, `general.socials[].url` (absolute), `general.alternate_names[]`, `general.address{locality, country, country_code}` (city level only), `general.area_served[]`, `general.company{name, role, url?}`, `general.years_of_experience`, `seo.meta_title` (≤ 60 chars), `seo.meta_description` (≈ 155 chars), `seo.og_image`, `hero.summary` |
-| `GET /projects`, `/projects/:slug` | stable `slug`, `title`, `summary` (≤ 160 chars), `cover_image` (absolute or root-relative) + `cover_alt`, `published_at`, `updated_at`, `is_sample` (boolean). Summary items also carry `type`, `year`, `role`, `preview_image`, `metrics[]`, `technologies[]`. The full record adds `problem`, `solution`, `challenges[{title, body}]`, `architecture{nodes[{id,label,layer,note}], edges[{from,to,kind,label}]}`, `decisions[{title, body, nodes[]}]`, `metrics[{label, value \| null}]`, `gallery[{image, alt}]`, `duration`, `client`, `live_url`, `github_url`, `related_projects[]` |
+| `GET /projects`, `/projects/:slug` | **Live** (API_CONTRACT.md §3). Used for SEO: stable `slug`, `title`, `short_description` (the meta description: keep it ≤ 160 chars), `cover_image` (absolute; also the OG image when raster), `completed_at` (sitemap `lastmod`, JSON-LD `dateCreated`), `live_url`, `repo_url`, `technologies[].name` (JSON-LD keywords), `category.name`. Missing for SEO (backend gap, see INTEGRATION_REPORT.md): `meta_title`, `meta_description`, `updated_at`, gallery `alt` texts and sizes |
 | `GET /services` | flat list sorted by group then id: `slug`, `method`, `title`, `description`, `deliverables[]`, `stack[]`, `group{slug, name, sort}` |
-| `GET /testimonials` | **Approved records only:** `name`, `role`, `company`, `quote`, `rating` (1-5), `avatar` (https or root-relative), `status` (`approved`), `scope`, `checks[]`, `is_sample` |
-| `POST /testimonials` | `multipart/form-data` `{ name, role, company?, rating, message, avatar?, consent, hp }` → `201` with `data.status = "pending"` (never published directly), `422` with `errors{field: [message]}`. Full contract, moderation and spam rules: `README.md` → "Testimonials API contract". Approving a review triggers the Deploy Hook (§8) |
-| `GET /faqs` | `question`, `answer` (plain text: it is copied verbatim into `FAQPage` and `llms.txt`) |
-| `POST /contact` | body `{ name, email, phone?, type, message, website? }` (`website` = honeypot: answer 201, store nothing). 201 on success, 422 with `errors{field: [message]}` (shown on the fields), anything else is "500 — Retry". Escape all input server-side; the client already refuses HTML |
-| Listings | Pagination (`pagination.last_page`) so the prerenderer can enumerate every item |
+| `GET /testimonials` | **Live**, approved records only: `name`, `name_job`, `company_name`, `description`, `rating`, `avatar`, `is_featured`, `project{id,title,slug}`. Never marked up as `Review` |
+| `POST /testimonials` | **Live**, `multipart/form-data` (API_CONTRACT.md §5): stored inactive until approved; approving one triggers the Deploy Hook (§8) |
+| `GET /experiences` | **Live** (§4): every role is prerendered text in both languages |
+| `GET /faqs` | **Live** (§6): `question`, `answer` (plain text: copied verbatim into `FAQPage` and `llms.txt`) |
+| `POST /contact` | **Live** (§7) |
+| Listings | Pagination (`pagination.total_pages`) so the prerenderer can enumerate every project |
 
 **Slug changes:** a slug must never change silently. If it must, the backend records the old slug, and a `308` redirect is added to `vercel.json` `redirects`.
 
@@ -197,11 +198,11 @@ The backend must provide, per locale:
 
 Content is baked in at build time, so publishing must trigger a rebuild:
 
-1. Create a **Vercel Deploy Hook** for the production branch.
-2. Laravel calls it (queued job) whenever a project, setting, service, FAQ or testimonial is created, updated, published or deleted.
-3. Vercel rebuilds (about 1 minute). New URLs appear in the regenerated `sitemap.xml`.
+1. Create a **Vercel Deploy Hook** for the production branch (Vercel → Project → Settings → Git → Deploy Hooks).
+2. Put its URL in the backend's `VERCEL_DEPLOY_HOOK_URL` (server env, never in this repository). Laravel calls it when a project, experience or FAQ is saved or deleted, and when an approved testimonial changes (API_CONTRACT.md §10). At most once per minute; reordering in the dashboard does not trigger it (rebuild by hand).
+3. Vercel rebuilds (about 1 minute) and fetches the API again. New URLs appear in the regenerated `sitemap.xml`.
 
-Until the API is live (`VITE_USE_MOCK=true`), the build prerenders the mock data, and in production the contact form (`VITE_CONTACT_RELAY`) and the "Write a review" form (`VITE_REVIEW_RELAY`, photo not sent) relay to WhatsApp.
+Settings, services, stats, About and skills are still static data in this repository: changing them needs a commit.
 
 ---
 
@@ -325,4 +326,5 @@ Rankings use field CWV (LCP, INP, CLS). Targets: LCP < 2.5 s, CLS < 0.1, INP < 2
 | 4 ✅ | Case-study JSON-LD + breadcrumbs (real projects only), samples noindex + out of the sitemap, `<Seo status>`, filter URLs canonicalized, `ProfessionalService` / `OfferCatalog` |
 | 5 ✅ | FAQPage JSON-LD, sample content kept noindex and out of the sitemap; the blog was later removed |
 | 6 ✅ | Deploy hardening (headers, no catch-all rewrite, post-build verifier, stale-chunk recovery), titles/descriptions from settings, Person identity (`alternateName`, address, `areaServed`), 5 new FAQs, keyword-natural copy, `llms.txt`, initial JS 204 → 169.4 KB, hydration on demand, CLS fix, WCAG AA contrast, Search Console runbook |
-| 7 | Laravel API connected; real projects and testimonials (indexable case studies, CreativeWork JSON-LD), Deploy Hook |
+| 7.1 ✅ | Laravel API connected for projects, experiences, testimonials, FAQs and both forms: every real case study indexable with CreativeWork JSON-LD, sitemap `lastmod` from `completed_at`, FAQPage from `GET /faqs`, build fails when the API fails, Deploy Hook rebuilds |
+| 7.2 | Settings, services, stats, skills from the API once the backend serves them; `meta_title`/`meta_description`/`updated_at` per project |

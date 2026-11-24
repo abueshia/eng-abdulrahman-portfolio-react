@@ -14,7 +14,9 @@ const localized = (/** @type {'ar' | 'en'} */ lang) => ({
     },
   ],
   faqs: [{ question: 'Do you work remotely?', answer: 'Yes.' }],
-  projects: [{ slug: 'sample-x', title: 'Sample', summary: 'Sample project', is_sample: true }],
+  projects: [
+    { slug: 'clinic-platform', title: 'Clinic Platform', summary: 'Bookings and records.' },
+  ],
 });
 
 describe('llms.txt', () => {
@@ -32,7 +34,7 @@ describe('llms.txt', () => {
     expect(text).toContain('Also written as: عبد الرحمن أبو عيشة');
   });
 
-  it('links the pages, services, FAQ and profiles, never samples or contact numbers', () => {
+  it('links the pages, every project, services, FAQ and profiles, never contact numbers', () => {
     expect(text).toContain('[Home, English](https://example.vercel.app/en)');
     expect(text).toContain(
       '- Backend & Integrations: Payment Gateway Integration. Paymob, Fawry and more.',
@@ -40,7 +42,9 @@ describe('llms.txt', () => {
     expect(text).toContain('- Do you work remotely? Yes.');
     expect(text).toContain('[GitHub](https://github.com/abueshia)');
     expect(text).toContain('[CV (PDF)](https://example.vercel.app/cv/');
-    expect(text).not.toContain('sample-x');
+    expect(text).toContain(
+      '- [Clinic Platform](https://example.vercel.app/en/projects/clinic-platform): Bookings and records.',
+    );
     expect(text).not.toContain('wa.me');
     expect(text).not.toMatch(/localhost/);
   });

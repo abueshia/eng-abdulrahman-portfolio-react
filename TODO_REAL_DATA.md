@@ -6,7 +6,9 @@ Run `npm run data:todo`. It reports three separate lists:
 | --- | --- | --- |
 | **Required before publishing** | `TODO_REAL_DATA` values, plus required files that are missing or invalid (format/dimensions are checked) | **Yes** (exit code 1) |
 | **Recommended** | Quality issues (e.g. a portrait too small to stay sharp) | No |
-| **Temporary mock until the API** | Whole mock files headed `MOCK_UNTIL_API` | No: expected until `VITE_USE_MOCK=false` |
+| **Temporary mock until the API** | Whole mock files headed `MOCK_UNTIL_API` (resources the API does not serve yet) | No |
+
+It also blocks when a visible section's resource is neither live (`VITE_API_RESOURCES`) nor mocked, and when a form would reach nobody.
 
 It also lists the sections hidden through `settings.sections_visibility`.
 
@@ -35,25 +37,28 @@ JSON-LD `sameAs` lists identity profiles only (GitHub, LinkedIn, Facebook). What
 
 ## What remains before launch
 
-After phase 6, only three kinds of work are left: real content, the domain decision, and connecting the API (phase 7).
+Phase 7 (part 1) connected projects, experiences, testimonials, FAQs and both forms to the Laravel API: their content is real and managed in the admin. What is left:
 
-1. **Real content** (blocks `npm run data:todo`):
-   - [ ] **Projects:** replace the 3 sample case studies (`is_sample: true`) with real ones from the API, or hide the section (`sections_visibility.projects = false`).
-   - [ ] **Testimonials:** replace the 4 sample reviews with real, permitted quotes, or hide the section.
-   - [ ] **Experience and stats:** real roles and measured figures (today only "4 years" is real; the rest shows "No data").
+1. **Content quality in the admin** (not blocking, see `INTEGRATION_REPORT.md`):
+   - [ ] Project slugs that do not match their titles (`high-throughput-ecommerce-api` is Steel Tech).
+   - [ ] Experience `id=6` (en): "Ach 2" typo inside the achievements text.
+   - [ ] Some project texts carry `[cite: …]` editor artefacts (the frontend strips them, better removed at the source).
+   - [ ] No project is `is_featured`; testimonials have no photos (`avatar`), so cards show monograms.
+   - [ ] **Stats:** measured figures (still static data in `stats.js`).
 2. **Domain:**
    - [x] Production origin decided: `https://eng-abdulrahman-abu-eisha.vercel.app` is the default `VITE_SITE_URL` everywhere (canonical, hreflang, OG, sitemap, robots, JSON-LD, llms.txt).
    - [ ] Confirm the same value is set in Vercel (Production) and verified in Search Console (`SEO.md` §10). If a custom domain is added later, follow the "Domain" steps there.
 3. **API (phase 7):**
-   - [ ] Laravel endpoints with the documented envelope and SEO fields (`SEO.md` §7, `README.md`), then `VITE_USE_MOCK=false` + `VITE_API_URL` in Vercel.
-   - [ ] `POST /contact` live. Until then the form runs in **relay mode** in production: it says up front that sending opens WhatsApp, then opens `wa.me/201028292449` with the message pre-filled (mail app if no WhatsApp number). `npm run data:todo` lists this as *recommended*. With `VITE_CONTACT_RELAY=false` and no API, it becomes *blocking* (a pure mock reaches nobody).
-   - [ ] `POST /testimonials` live (contract and spam protection in `README.md` → "Testimonials API contract"). Until then "Write a review" also runs in **relay mode** in production: it opens WhatsApp with the name, job title, stars and text pre-filled and says up front that the photo is not sent. `npm run data:todo` reports the review form separately: *recommended* in relay mode, *blocking* with `VITE_REVIEW_RELAY=false` and no API, nothing once the API is connected (`ℹ Forms in production: …` line).
-   - [ ] Moderation in the Laravel admin: submissions arrive as `pending`; approving one publishes it (and must call the Deploy Hook).
-   - [ ] Vercel Deploy Hook called by the backend on every publish (`SEO.md` §8).
+   - [x] Projects, experiences, testimonials (list + form), FAQs and contact live (`VITE_API_RESOURCES`, `README.md` → "The Laravel API").
+   - [ ] Vercel env (Production): `VITE_API_URL=https://eng-abdelrahman.dr-krok.com/api/v1` and `VITE_API_RESOURCES=projects,experiences,testimonials,faqs,contact`.
+   - [ ] Vercel Deploy Hook created and its URL set in the backend's `VERCEL_DEPLOY_HOOK_URL` (`SEO.md` §8).
+   - [ ] Production backend deployed with the code the contract describes, and `APP_DEBUG=false` (`INTEGRATION_REPORT.md`).
+   - [ ] Moderation in the Laravel admin: website reviews arrive inactive; approving one publishes it (and calls the Deploy Hook).
+   - [ ] Phase 7.2: settings, services, stats and skills from the API.
 
 ### ✗ Required before publishing (`npm run data:todo` exit 1)
 
-- [ ] **Visible sections serving samples:** `projects` (3 sample case studies) and `testimonials` (4 sample reviews). Replace them with real content from the API, or hide the section in `settings.sections_visibility`, before going live.
+- [x] Nothing today. It blocks again if a visible section's resource leaves `VITE_API_RESOURCES` (projects, experiences, testimonials and FAQs have no mock data any more) or if a form would reach nobody.
 
 ## ◇ Recommended (not blocking)
 
@@ -63,16 +68,9 @@ After phase 6, only three kinds of work are left: real content, the domain decis
 
 ## ◌ Temporary mock until the API
 
-Clearly fictional sample content (`sample-*` slugs, "Sample Company A/B/C", zeroed figures, `is_sample` projects). It is replaced by Laravel content when the API is connected:
+Static data for the resources the Laravel API does not serve yet (phase 7.2). Projects, experiences, testimonials and FAQs have **no** mock data any more: they come from the API (tests use the real captured responses in `docs/api-fixtures/`).
 
-- `projects.js`: **3 sample case studies** (multi-tenant SaaS, inventory & POS, delivery/booking API), each with `is_sample: true`. No real clients or companies, no invented numbers: metrics are descriptive ("REST + WebSocket") or `null` ("No data"). The flag shows a "Sample / نموذجي" badge, makes the case study `noindex`, keeps it out of `sitemap.xml` and suppresses its CreativeWork JSON-LD. Real projects from the API simply omit the flag (or send `false`) and become indexable automatically.
-  - Screens: generated SVGs in `public/images/projects/<slug>/` (`npm run visuals`). Replace each `cover_image`, `preview_image` and `gallery[].image` path with a real screenshot (16:10, ≥ 1600 px wide; JPG/PNG/WebP covers also become the Open Graph image) and update the `alt` texts.
-  - Per real project, provide: title, summary (≤ 160 chars), problem, solution, role, technologies, challenges, architecture nodes/edges + decisions, metrics (only measured values), gallery, and `live_url` / `github_url` if public.
-- `experiences.js`, `stats.js` (only "4+ years" is real). The observability board shows the zeroed sample metrics as **"No data"** panels (no number, flat dashed series), so nothing fictional reads as a real figure.
-- `services.js`: the **real** list of 14 services in 5 groups (edit wording freely). It stays in a mock file only until `GET /services` serves it.
-- `testimonials.js`: **4 sample reviews** (`is_sample: true`, `status: 'approved'`): owner-provided wording, a sample role only ("Sample client, …"), a simple descriptive star rating (5, 5, 4, 5), no names, photos or logos (the card shows a generated monogram), and no Review/AggregateRating JSON-LD. The badge shows on the section and on every card. Real ones come from the visitor form after moderation (`approved`), or from the admin: the client's role, the quote, a 1-5 rating and permission to publish (name, company and photo optional).
-- `faqs.js`: the owner's FAQ, 13 honest general answers (no prices, durations or ranking promises). Phase 6 added five that match real searches (freelance Laravel developer in Cairo, back end vs Full-Stack, remote work, Paymob/Fawry, Laravel REST APIs). Edit freely.
+- `stats.js`: headline figures (only "4+ years" is verified real).
+- `services.js`: the **real** list of 14 services in 5 groups (edit wording freely) until `GET /services` exists.
 - `technologies.js`
-- `credentials.js`: **hidden** (`sections_visibility.credentials = false`), so it is absent from the navigation and prerendering until real content exists
-
-> Note: sample case studies are still prerendered (links work) but are `noindex` and **not** listed in `sitemap.xml`. The sitemap can be submitted as is; real projects appear in it as soon as the API serves them without `is_sample`.
+- `credentials.js`: **hidden** (`sections_visibility.credentials = false`), so it is absent from the navigation and prerendering until real content exists.

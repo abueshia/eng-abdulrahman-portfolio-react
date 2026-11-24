@@ -6,12 +6,14 @@ import { useTranslation } from 'react-i18next';
 
 import '@/i18n/sections';
 import { LineIcon } from '@/components/ui/LineIcon';
-import { env } from '@/config/env';
+import { api, isLiveResource } from '@/config/api';
 import { openRelay, relayTarget } from '@/features/contact/lib/relay';
+import { useProjects } from '@/features/projects/hooks/useProjects';
 import { useLocale } from '@/hooks/useLocale';
 import { useSettings } from '@/hooks/useSettings';
 import { useSmoothScroll } from '@/hooks/useSmoothScroll';
 import { testimonialsService } from '@/services/api';
+import { retryAfterSeconds } from '@/services/api/rate-limit';
 import { EASE } from '@/utils/motion';
 import { initials } from '../lib/avatar';
 import { AVATAR_TYPES, checkImageFile, squareAvatar } from '../lib/avatar-image';
@@ -19,6 +21,7 @@ import { reviewRelayMessage } from '../lib/review-relay';
 import {
   EMPTY_REVIEW,
   REVIEW_LIMITS,
+  reviewFieldFor,
   reviewFingerprint,
   reviewSchema,
   toReviewPayload,
@@ -26,10 +29,9 @@ import {
 import { Avatar } from './Avatar';
 import { StarIcon } from './Stars';
 
-/** @typedef {'idle' | 'sending' | 'success' | 'relayed' | 'invalid' | 'failure' | 'duplicate'} Phase */
+/** @typedef {'idle' | 'sending' | 'success' | 'relayed' | 'invalid' | 'limited' | 'failure' | 'duplicate'} Phase */
 
 const W = 'testimonials.write';
-const FIELDS = /** @type {const} */ (['name', 'role', 'company', 'rating', 'message', 'consent']);
 
 const SWAP = {
   initial: { clipPath: 'inset(0% 0% 100% 0%)' },
@@ -91,29 +93,34 @@ function Field({ name, label, error, describedBy, children, after }) {
  *   inside), `Esc` and a click on the backdrop close it, page scroll is
  *   locked (CSS `:has()` + Lenis stopped). The trigger gets focus back.
  *   A bottom sheet on phones.
- * - Fields: name, job title, company (optional), a 1-5 star radio group
- *   (arrow keys follow the reading direction, a text label names the
- *   choice), the review with a character counter, an optional photo (picked
- *   or dropped, checked, cropped square to 256 px and re-encoded in the
- *   browser, which strips EXIF), and a required publication consent.
+ * - Fields are the API's (`POST /testimonials`, API_CONTRACT.md §5): name,
+ *   job title and company (optional), a 1-5 star radio group (arrow keys
+ *   follow the reading direction, a text label names the choice), the review
+ *   with a character counter, the project it is about (optional, published
+ *   projects), an optional photo (picked or dropped, checked, cropped square
+ *   to 256 px and re-encoded in the browser, which strips EXIF) and a
+ *   required publication consent. Texts are sent under the page language.
  *   Without a photo, a monogram avatar updates as the name is typed.
  * - Honeypot, no double submit, HTML refused. Submitting shows a progress
- *   bar, then the thank-you screen (published after moderation, never
- *   instantly), the server's 422 errors on their fields, or "500 — Retry".
- * - Mock mode (development) says the review was not delivered. Relay mode
- *   (production on the mock adapter) opens WhatsApp or email pre-filled
- *   and says up front that the photo does not travel that way.
+ *   bar, then the thank-you screen (published after review, never
+ *   instantly), the server's 422 errors on their fields (`name.ar` lands on
+ *   the name), "try again shortly" on 429, or a network/server failure with
+ *   Retry. What the visitor typed is never lost.
+ * - When `testimonials` is not a live resource: development says the review
+ *   was not delivered; production relays to WhatsApp or email.
  *
  * @param {{ onClose: () => void }} props
  */
 export default function ReviewModal({ onClose }) {
   const { t } = useTranslation();
-  const { dir } = useLocale();
+  const { dir, locale } = useLocale();
   const { lenisRef } = useSmoothScroll();
   const { data } = useSettings();
+  const { data: projectsData } = useProjects();
+  const projects = projectsData?.data ?? [];
   const general = data?.data?.general;
   const whatsapp = general?.socials?.find((/** @type {any} */ s) => s.platform === 'whatsapp');
-  const relay = env.reviewRelay;
+  const relay = api.reviewRelay;
   const relayChannel = whatsapp ? 'whatsapp' : 'email';
   const uid = useId();
   const titleId = `${uid}-title`;
@@ -138,6 +145,12 @@ export default function ReviewModal({ onClose }) {
   );
   const [processing, setProcessing] = useState(false);
   const [dragging, setDragging] = useState(false);
+  /** Seconds to wait after a 429 (`Retry-After`), when the API said. */
+  const [retryAfter, setRetryAfter] = useState(/** @type {number | null} */ (null));
+  /** Server message of a 422 that names no visible field. */
+  const [formError, setFormError] = useState(/** @type {string | null} */ (null));
+  /** The last failure was the network (no response), not the server. */
+  const [offline, setOffline] = useState(false);
 
   const {
     register,
@@ -152,7 +165,7 @@ export default function ReviewModal({ onClose }) {
     mode: 'onTouched',
     reValidateMode: 'onChange',
   });
-  const [name, message, rating] = useWatch({ control, name: ['name', 'message', 'rating'] });
+  const [name, message, rating] = useWatch({ control, name: ['name', 'description', 'rating'] });
 
   // Open as a modal; undo everything on unmount (StrictMode-safe).
   useEffect(() => {
@@ -257,7 +270,7 @@ export default function ReviewModal({ onClose }) {
 
   const onSubmit = handleSubmit(async (values) => {
     if (phase === 'sending' || processing) return;
-    const payload = toReviewPayload(values, photo);
+    const payload = toReviewPayload(values, locale, photo);
     const key = reviewFingerprint(payload);
     if (sentKey === key) {
       setPhase('duplicate');
@@ -282,29 +295,37 @@ export default function ReviewModal({ onClose }) {
         return;
       }
       // Honeypot filled: look done, open nothing.
-      if (!payload.hp) openRelay(target);
+      if (!payload.website) openRelay(target);
       setSentKey(key);
       setRelayed(target);
       setPhase('relayed');
       return;
     }
     setPhase('sending');
+    setFormError(null);
     try {
       await testimonialsService.submit(payload);
       setSentKey(key);
       setPhase('success');
     } catch (error) {
       const apiError = /** @type {any} */ (error);
+      // The form keeps every value: only the phase changes.
       if (apiError?.isValidation) {
-        Object.entries(apiError.errors ?? {}).forEach(([field, messages]) => {
+        let placed = false;
+        Object.entries(apiError.errors ?? {}).forEach(([key, messages]) => {
           const text = [messages].flat()[0];
-          if (field === 'avatar') setPhotoError({ message: text });
-          else if (FIELDS.includes(/** @type {any} */ (field))) {
-            setError(/** @type {any} */ (field), { type: 'server', message: text });
-          }
+          const field = reviewFieldFor(key);
+          if (field === 'image') setPhotoError({ message: text });
+          else if (field) setError(/** @type {any} */ (field), { type: 'server', message: text });
+          if (field) placed = true;
         });
+        if (!placed) setFormError(apiError.message || null);
         setPhase('invalid');
+      } else if (apiError?.isRateLimited) {
+        setRetryAfter(retryAfterSeconds(apiError));
+        setPhase('limited');
       } else {
+        setOffline(Boolean(apiError?.isNetwork));
         setPhase('failure');
       }
     }
@@ -323,7 +344,8 @@ export default function ReviewModal({ onClose }) {
     sending: t(`${W}.sending`),
     success: null,
     relayed: null,
-    invalid: t(`${W}.invalid`),
+    invalid: formError ? `${t(`${W}.invalid`)} ${formError}` : t(`${W}.invalid`),
+    limited: null,
     failure: null,
     duplicate: t(`${W}.duplicate`),
   }[phase];
@@ -406,12 +428,10 @@ export default function ReviewModal({ onClose }) {
                     ? t(`${W}.success.title`)
                     : t(`${W}.relay.${relayed?.channel}.title`)}
                 </p>
-                <p className="req__result-body">
-                  {phase === 'success'
-                    ? t(`${W}.success.body`)
-                    : t(`${W}.relay.${relayed?.channel}.body`)}
-                </p>
-                {phase === 'success' && env.useMock && (
+                {phase === 'relayed' && (
+                  <p className="req__result-body">{t(`${W}.relay.${relayed?.channel}.body`)}</p>
+                )}
+                {phase === 'success' && !isLiveResource('testimonials') && (
                   <p className="req__mock" role="note">
                     {t(`${W}.mock`)}
                   </p>
@@ -457,25 +477,29 @@ export default function ReviewModal({ onClose }) {
                   )}
                 </Field>
                 <div className="req__row">
-                  <Field name="role" label={t(`${W}.fields.role`)} error={errors.role}>
+                  <Field name="name_job" label={t(`${W}.fields.role`)} error={errors.name_job}>
                     {(props) => (
                       <input
                         {...props}
-                        {...register('role')}
+                        {...register('name_job')}
                         className="req__input"
                         autoComplete="organization-title"
-                        maxLength={REVIEW_LIMITS.role.max}
+                        maxLength={REVIEW_LIMITS.name_job.max}
                       />
                     )}
                   </Field>
-                  <Field name="company" label={t(`${W}.fields.company`)} error={errors.company}>
+                  <Field
+                    name="company_name"
+                    label={t(`${W}.fields.company`)}
+                    error={errors.company_name}
+                  >
                     {(props) => (
                       <input
                         {...props}
-                        {...register('company')}
+                        {...register('company_name')}
                         className="req__input"
                         autoComplete="organization"
-                        maxLength={REVIEW_LIMITS.company.max}
+                        maxLength={REVIEW_LIMITS.company_name.max}
                       />
                     )}
                   </Field>
@@ -528,21 +552,21 @@ export default function ReviewModal({ onClose }) {
                 </fieldset>
 
                 <Field
-                  name="message"
+                  name="description"
                   label={t(`${W}.fields.message`)}
-                  error={errors.message}
-                  describedBy="review-message-count"
+                  error={errors.description}
+                  describedBy="review-description-count"
                   after={
                     <p
-                      id="review-message-count"
+                      id="review-description-count"
                       className="rv-counter"
                       data-near={
-                        messageLength > REVIEW_LIMITS.message.max * 0.9 ? 'true' : undefined
+                        messageLength > REVIEW_LIMITS.description.max * 0.9 ? 'true' : undefined
                       }
                     >
                       {t(`${W}.fields.counter`, {
                         count: messageLength,
-                        max: REVIEW_LIMITS.message.max,
+                        max: REVIEW_LIMITS.description.max,
                       })}
                     </p>
                   }
@@ -550,14 +574,37 @@ export default function ReviewModal({ onClose }) {
                   {(props) => (
                     <textarea
                       {...props}
-                      {...register('message')}
+                      {...register('description')}
                       className="req__input req__textarea"
                       rows={5}
-                      maxLength={REVIEW_LIMITS.message.max}
+                      maxLength={REVIEW_LIMITS.description.max}
                       placeholder={t(`${W}.fields.messagePlaceholder`)}
                     />
                   )}
                 </Field>
+
+                {projects.length > 0 && (
+                  <Field
+                    name="project_id"
+                    label={t(`${W}.fields.project`)}
+                    error={errors.project_id}
+                  >
+                    {(props) => (
+                      <select
+                        {...props}
+                        {...register('project_id')}
+                        className="req__input req__select"
+                      >
+                        <option value="">{t(`${W}.fields.projectNone`)}</option>
+                        {projects.map((project) => (
+                          <option key={project.id} value={String(project.id)}>
+                            {project.title}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </Field>
+                )}
 
                 <div
                   className="rv-photo"
@@ -665,8 +712,13 @@ export default function ReviewModal({ onClose }) {
 
                 {/* Honeypot: off-screen, unfocusable, ignored by assistive technology. */}
                 <div className="req__trap" aria-hidden="true">
-                  <label htmlFor="review-hp">{t(`${W}.fields.hp`)}</label>
-                  <input id="review-hp" {...register('hp')} tabIndex={-1} autoComplete="off" />
+                  <label htmlFor="review-website">{t(`${W}.fields.hp`)}</label>
+                  <input
+                    id="review-website"
+                    {...register('website')}
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
                 </div>
 
                 {relay && (
@@ -708,9 +760,22 @@ export default function ReviewModal({ onClose }) {
                 {phase === 'failure' && (
                   <div className="req__failure" ref={focusOnMount} tabIndex={-1} role="alert">
                     <p className="req__failure-status" dir="ltr">
-                      {t(`${W}.failure.status`)}
+                      {offline ? t(`${W}.failure.networkStatus`) : t(`${W}.failure.status`)}
                     </p>
-                    <p>{t(`${W}.failure.body`)}</p>
+                    <p>{offline ? t(`${W}.failure.network`) : t(`${W}.failure.body`)}</p>
+                  </div>
+                )}
+
+                {phase === 'limited' && (
+                  <div className="req__failure" ref={focusOnMount} tabIndex={-1} role="alert">
+                    <p className="req__failure-status" dir="ltr">
+                      429 Too Many Requests
+                    </p>
+                    <p>
+                      {retryAfter && retryAfter > 60
+                        ? t(`${W}.limited.minutes`, { count: Math.ceil(retryAfter / 60) })
+                        : t(`${W}.limited.body`)}
+                    </p>
                   </div>
                 )}
               </m.form>

@@ -1,9 +1,9 @@
 /**
- * Review relay: while a production build still runs on the mock adapter
- * (no Laravel `POST /testimonials` yet), submitting opens WhatsApp (or the
- * mail app without a WhatsApp number) with the review pre-filled, exactly
- * like the contact form. The photo cannot travel in a link, and the form
- * says so before sending. Pure helpers; the decision lives in `env.reviewRelay`.
+ * Review relay: only for builds where `testimonials` is not a live API
+ * resource (VITE_API_RESOURCES). Submitting then opens WhatsApp (or the mail
+ * app without a WhatsApp number) with the review pre-filled, exactly like the
+ * contact form. The photo cannot travel in a link, and the form says so
+ * before sending. Pure helpers; the decision lives in `api.reviewRelay`.
  */
 
 /**
@@ -21,11 +21,12 @@
  */
 export function reviewRelayMessage(payload, labels) {
   const stars = '★'.repeat(payload.rating) + '☆'.repeat(Math.max(0, 5 - payload.rating));
+  const who = [payload.name_job, payload.company_name].filter(Boolean).join(' · ');
   return [
     labels.greeting,
-    `${labels.role}: ${payload.role}${payload.company ? ` · ${payload.company}` : ''}`,
+    ...(who ? [`${labels.role}: ${who}`] : []),
     `${labels.rating} ${stars}`,
     '',
-    payload.message,
+    payload.description,
   ].join('\n');
 }

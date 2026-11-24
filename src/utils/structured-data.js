@@ -203,16 +203,15 @@ function buildServicesNode({ general, url, personId, services, catalogName }) {
 /**
  * Case-study structured data: `CreativeWork` (or `SoftwareSourceCode` when
  * the code is public) authored by the Person, plus a `BreadcrumbList`.
- *
- * Sample projects (`is_sample`) get none: their pages are noindex, and a
- * sample must never be described to search engines as real work.
- * @param {any} project Full project from GET /projects/{slug}.
+ * Every project comes from the API (published, real work).
+ * @param {import('@/services/api/mappers/projects').Project | null | undefined} project
+ *   Mapped project from GET /projects/{slug}.
  * @param {'ar' | 'en'} locale
  * @param {{ home: string, work: string }} labels Breadcrumb names (localised).
  * @returns {object | undefined}
  */
 export function buildProjectJsonLd(project, locale, labels) {
-  if (!project || project.is_sample) return undefined;
+  if (!project) return undefined;
   const home = `${env.siteUrl}${localizePath(locale, '/')}`;
   const url = `${env.siteUrl}${localizePath(locale, `/projects/${project.slug}`)}`;
   const code = isAbsoluteUrl(project.github_url);
@@ -229,8 +228,9 @@ export function buildProjectJsonLd(project, locale, labels) {
         url,
         inLanguage: locale,
         ...(image ? { image } : {}),
-        ...(project.published_at ? { datePublished: project.published_at } : {}),
-        ...(project.updated_at ? { dateModified: project.updated_at } : {}),
+        // The API exposes no publish/update dates: completion is the one real date.
+        ...(project.completed_at ? { dateCreated: project.completed_at } : {}),
+        ...(project.category?.name ? { genre: project.category.name } : {}),
         author: { '@id': `${env.siteUrl}/#person` },
         keywords: (project.technologies ?? []).map((tech) => tech.name),
         ...(code ? { codeRepository: project.github_url } : {}),

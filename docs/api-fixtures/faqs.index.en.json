@@ -1,0 +1,98 @@
+{
+    "code": 200,
+    "success": true,
+    "message": "FAQs retrieved successfully",
+    "data": [
+        {
+            "id": 5,
+            "question": "What is Eng. Abdelrahman Abu Aishah’s core technology stack?",
+            "answer": "I specialize in backend engineering with PHP 8.3, Laravel 10, MySQL, and Redis, paired with modern frontend development using JavaScript (ES6+), React.js, HTML5, CSS3, and Bootstrap 5.",
+            "category": "architecture",
+            "sort_order": 1
+        },
+        {
+            "id": 6,
+            "question": "How do you ensure code quality, scalability, and maintainability?",
+            "answer": "Every project adheres to SOLID principles, Repository and Service layers, PHP 8.3 strict typing, PSR-12 formatting via Laravel Pint, English PHPDoc comments, and automated PHPUnit feature tests.",
+            "category": "process",
+            "sort_order": 2
+        },
+        {
+            "id": 7,
+            "question": "How do you usually work?",
+            "answer": "I start by understanding the problem and the goal before writing any code, then I propose a clear technical solution and we agree on the scope. During execution, I share progress in short milestones so you can see the work taking shape and adjust direction early on.",
+            "category": "general",
+            "sort_order": 3
+        },
+        {
+            "id": 8,
+            "question": "What are the project phases?",
+            "answer": "Requirements analysis, followed by system architecture and data modeling, then phased implementation with testing, review and feedback sessions with you, and finally launch and post-launch support. The timeline for each phase is determined after understanding the full scope, not before.",
+            "category": "general",
+            "sort_order": 4
+        },
+        {
+            "id": 9,
+            "question": "What is included in delivery and maintenance?",
+            "answer": "You receive the source code in your repository along with setup and deployment documentation, and we walk through the system together. After launch, we can arrange ongoing maintenance and support—including bug fixes, security updates, and performance monitoring—tailored to your project's needs.",
+            "category": "general",
+            "sort_order": 5
+        },
+        {
+            "id": 10,
+            "question": "What types of services do you offer?",
+            "answer": "Backend and API development with Laravel, payment gateway and third-party integrations, SaaS platforms and admin dashboards, React frontends, Technical SEO & GEO, as well as DevOps and technical consulting. You can find the full list in the Services section above.",
+            "category": "general",
+            "sort_order": 6
+        },
+        {
+            "id": 11,
+            "question": "How do we communicate during the project?",
+            "answer": "Through whichever channel works best for you—email, WhatsApp, or regular calls—along with written updates at every milestone. I prefer keeping decisions documented in writing so everyone stays on the same page.",
+            "category": "general",
+            "sort_order": 7
+        },
+        {
+            "id": 12,
+            "question": "How do payments work?",
+            "answer": "In general, payments are split into milestones tied to agreed deliverables, with details outlined in a written proposal for each project after understanding the scope. There is no fixed pricing because every project is different.",
+            "category": "general",
+            "sort_order": 8
+        },
+        {
+            "id": 13,
+            "question": "Do you guarantee top rankings in search results?",
+            "answer": "No, and no one can honestly make that guarantee. What I provide in technical SEO is a solid foundation: crawlable and indexable pages, structured data, good performance, and accurate hreflang tags. Actual rankings are determined by search engines and depend on content and competition.",
+            "category": "general",
+            "sort_order": 9
+        },
+        {
+            "id": 14,
+            "question": "And what is GEO?",
+            "answer": "GEO (Generative Engine Optimization) is preparing your website and content to be accurately understood and cited in AI search engine answers: clear entities, structured data, answer-formatted content, and an llms.txt file. It improves the chances of visibility, though it does not guarantee it.",
+            "category": "general",
+            "sort_order": 10
+        },
+        {
+            "id": 15,
+            "question": "Do you work remotely with clients outside Egypt?",
+            "answer": "Yes. I work remotely from Cairo (Africa/Cairo timezone), and we agree upfront on communication hours that fit time-zone differences as well as how we track progress, with written updates at every milestone.",
+            "category": "general",
+            "sort_order": 11
+        },
+        {
+            "id": 16,
+            "question": "Do you integrate Egyptian payment gateways such as Paymob and Fawry?",
+            "answer": "Yes, as part of my payment gateway integration service: Paymob and Fawry, as well as other gateways like PayPal, Tap, and HyperPay. This covers one-time payments and subscriptions, signature-verified webhooks, and full or partial refunds.",
+            "category": "general",
+            "sort_order": 12
+        },
+        {
+            "id": 17,
+            "question": "Do you build Laravel REST APIs for a mobile app or an existing system?",
+            "answer": "Yes. I design and build Laravel REST APIs for web, mobile, and partner systems: a clear contract documented with OpenAPI, Sanctum authentication, API versioning, and tests for each endpoint. The API can be built from scratch or as a layer on top of an existing system.",
+            "category": "general",
+            "sort_order": 13
+        }
+    ]
+}

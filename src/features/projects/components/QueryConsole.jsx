@@ -7,7 +7,7 @@ import { EASE } from '@/utils/motion';
 import { describeQuery } from '../lib/filters';
 
 /**
- * One facet row: `type: [all] [saas] [pos] …` as toggle buttons. The active
+ * One facet row: `type: [all] [saas] [web_app] …` as toggle buttons. The active
  * pill lands on the chosen option (motion, on state change).
  * @param {{
  *   id: string, label: string, value: string | null, allLabel: string,
@@ -90,10 +90,7 @@ export function QueryConsole({ filters, facets, count, onChange }) {
           label={t('projects.type')}
           value={filters.type}
           allLabel={t('projects.all')}
-          options={facets.types.map((type) => ({
-            slug: type.slug,
-            label: t(`projects.types.${type.slug}`, { defaultValue: type.slug }),
-          }))}
+          options={facets.types.map((type) => ({ slug: type.slug, label: type.label }))}
           onChange={(type) => onChange({ ...filters, type })}
           hydrated={hydrated}
         />

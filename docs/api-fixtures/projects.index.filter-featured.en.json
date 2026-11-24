@@ -1,0 +1,17 @@
+{
+    "code": 200,
+    "success": true,
+    "message": "Projects retrieved successfully",
+    "pagination": {
+        "current_page": 1,
+        "first_page_url": "http://localhost:8003/api/v1/projects?lang=en&featured=1&page=1",
+        "prev_page_url": "",
+        "next_page_url": "",
+        "last_page_url": "http://localhost:8003/api/v1/projects?lang=en&featured=1&page=1",
+        "total_pages": 1,
+        "per_page": 9,
+        "total_items": 0,
+        "path": "http://localhost:8003/api/v1/projects"
+    },
+    "data": []
+}

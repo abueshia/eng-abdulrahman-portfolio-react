@@ -6,13 +6,11 @@ import { useLocale } from '@/hooks/useLocale';
 import { projectsService } from '@/services/api';
 
 /**
- * Paginated project list.
- * @param {import('@/services/api/projects.service').ProjectListParams} [params]
+ * Every published project (the API pages are followed; filtering happens
+ * client-side, see `lib/filters`).
  */
-export function useProjects(params = {}) {
-  return useApiQuery(['projects', params], (options) => projectsService.list(params, options), {
-    placeholderData: (previous) => previous, // keep the grid while filters change
-  });
+export function useProjects() {
+  return useApiQuery(['projects'], projectsService.all, { staleTime: 5 * 60 * 1000 });
 }
 
 /**

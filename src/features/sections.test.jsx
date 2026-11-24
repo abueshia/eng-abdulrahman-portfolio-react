@@ -1,6 +1,7 @@
 /**
  * Behaviour and accessibility of the home sections that have no dedicated
- * suite: each renders from the mock API exactly as on the page.
+ * suite: each renders exactly as on the page, the static ones from the mock
+ * data, the live ones from the real captured API responses (docs/api-fixtures).
  */
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -14,6 +15,9 @@ import SkillsSection from '@/features/skills/components/SkillsSection';
 import StatsSection from '@/features/stats/components/StatsSection';
 import TestimonialsSection from '@/features/testimonials/components/TestimonialsSection';
 import { renderWithProviders } from '@/test/renderWithProviders';
+import experiencesEn from '../../docs/api-fixtures/experiences.index.en.json';
+import projectsEn from '../../docs/api-fixtures/projects.index.per_page50.en.json';
+import testimonialsEn from '../../docs/api-fixtures/testimonials.index.en.json';
 
 const EN = { initialEntries: ['/en'] };
 
@@ -25,7 +29,7 @@ describe('Stats (observability)', () => {
     expect(statsEl).toHaveTextContent('4');
     expect(statsEl).toHaveTextContent('52');
     expect(statsEl).toHaveTextContent('36');
-    expect(statsEl).toHaveTextContent('150');
+    expect(statsEl).toHaveTextContent('99.9');
   });
 });
 
@@ -70,26 +74,39 @@ describe('Skills (services)', () => {
 });
 
 describe('Experience (queue)', () => {
-  it('renders every role as a commit with its achievements', async () => {
+  it('renders every API role as a commit with its achievements as diff lines', async () => {
     const { container } = renderWithProviders(<ExperienceSection />, EN);
-    await screen.findAllByText(/Sample Company/);
+    await screen.findAllByText(/Matrix Clouds/);
     const commits = container.querySelectorAll('#experience article');
-    expect(commits.length).toBeGreaterThan(1);
-    expect(container.querySelector('#experience')).toHaveTextContent('Sample Company');
+    expect(commits).toHaveLength(experiencesEn.data.length);
+    const section = /** @type {HTMLElement} */ (container.querySelector('#experience'));
+    expect(section).toHaveTextContent('iCode Tech');
+    // Achievements: one `+` line per item of the API's newline-separated text.
+    const expected = experiencesEn.data.reduce(
+      (sum, item) => sum + item.achievements.split('\n').filter((line) => line.trim()).length,
+      0,
+    );
+    expect(section.querySelectorAll('.gl__add')).toHaveLength(expected);
+    // The API's localised employment label, and an open end for current roles.
+    expect(section).toHaveTextContent('Full-Time');
+    expect(within(section).getAllByText('present')).toHaveLength(2);
   });
 });
 
 describe('Projects (database)', () => {
-  it('lists every case file as an article linking to its case study, flagged as sample', async () => {
+  it('lists every API project as an article linking to its case study, no sample badge', async () => {
     const { container } = renderWithProviders(<ProjectsSection />, EN);
-    await screen.findAllByText('Sample');
+    await screen.findByText(projectsEn.data[0].title);
     const files = container.querySelectorAll('#projects article');
-    expect(files).toHaveLength(3);
+    expect(files).toHaveLength(projectsEn.data.length);
     const first = within(/** @type {HTMLElement} */ (files[0]));
-    expect(first.getByRole('link', { name: /.+/ }).getAttribute('href')).toMatch(
-      /^\/en\/projects\//,
+    expect(first.getByRole('link', { name: /.+/ }).getAttribute('href')).toBe(
+      `/en/projects/${projectsEn.data[0].slug}`,
     );
-    expect(screen.getAllByText('Sample').length).toBeGreaterThan(0);
+    // The type facet shows the API's localised labels.
+    expect(screen.getAllByText(projectsEn.data[0].project_type_label).length).toBeGreaterThan(0);
+    expect(container.querySelector('.sample-badge')).toBeNull();
+    expect(container).not.toHaveTextContent(/\bSample\b/);
   });
 
   it('filters with pressed toggle buttons and announces the result', async () => {
@@ -113,7 +130,7 @@ describe('Services (endpoints)', () => {
 });
 
 describe('Testimonials (review)', () => {
-  it('is a labelled carousel of sample reviews, each a labelled slide', async () => {
+  it('is a labelled carousel of the approved API reviews, each a labelled slide', async () => {
     renderWithProviders(<TestimonialsSection />, EN);
     const regions = await screen.findAllByRole('region');
     const carousel = /** @type {HTMLElement} */ (
@@ -121,9 +138,20 @@ describe('Testimonials (review)', () => {
     );
     expect(carousel).toBeDefined();
     const slides = within(carousel).getAllByRole('group');
-    expect(slides).toHaveLength(4);
+    expect(slides).toHaveLength(testimonialsEn.data.length);
     slides.forEach((slide) => expect(slide).toHaveAttribute('aria-roledescription', 'slide'));
-    expect(screen.getAllByText('Sample').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Sample')).toBeNull();
+    // Featured reviews are marked; a linked published project is a link.
+    const featured = testimonialsEn.data.filter((item) => item.is_featured).length;
+    expect(screen.getAllByText('Featured review')).toHaveLength(featured);
+    const linked = testimonialsEn.data.find((item) => item.project);
+    expect(screen.getByRole('link', { name: linked?.project?.title })).toHaveAttribute(
+      'href',
+      `/en/projects/${linked?.project?.slug}`,
+    );
+    // No photo in the API (avatar: null): every card shows the generated monogram.
+    expect(document.querySelectorAll('.review .avatar--photo')).toHaveLength(0);
+    expect(document.querySelectorAll('.review .avatar__letters')).toHaveLength(slides.length);
     // Stars are one named image per card; the monogram is decorative.
     slides.forEach((slide) =>
       expect(

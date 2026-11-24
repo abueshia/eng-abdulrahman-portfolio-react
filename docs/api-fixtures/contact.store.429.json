@@ -1,0 +1,5 @@
+{
+    "message": "Too Many Attempts.",
+    "exception": "Illuminate\\Http\\Exceptions\\ThrottleRequestsException",
+    "_note": "file/line/trace removed: present only because APP_DEBUG=true locally"
+}

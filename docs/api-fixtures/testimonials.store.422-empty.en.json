@@ -1,0 +1,13 @@
+{
+    "code": 422,
+    "success": false,
+    "message": "The name field is required.",
+    "errors": {
+        "name": [
+            "The name field is required."
+        ],
+        "description": [
+            "The testimonial field is required."
+        ]
+    }
+}

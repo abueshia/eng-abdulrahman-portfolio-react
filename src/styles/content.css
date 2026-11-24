@@ -94,9 +94,6 @@
   color: var(--text-muted);
   font-size: 0.85rem;
 }
-.pr__badge {
-  margin-inline-start: auto;
-}
 .pr__passed {
   color: var(--signal);
 }
@@ -215,6 +212,25 @@
 .review__badge {
   margin-inline-start: auto;
 }
+.review__featured {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid color-mix(in oklab, var(--accent) 45%, transparent);
+  border-radius: 999px;
+  color: var(--accent);
+  font: 500 0.68rem/1.4 var(--ff-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+:root[lang='ar'] .review__featured {
+  font-family: var(--ff-body);
+  font-size: 0.75rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
 .review__role {
   color: var(--text-dim);
   font-size: 0.82rem;
@@ -245,6 +261,17 @@
 }
 .review__scope-key {
   color: var(--text-dim);
+}
+.review__project {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong);
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color var(--dur-fast) var(--ease-snap);
+}
+.review__project:hover,
+.review__project:focus-visible {
+  text-decoration-color: var(--accent);
 }
 .review__checks {
   display: flex;

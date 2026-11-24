@@ -15,8 +15,13 @@ const WRITE_LINE = 'top 70%';
  * - HEAD, an Ember dot (the visitor's request), rides `main` against the same
  *   line, so it reaches every commit exactly as it is drawn.
  * All scrubbed: scrolling back un-writes the log.
+ *
+ * `graphKey` (the rendered rows) is a dependency: when the API data lands or
+ * changes after mount, the triggers are rebuilt on the new rows and
+ * ScrollTrigger refreshes, so nothing animates against stale positions.
+ * @param {{ graphKey?: string }} props
  */
-export default function ExperienceDirector() {
+export default function ExperienceDirector({ graphKey = '' }) {
   const { dir } = useLocale();
 
   useDirector(
@@ -87,7 +92,7 @@ export default function ExperienceDirector() {
         );
       }
     },
-    { target: 'experience', deps: [dir] },
+    { target: 'experience', deps: [dir, graphKey] },
   );
 
   return null;

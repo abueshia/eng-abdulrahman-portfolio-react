@@ -1,0 +1,447 @@
+{
+    "contact.store.201.en": {
+        "request": "POST /api/v1/contact?lang=en  body: {name, email, phone, subject, service, budget_range, timeline, type:\"project_inquiry\", message}  (rolled back, mail faked)",
+        "status": 201,
+        "headers": {
+            "content-type": "application/json",
+            "cache-control": "no-cache, private",
+            "vary": "Origin",
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "2"
+        }
+    },
+    "contact.store.422-empty.en": {
+        "request": "POST /api/v1/contact?lang=en  body: {}",
+        "status": 422,
+        "headers": {
+            "content-type": "application/json",
+            "cache-control": "no-cache, private",
+            "vary": "Origin",
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "4"
+        }
+    },
+    "contact.store.422-invalid.ar": {
+        "request": "POST /api/v1/contact?lang=ar  body: {name:\"\", email:\"not-an-email\", message:\"\", type:\"unknown_type\", website:\"bot\"}",
+        "status": 422,
+        "headers": {
+            "content-type": "application/json",
+            "cache-control": "no-cache, private",
+            "vary": "Origin",
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "3"
+        }
+    },
+    "contact.store.429": {
+        "request": "POST /api/v1/contact  (6th request within 1 minute from the same IP)",
+        "status": 429,
+        "headers": {
+            "content-type": "application/json",
+            "cache-control": "no-cache, private",
+            "vary": "Origin",
+            "x-ratelimit-limit": "5",
+            "x-ratelimit-remaining": "0",
+            "retry-after": "60"
+        }
+    },
+    "cors.localhost5173": {
+        "request": "OPTIONS + GET with Origin: http://localhost:5173",
+        "preflight_status": 204,
+        "preflight_allow_origin": "http://localhost:5173",
+        "preflight_allow_methods": "GET, POST, OPTIONS, HEAD",
+        "get_status": 200,
+        "get_allow_origin": "http://localhost:5173"
+    },
+    "cors.other-origin": {
+        "request": "OPTIONS + GET with Origin: https://example.com",
+        "preflight_status": 204,
+        "preflight_allow_origin": null,
+        "preflight_allow_methods": null,
+        "get_status": 200,
+        "get_allow_origin": null
+    },
+    "cors.vercel": {
+        "request": "OPTIONS + GET with Origin: https://eng-abdulrahman-abu-eisha.vercel.app",
+        "preflight_status": 204,
+        "preflight_allow_origin": "https://eng-abdulrahman-abu-eisha.vercel.app",
+        "preflight_allow_methods": "GET, POST, OPTIONS, HEAD",
+        "get_status": 200,
+        "get_allow_origin": "https://eng-abdulrahman-abu-eisha.vercel.app"
+    },
+    "experiences.index.ar": {
+        "request": "GET /api/v1/experiences?lang=ar",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"0333552fa65c6f3a26cc1ebe78b396098b866936\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "119"
+        }
+    },
+    "experiences.index.en": {
+        "request": "GET /api/v1/experiences?lang=en",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"226f6858bcb470ff6f373e171c42e009b7f1f735\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "116"
+        }
+    },
+    "faqs.index.ar": {
+        "request": "GET /api/v1/faqs?lang=ar",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"2635fbfe39a3c7a6239d69f911732b583930ac48\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "117"
+        }
+    },
+    "faqs.index.category-param-ignored.en": {
+        "request": "GET /api/v1/faqs?lang=en&category=process",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"4b2277417ca42e0f0b26ca6c2fb1d6811325d9ad\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "113"
+        }
+    },
+    "faqs.index.en": {
+        "request": "GET /api/v1/faqs?lang=en",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"4b2277417ca42e0f0b26ca6c2fb1d6811325d9ad\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "114"
+        }
+    },
+    "projects.index.accept-language-ar": {
+        "request": "GET /api/v1/projects?per_page=2  (Accept-Language: ar-EG,ar;q=0.9)",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"258b561cebc8cbdab178c9ce875d6841be34fbb6\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "115"
+        }
+    },
+    "projects.index.accept-language-fr": {
+        "request": "GET /api/v1/projects?per_page=2  (Accept-Language: fr-FR)",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"6fabc05f5f7e5e1c005c033d721afb4efdce4c06\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "114"
+        }
+    },
+    "projects.index.ar": {
+        "request": "GET /api/v1/projects?lang=ar",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"4671c995b46bbbe6d0f470e0355aea17b1d33a29\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "119"
+        }
+    },
+    "projects.index.en": {
+        "request": "GET /api/v1/projects?lang=en",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"33b6868bcddde57b4d275aae43a8b46471b18fb9\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "117"
+        }
+    },
+    "projects.index.filter-category.en": {
+        "request": "GET /api/v1/projects?lang=en&category=mobile-applications",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"ffa93d2968b1e6f777a3d2458499fb84f24e7712\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "109"
+        }
+    },
+    "projects.index.filter-featured.en": {
+        "request": "GET /api/v1/projects?lang=en&featured=1",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"b1ad099e626e09bf2306ec5ce122bb87f625988a\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "108"
+        }
+    },
+    "projects.index.filter-type.en": {
+        "request": "GET /api/v1/projects?lang=en&type=saas",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"ac3a715910a78b9d74fb71bf1b467271eac38a5a\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "110"
+        }
+    },
+    "projects.index.filtered-paginated.ar": {
+        "request": "GET /api/v1/projects?lang=ar&per_page=2&category=mnsat-taalmy",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"df0c23e87ffc31be97cf5a96c3f449249e2f37a3\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "113"
+        }
+    },
+    "projects.index.filtered-paginated.next-link.ar": {
+        "request": "GET <pagination.next_page_url of projects.index.filtered-paginated.ar> (followed as-is)",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"ee7f796bd69a1a231e12ad2f1493e8e399e0354a\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "112"
+        }
+    },
+    "projects.index.page2.ar": {
+        "request": "GET /api/v1/projects?lang=ar&page=2",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"e4921b67bf4c17e2a4d4b5f07ba2b5dc610dc5a3\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "118"
+        }
+    },
+    "projects.index.page2.en": {
+        "request": "GET /api/v1/projects?lang=en&page=2",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"242b13c9b6852afb759c35b625d3dd025c51c329\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "116"
+        }
+    },
+    "projects.index.per_page50.en": {
+        "request": "GET /api/v1/projects?lang=en&per_page=50",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"2b1536e193bf5183de04c25dfb95774b4631c539\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "111"
+        }
+    },
+    "projects.index.sort-ignored.en": {
+        "request": "GET /api/v1/projects?lang=en&per_page=3&sort=-completed_at",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"64107f9b454621a2c42d8f93a8d0e043208f6c58\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "107"
+        }
+    },
+    "projects.show.404-missing": {
+        "request": "GET /api/v1/projects/this-slug-does-not-exist?lang=en",
+        "status": 404,
+        "headers": {
+            "content-type": "application/json",
+            "cache-control": "no-cache, private",
+            "vary": "Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "102"
+        }
+    },
+    "projects.show.404-unpublished": {
+        "request": "GET /api/v1/projects/<unpublished-or-inactive-slug>?lang=en",
+        "status": 404,
+        "headers": {
+            "content-type": "application/json",
+            "cache-control": "no-cache, private",
+            "vary": "Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "101"
+        }
+    },
+    "projects.show.ar": {
+        "request": "GET /api/v1/projects/dr-krok-comprehensive-medical-dental-learning-platform-ukraine?lang=ar  (largest gallery)",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"3e54fa79207598ddc37f6e58a037d1cf874bbc2c\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "106"
+        }
+    },
+    "projects.show.en": {
+        "request": "GET /api/v1/projects/dr-krok-comprehensive-medical-dental-learning-platform-ukraine?lang=en  (largest gallery)",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"ecc7e3a86f904a5210cf47a3367d8b5fe9df1d4c\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "104"
+        }
+    },
+    "projects.show.small-gallery.ar": {
+        "request": "GET /api/v1/projects/high-throughput-ecommerce-api?lang=ar  (smallest gallery)",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"5ff1c9f3fbc40fe9eb2d290ac2b10a8c2974194b\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "105"
+        }
+    },
+    "projects.show.small-gallery.en": {
+        "request": "GET /api/v1/projects/high-throughput-ecommerce-api?lang=en  (smallest gallery)",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"e0443b14d04d24c8bbcf6895cc5f1d776830d2d7\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "103"
+        }
+    },
+    "public-get.429": {
+        "request": "GET /api/v1/faqs  (121st GET within 1 minute from the same IP)",
+        "status": 429,
+        "headers": {
+            "content-type": "application/json",
+            "cache-control": "no-cache, private",
+            "vary": "Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "0",
+            "retry-after": "60"
+        }
+    },
+    "route.404-commented-categories": {
+        "request": "GET /api/v1/categories  (route is commented out)",
+        "status": 404,
+        "headers": {
+            "content-type": "application/json",
+            "cache-control": "no-cache, private",
+            "vary": "Origin"
+        }
+    },
+    "testimonials.index.ar": {
+        "request": "GET /api/v1/testimonials?lang=ar",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"9b89a4858b28c47d2ae5011185f63bedd3aa8fb8\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "118"
+        }
+    },
+    "testimonials.index.en": {
+        "request": "GET /api/v1/testimonials?lang=en",
+        "status": 200,
+        "headers": {
+            "content-type": "application/json",
+            "etag": "\"6de732b0858c1c88cf1eab581860b8c29a5f67d5\"",
+            "cache-control": "max-age=60, public, s-maxage=300",
+            "vary": "Accept-Language, Origin",
+            "x-ratelimit-limit": "120",
+            "x-ratelimit-remaining": "115"
+        }
+    },
+    "testimonials.store.201.en": {
+        "request": "POST /api/v1/testimonials?lang=en  body: {name, name_job, company_name, description, rating:5, locale:\"en\"}  (rolled back)",
+        "status": 201,
+        "headers": {
+            "content-type": "application/json",
+            "cache-control": "no-cache, private",
+            "vary": "Origin",
+            "x-ratelimit-limit": "3",
+            "x-ratelimit-remaining": "0"
+        }
+    },
+    "testimonials.store.422-empty.en": {
+        "request": "POST /api/v1/testimonials?lang=en  body: {}",
+        "status": 422,
+        "headers": {
+            "content-type": "application/json",
+            "cache-control": "no-cache, private",
+            "vary": "Origin",
+            "x-ratelimit-limit": "3",
+            "x-ratelimit-remaining": "2"
+        }
+    },
+    "testimonials.store.422-invalid.ar": {
+        "request": "POST /api/v1/testimonials?lang=ar  body: {name:\"A\", description:\"short\", rating:9, project_id:999999, website:\"bot\"}",
+        "status": 422,
+        "headers": {
+            "content-type": "application/json",
+            "cache-control": "no-cache, private",
+            "vary": "Origin",
+            "x-ratelimit-limit": "3",
+            "x-ratelimit-remaining": "1"
+        }
+    },
+    "testimonials.store.429": {
+        "request": "POST /api/v1/testimonials  (4th request within 60 minutes from the same IP)",
+        "status": 429,
+        "headers": {
+            "content-type": "application/json",
+            "cache-control": "no-cache, private",
+            "vary": "Origin",
+            "x-ratelimit-limit": "3",
+            "x-ratelimit-remaining": "0",
+            "retry-after": "3600"
+        }
+    }
+}

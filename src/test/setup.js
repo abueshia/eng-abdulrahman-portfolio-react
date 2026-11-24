@@ -3,6 +3,11 @@ import { cleanup } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, vi } from 'vitest';
 
 import i18n, { loadLocale } from '@/i18n';
+import { registerMockRoutes } from '@/services/api/mock/handlers';
+import { fixtureRoutes } from './api-fixtures';
+
+// Live resources have no mock data: serve the real captured API responses.
+registerMockRoutes(fixtureRoutes);
 
 // Base strings are lazy chunks in the app; tests use both languages freely.
 beforeAll(() => Promise.all([loadLocale('ar'), loadLocale('en')]));

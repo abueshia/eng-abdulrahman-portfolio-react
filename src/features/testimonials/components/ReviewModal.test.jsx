@@ -4,7 +4,11 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { testimonialsService } from '@/services/api';
 import { ApiError } from '@/services/api/errors';
 import { renderWithProviders } from '@/test/renderWithProviders';
+import projectsEn from '../../../../docs/api-fixtures/projects.index.per_page50.en.json';
+import testimonialsEn from '../../../../docs/api-fixtures/testimonials.index.en.json';
 import TestimonialsSection from './TestimonialsSection';
+
+const THANKS = 'Thank you! Your review has been received and will appear after review.';
 
 // Canvas is not available in jsdom: the resize step is stubbed, the checks are real.
 vi.mock('../lib/avatar-image', async (importOriginal) => {
@@ -43,7 +47,7 @@ async function openForm(entry = '/en') {
 async function fillValid(user, dialog) {
   const d = within(dialog);
   await user.type(d.getByLabelText('Name'), 'Visitor Reviewer');
-  await user.type(d.getByLabelText('Job title'), 'Operations lead');
+  await user.type(d.getByLabelText(/Job title/), 'Operations lead');
   await user.click(d.getByRole('radio', { name: /4 stars/ }));
   fireEvent.change(d.getByLabelText('Your review'), {
     target: { value: 'A calm, well organised project from start to finish.' },
@@ -98,9 +102,10 @@ describe('Write a review: fields', () => {
     expect(
       await d.findByText('Please enter your name (at least 2 characters).'),
     ).toBeInTheDocument();
-    expect(d.getByText('Please enter your job title (at least 2 characters).')).toBeInTheDocument();
+    // The job title is optional in the API contract.
+    expect(d.getByLabelText(/Job title/)).toHaveAttribute('aria-invalid', 'false');
     expect(d.getByText('Please choose a rating from 1 to 5 stars.')).toBeInTheDocument();
-    expect(d.getByText('Tell a little more (at least 20 characters).')).toBeInTheDocument();
+    expect(d.getByText('Tell a little more (at least 10 characters).')).toBeInTheDocument();
     expect(d.getByText('Please agree to the publication to send your review.')).toBeInTheDocument();
     expect(d.getByLabelText('Name')).toHaveAttribute('aria-invalid', 'true');
 
@@ -111,10 +116,10 @@ describe('Write a review: fields', () => {
   it('counts characters as the review is typed', async () => {
     const { user, dialog } = await openForm();
     const d = within(dialog);
-    expect(d.getByText('0 / 600 characters')).toBeInTheDocument();
+    expect(d.getByText('0 / 1000 characters')).toBeInTheDocument();
     await user.type(d.getByLabelText('Your review'), 'Hello');
-    expect(d.getByText('5 / 600 characters')).toBeInTheDocument();
-    expect(d.getByLabelText('Your review')).toHaveAccessibleDescription('5 / 600 characters');
+    expect(d.getByText('5 / 1000 characters')).toBeInTheDocument();
+    expect(d.getByLabelText('Your review')).toHaveAccessibleDescription('5 / 1000 characters');
   });
 
   it('moves through the stars with the arrow keys, in the reading direction', async () => {
@@ -201,49 +206,65 @@ describe('Write a review: fields', () => {
   });
 });
 
-describe('Write a review: submission (mock adapter, development)', () => {
-  it('posts the review, thanks the visitor, says it was not delivered, and never lists it', async () => {
+describe('Write a review: submission (POST /testimonials contract)', () => {
+  it('posts the API fields, thanks the visitor, says it was not delivered (not live), never lists it', async () => {
     const submit = vi.spyOn(testimonialsService, 'submit');
     const { user, dialog } = await openForm();
     await fillValid(user, dialog);
     await user.click(within(dialog).getByRole('button', { name: /Submit review/ }));
 
-    const status = await within(dialog).findByText('Thank you! Your review arrived.');
+    const status = await within(dialog).findByText(THANKS);
     const panel = /** @type {HTMLElement} */ (status.closest('.req__result'));
     expect(panel).toHaveFocus();
-    expect(within(panel).getByText(/after moderation, not right away/)).toBeInTheDocument();
+    // Tests run with no live resource: the mock answered, and the panel says so.
     expect(within(panel).getByText(/Mock mode: not delivered/)).toBeInTheDocument();
     expect(submit).toHaveBeenCalledWith(
       expect.objectContaining({
+        locale: 'en',
         name: 'Visitor Reviewer',
-        role: 'Operations lead',
+        name_job: 'Operations lead',
+        description: 'A calm, well organised project from start to finish.',
         rating: 4,
         consent: true,
-        hp: '',
+        website: '',
       }),
     );
-    const response = await submit.mock.results[0].value;
-    expect(response).toMatchObject({ code: 201, data: { status: 'pending' } });
+    expect(submit.mock.calls[0][0]).not.toHaveProperty('hp');
+    expect(await submit.mock.results[0].value).toMatchObject({ code: 201 });
 
-    // Pending: neither the rendered list nor a fresh fetch shows it.
+    // Stored inactive: neither the rendered list nor a fresh fetch shows it.
     await user.click(within(panel).getByRole('button', { name: 'Close' }));
     expect(screen.queryByText('Visitor Reviewer')).not.toBeInTheDocument();
     const list = await testimonialsService.list({ lang: 'en' });
     expect(list.data.some((item) => item.name === 'Visitor Reviewer')).toBe(false);
-    expect(list.data).toHaveLength(4);
+    expect(list.data).toHaveLength(testimonialsEn.data.length);
   });
 
-  it('sends the honeypot as is: the API answers 201 and stores nothing', async () => {
+  it('links the review to a published project picked from the API list', async () => {
+    const submit = vi.spyOn(testimonialsService, 'submit');
+    const { user, dialog } = await openForm();
+    const d = within(dialog);
+    const select = await d.findByLabelText('Project (optional)');
+    // "No specific project" + every published project.
+    expect(within(select).getAllByRole('option')).toHaveLength(projectsEn.data.length + 1);
+    await fillValid(user, dialog);
+    await user.selectOptions(select, String(projectsEn.data[1].id));
+    await user.click(d.getByRole('button', { name: /Submit review/ }));
+    await d.findByText(THANKS);
+    expect(submit.mock.calls[0][0].project_id).toBe(projectsEn.data[1].id);
+  });
+
+  it('looks accepted when the honeypot is filled, and sends nothing', async () => {
     const submit = vi.spyOn(testimonialsService, 'submit');
     const { user, dialog } = await openForm();
     await fillValid(user, dialog);
-    fireEvent.change(/** @type {HTMLElement} */ (dialog.querySelector('#review-hp')), {
+    fireEvent.change(/** @type {HTMLElement} */ (dialog.querySelector('#review-website')), {
       target: { value: 'https://spam.example' },
     });
     await user.click(within(dialog).getByRole('button', { name: /Submit review/ }));
-    await within(dialog).findByText('Thank you! Your review arrived.');
-    expect(submit.mock.calls[0][0].hp).toBe('https://spam.example');
-    expect((await submit.mock.results[0].value).data).toEqual({ id: 0, status: 'pending' });
+    await within(dialog).findByText(THANKS);
+    expect(submit.mock.calls[0][0].website).toBe('https://spam.example');
+    expect((await submit.mock.results[0].value).data).toBeNull();
   });
 
   it('sends once on a double click, with a busy progress button', async () => {
@@ -260,7 +281,7 @@ describe('Write a review: submission (mock adapter, development)', () => {
     expect(button).toHaveTextContent('Submitting…');
   });
 
-  it('shows "500 — Retry" on failure and retries', async () => {
+  it('shows "500 — Retry" on a server failure and retries the same review', async () => {
     const submit = vi
       .spyOn(testimonialsService, 'submit')
       .mockRejectedValueOnce(new ApiError({ message: 'Server error', status: 500 }));
@@ -268,21 +289,55 @@ describe('Write a review: submission (mock adapter, development)', () => {
     await fillValid(user, dialog);
     await user.click(within(dialog).getByRole('button', { name: /Submit review/ }));
 
-    // Failure: "500 — Retry", and the same review can be retried.
     expect(await within(dialog).findByRole('alert')).toHaveTextContent('500 — Retry');
     await user.click(within(dialog).getByRole('button', { name: /Retry/ }));
-    await within(dialog).findByText('Thank you! Your review arrived.');
+    await within(dialog).findByText(THANKS);
     expect(submit).toHaveBeenCalledTimes(2);
   });
 
-  it('maps 422 errors from the API onto their fields (photo included)', async () => {
+  it('keeps everything typed after a network error, and says so', async () => {
+    vi.spyOn(testimonialsService, 'submit').mockRejectedValueOnce(
+      new ApiError({ message: 'Network Error', status: 0 }),
+    );
+    const { user, dialog } = await openForm();
+    await fillValid(user, dialog);
+    await user.click(within(dialog).getByRole('button', { name: /Submit review/ }));
+
+    const d = within(dialog);
+    expect(await d.findByRole('alert')).toHaveTextContent(/could not be reached/);
+    expect(d.getByLabelText('Name')).toHaveValue('Visitor Reviewer');
+    expect(d.getByLabelText('Your review')).toHaveValue(
+      'A calm, well organised project from start to finish.',
+    );
+    expect(d.getByRole('radio', { name: /4 stars/ })).toBeChecked();
+  });
+
+  it('says "try again later" on 429 (one hour for reviews) and keeps the review', async () => {
+    vi.spyOn(testimonialsService, 'submit').mockRejectedValueOnce(
+      new ApiError({
+        message: 'Too Many Attempts.',
+        status: 429,
+        cause: { response: { status: 429, headers: { 'retry-after': '3600' } } },
+      }),
+    );
+    const { user, dialog } = await openForm();
+    await fillValid(user, dialog);
+    await user.click(within(dialog).getByRole('button', { name: /Submit review/ }));
+
+    const d = within(dialog);
+    expect(await d.findByRole('alert')).toHaveTextContent(/try again in about 60 min/);
+    expect(d.getByLabelText('Name')).toHaveValue('Visitor Reviewer');
+  });
+
+  it('maps 422 errors onto their fields: translatable keys (name.en) and the photo', async () => {
     vi.spyOn(testimonialsService, 'submit').mockRejectedValueOnce(
       new ApiError({
         message: 'The given data was invalid.',
         status: 422,
         errors: {
-          role: ['The role looks like spam.'],
-          avatar: ['The avatar failed the server check.'],
+          'name.en': ['The name looks like spam.'],
+          name_job: ['The job title looks like spam.'],
+          image: ['The image failed the server check.'],
         },
       }),
     );
@@ -291,9 +346,13 @@ describe('Write a review: submission (mock adapter, development)', () => {
     await user.click(within(dialog).getByRole('button', { name: /Submit review/ }));
 
     const d = within(dialog);
-    expect(await d.findByText('The role looks like spam.')).toBeInTheDocument();
-    expect(d.getByLabelText('Job title')).toHaveAttribute('aria-invalid', 'true');
-    expect(d.getByRole('alert')).toHaveTextContent('The avatar failed the server check.');
+    expect(await d.findByText('The name looks like spam.')).toBeInTheDocument();
+    expect(d.getByLabelText('Name')).toHaveAttribute('aria-invalid', 'true');
+    expect(d.getByText('The job title looks like spam.')).toBeInTheDocument();
+    expect(d.getByLabelText(/Job title/)).toHaveAttribute('aria-invalid', 'true');
+    expect(d.getByRole('alert')).toHaveTextContent('The image failed the server check.');
     expect(d.getAllByText('422 — Some fields need attention.').length).toBeGreaterThan(0);
+    // Values stay for correction.
+    expect(d.getByLabelText('Name')).toHaveValue('Visitor Reviewer');
   });
 });

@@ -77,7 +77,9 @@ export default defineConfig(({ isSsrBuild }) => ({
     globals: true,
     setupFiles: ['./src/test/setup.js'],
     css: false,
-    env: { VITE_USE_MOCK: 'true', VITE_MOCK_LATENCY: '0', VITE_FX: 'off' },
+    // Every resource goes through the mock adapter; the live ones are answered
+    // from the real captured responses (src/test/api-fixtures.js).
+    env: { VITE_API_RESOURCES: '', VITE_MOCK_LATENCY: '0', VITE_FX: 'off' },
     include: ['src/**/*.test.{js,jsx}', 'scripts/**/*.test.js'],
     // Prerender, hydration and form tests render whole pages: 5 s is too
     // tight for them.

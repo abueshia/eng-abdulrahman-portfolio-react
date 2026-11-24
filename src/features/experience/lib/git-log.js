@@ -21,6 +21,7 @@ export const SIDE_TYPES = new Set(['freelance']);
 /**
  * @typedef {{ id: number | string, company: string, role: string, employment_type?: string,
  *   start_date: string, end_date?: string | null, is_current?: boolean }} Experience
+ *   Subset of the mapped API experience (`services/api/mappers/experiences.js`).
  *
  * @typedef {{ lane: number, from: 'top' | 'node' | 'curve', to: 'node' | 'bottom' }} Segment
  * @typedef {{ kind: 'fork' | 'merge', lane: number }} Curve  `lane`: the side lane joining main.

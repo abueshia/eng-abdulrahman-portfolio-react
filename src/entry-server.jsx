@@ -26,6 +26,7 @@ import { buildLlmsTxt } from '@/utils/llms';
 
 // Re-exported for scripts/prerender.js (it only imports this bundle).
 export { env };
+export { api } from '@/config/api';
 export { PRERENDER_GLOBAL } from '@/app/prerender-state';
 export { DEFAULT_LOCALE, getDirection, localizePath } from '@/config/routes';
 export { headToHtml, serializeJson } from '@/utils/head';
@@ -70,7 +71,8 @@ export async function renderPage(url) {
   const defaults = queryClient.getDefaultOptions();
   // A failed fetch is final on the server: without this, an errored query
   // looks "pending" again on the next pass and the page renders its loading
-  // state instead of the error UI (e.g. 404 for an unknown slug).
+  // state instead of the error UI (404 for an unknown slug; any other failure
+  // aborts the build, see `assertQueriesSucceeded`).
   queryClient.setDefaultOptions({
     ...defaults,
     queries: { ...defaults.queries, retryOnMount: false },
@@ -102,6 +104,7 @@ export async function renderPage(url) {
     await Promise.allSettled(pending.map((query) => query.fetch()));
   }
 
+  assertQueriesSucceeded(queryClient, url);
   const queryState = dehydrate(queryClient);
   // Drop the cache: its garbage-collection timers would keep Node alive.
   queryClient.clear();
@@ -112,21 +115,52 @@ export async function renderPage(url) {
 }
 
 /**
- * Fetches every page of a paginated collection.
- * @param {(params: object, options: object) => Promise<import('@/services/api/client').ApiResult<any[]>>} list
- * @returns {Promise<any[]>}
+ * A prerendered page must never ship without its data: an empty section or an
+ * error state baked into static HTML would be indexed as the real page. Any
+ * failed query aborts the build with the request that failed. A 404 is the
+ * one expected failure (an unknown slug renders the 404 page).
+ * @param {import('@tanstack/react-query').QueryClient} queryClient
+ * @param {string} url Page being rendered.
  */
-async function fetchAll(list) {
-  const items = [];
-  let page = 1;
-  let lastPage;
-  do {
-    const result = await list({ page, per_page: 50 }, { lang: DEFAULT_LOCALE });
-    items.push(...result.data);
-    lastPage = result.pagination?.last_page ?? 1;
-    page += 1;
-  } while (page <= lastPage);
-  return items;
+function assertQueriesSucceeded(queryClient, url) {
+  const failed = queryClient
+    .getQueryCache()
+    .getAll()
+    .filter((query) => query.state.status === 'error' && query.state.error?.status !== 404);
+  if (failed.length === 0) return;
+  const details = failed
+    .map((query) => {
+      const error = /** @type {any} */ (query.state.error);
+      return `  - query ${JSON.stringify(query.queryKey)}: ${describeApiError(error)}`;
+    })
+    .join('\n');
+  queryClient.clear();
+  throw new Error(`Prerender of ${url} failed: the API did not answer.\n${details}`);
+}
+
+/**
+ * One line for a failed request: status, message and the endpoint.
+ * @param {any} error ApiError (or anything thrown).
+ */
+export function describeApiError(error) {
+  const config = error?.cause?.config;
+  const endpoint = config ? `${config.baseURL ?? ''}${config.url ?? ''}` : 'unknown endpoint';
+  const status = error?.status ? `HTTP ${error.status}` : 'network error';
+  return `${status} on ${endpoint} (${error?.message ?? 'no message'})`;
+}
+
+/**
+ * Every published project, through the same service the pages use.
+ * @param {'ar' | 'en'} lang
+ */
+async function fetchProjects(lang) {
+  try {
+    return (await projectsService.all({ lang })).data;
+  } catch (error) {
+    throw new Error(`Cannot list projects for the sitemap: ${describeApiError(error)}`, {
+      cause: error,
+    });
+  }
 }
 
 /**
@@ -134,7 +168,7 @@ async function fetchAll(list) {
  * @property {string} path      Locale-agnostic path ("/projects/my-project").
  * @property {string} [lastmod] ISO date for the sitemap.
  * @property {boolean} [sitemap] False for pages that are generated but not
- *   listed (noindex samples: sample case studies).
+ *   listed (none today: every project from the API is indexable).
  */
 
 /**
@@ -143,7 +177,10 @@ async function fetchAll(list) {
  * @returns {Promise<{ routes: PrerenderRoute[], locales: readonly string[] }>}
  */
 export async function getPrerenderRoutes() {
-  const projects = await fetchAll(projectsService.list);
+  const projects = await fetchProjects(DEFAULT_LOCALE);
+  if (projects.length === 0) {
+    throw new Error('The API returned no published project: refusing to build an empty portfolio.');
+  }
 
   return {
     locales: SUPPORTED_LOCALES,
@@ -151,9 +188,9 @@ export async function getPrerenderRoutes() {
       { path: paths.home() },
       ...projects.map((project) => ({
         path: paths.project(project.slug),
-        lastmod: project.updated_at ?? project.published_at,
-        // Samples are prerendered (deep links work) but noindex: never listed.
-        sitemap: !project.is_sample,
+        // The API has no updated_at/published_at: completion is the one real date.
+        ...(project.completed_at ? { lastmod: project.completed_at } : {}),
+        sitemap: true,
       })),
     ],
   };
@@ -171,8 +208,12 @@ export async function renderLlmsTxt() {
       settingsService.get(options),
       servicesService.list(options),
       faqsService.list(options),
-      projectsService.list({ per_page: 50 }, options),
-    ]);
+      projectsService.all(options),
+    ]).catch((error) => {
+      throw new Error(`Cannot build llms.txt (${lang}): ${describeApiError(error)}`, {
+        cause: error,
+      });
+    });
     return {
       settings: settings.data,
       services: services.data,

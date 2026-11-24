@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { contactSchema, fingerprint, requestPreview, toPayload } from './schema';
+import { contactFieldFor, contactSchema, fingerprint, requestPreview, toPayload } from './schema';
 
 const VALID = {
   name: 'Sample Person',
@@ -45,14 +45,25 @@ describe('contact schema', () => {
     expect(errorsOf({ ...VALID, message: 'Budget is < 5 and > 2, flexible.' })).toEqual({});
   });
 
-  it('builds the payload: trimmed, optional fields omitted, honeypot only when filled', () => {
-    expect(toPayload({ ...VALID, name: '  Sample Person  ' })).toEqual({
+  it('builds the contract payload: trimmed, optionals omitted, type mapped, label as service', () => {
+    expect(toPayload({ ...VALID, name: '  Sample Person  ' }, 'API design & development')).toEqual({
       name: 'Sample Person',
       email: 'person@example.com',
-      type: 'api',
+      type: 'project_inquiry',
+      service: 'API design & development',
       message: 'We need a documented REST API.',
     });
+    expect(toPayload({ ...VALID, type: 'consulting' }).type).toBe('consultation');
+    expect(toPayload({ ...VALID, type: 'other' }).type).toBe('general_contact');
+    // Without a label the raw value still says what was picked.
+    expect(toPayload(VALID).service).toBe('api');
     expect(toPayload({ ...VALID, website: 'http://spam' }).website).toBe('http://spam');
+  });
+
+  it('maps 422 keys onto the form fields', () => {
+    expect(
+      ['name', 'email', 'phone', 'message', 'service', 'type', 'website', 'x'].map(contactFieldFor),
+    ).toEqual(['name', 'email', 'phone', 'message', 'type', 'type', null, null]);
   });
 
   it('previews the exact request, never showing the honeypot', () => {

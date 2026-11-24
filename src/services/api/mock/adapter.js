@@ -40,7 +40,7 @@ function parseBody(data) {
 /**
  * Axios adapter that serves requests from in-memory mock data.
  *
- * Why an adapter (and not `if (useMock)` in every service): the whole HTTP
+ * Why an adapter (and not `if (mock)` in every service): the whole HTTP
  * pipeline (interceptors, envelope unwrapping, error normalisation) runs
  * exactly as it will against Laravel, so going live is a config flip.
  *

@@ -1,0 +1,59 @@
+{
+    "code": 200,
+    "success": true,
+    "message": "Testimonials retrieved successfully",
+    "data": [
+        {
+            "id": 5,
+            "name": "Eng. Khaled Al-Mansour",
+            "client_name": "Eng. Khaled Al-Mansour",
+            "name_job": "Chief Technology Officer (CTO)",
+            "client_role": "Chief Technology Officer (CTO)",
+            "company_name": "Elite Digital Solutions",
+            "description": "Eng. Abdelrahman Abu Aishah is an exceptional Full-Stack Engineer. His Laravel and React codebase follows strict SOLID and Repository patterns, making our platform effortless to scale.",
+            "testimonial": "Eng. Abdelrahman Abu Aishah is an exceptional Full-Stack Engineer. His Laravel and React codebase follows strict SOLID and Repository patterns, making our platform effortless to scale.",
+            "rating": 5,
+            "is_featured": true,
+            "sort_order": 1,
+            "source": "dashboard",
+            "avatar": null,
+            "project": null
+        },
+        {
+            "id": 6,
+            "name": "Tarek Abdelaziz",
+            "client_name": "Tarek Abdelaziz",
+            "name_job": "Senior Product Manager",
+            "client_role": "Senior Product Manager",
+            "company_name": "FastCommerce Platform",
+            "description": "Outstanding attention to detail in both database optimization and UI responsiveness. Delivered our REST API and admin portal ahead of schedule.",
+            "testimonial": "Outstanding attention to detail in both database optimization and UI responsiveness. Delivered our REST API and admin portal ahead of schedule.",
+            "rating": 5,
+            "is_featured": true,
+            "sort_order": 2,
+            "source": "dashboard",
+            "avatar": null,
+            "project": {
+                "id": 11,
+                "title": "Steel Tech Industrial Equipment Corporate Website & Product Showcase",
+                "slug": "high-throughput-ecommerce-api"
+            }
+        },
+        {
+            "id": 7,
+            "name": "م. أحمد علي",
+            "client_name": "م. أحمد علي",
+            "name_job": "Senior Software Engineer",
+            "client_role": "Senior Software Engineer",
+            "company_name": "Tech Solutions Corp",
+            "description": "مهندس برمجيات محترف، التسليم كان في الوقت المحدد وبأعلى جودة.",
+            "testimonial": "مهندس برمجيات محترف، التسليم كان في الوقت المحدد وبأعلى جودة.",
+            "rating": 5,
+            "is_featured": false,
+            "sort_order": 3,
+            "source": "website",
+            "avatar": null,
+            "project": null
+        }
+    ]
+}

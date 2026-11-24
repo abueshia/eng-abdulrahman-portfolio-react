@@ -9,6 +9,9 @@ import { createQueryClient } from '@/app/query-client';
 import { createAppRouter } from '@/app/router';
 import { renderPage } from '@/entry-server';
 import i18n from '@/i18n';
+import { FIXTURE_SLUG } from '@/test/api-fixtures';
+import projectsEn from '../../docs/api-fixtures/projects.index.per_page50.en.json';
+import showEn from '../../docs/api-fixtures/projects.show.en.json';
 
 /** @type {import('react-dom/client').Root | undefined} */
 let root;
@@ -52,12 +55,11 @@ async function hydrateUrl(url, expectedText) {
 
 describe('Hydration of prerendered pages', () => {
   it('hydrates the English case study without mismatches', async () => {
-    const title = 'Delivery & Booking API with Live Dispatch';
-    expect(await hydrateUrl('/en/projects/sample-delivery-dispatch', title)).toEqual([]);
+    expect(await hydrateUrl(`/en/projects/${FIXTURE_SLUG}`, showEn.data.title)).toEqual([]);
   });
 
   it('hydrates a filtered home URL without mismatches (filters apply after hydration)', async () => {
-    const errors = await hydrateUrl('/en?type=pos', 'Inventory & Point-of-Sale System');
+    const errors = await hydrateUrl('/en?type=saas', projectsEn.data[0].title);
     expect(errors).toEqual([]);
   });
 
@@ -68,7 +70,7 @@ describe('Hydration of prerendered pages', () => {
 
   it('hydrates for a light-theme visitor (prerendered as dark) without mismatches', async () => {
     document.documentElement.dataset.theme = 'light';
-    expect(await hydrateUrl('/en', 'Multi-tenant SaaS Subscription Platform')).toEqual([]);
+    expect(await hydrateUrl('/en', projectsEn.data[0].title)).toEqual([]);
     expect(document.documentElement.dataset.theme).toBe('light');
   });
 });

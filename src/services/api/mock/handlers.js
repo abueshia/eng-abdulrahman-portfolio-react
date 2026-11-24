@@ -1,23 +1,23 @@
 /**
- * Mock route table: one handler per Laravel endpoint.
+ * Mock route table for the resources NOT served by the live API
+ * (VITE_API_RESOURCES). Projects, experiences, testimonials and FAQs have no
+ * mock data: their GET routes are absent here (tests register the real
+ * captured responses through `registerMockRoutes`). The two POST routes stay,
+ * following the real contract, for builds where those forms are not live.
  *
  * Handlers receive `{ lang, query, body, params }` and return `{ status, body }`
  * built with `ok()` / `fail()`, so payloads match the real API envelope.
  */
 import {
   credentials,
-  experiences,
-  faqs,
-  projects,
   serviceGroups,
   services,
   settings,
   stats,
   technologies,
   technologyCategories,
-  testimonials,
 } from '@/data/mock';
-import { fail, localize, ok, paginate } from './response';
+import { fail, localize, ok } from './response';
 
 /**
  * @typedef {Object} MockContext
@@ -27,35 +27,6 @@ import { fail, localize, ok, paginate } from './response';
  * @property {Record<string, string>} params  Named route parameters.
  */
 
-const techBySlug = new Map(technologies.map((tech) => [tech.slug, tech]));
-
-/** Expands technology slugs into lightweight objects, like an eager-loaded relation. */
-const expandTechs = (slugs) =>
-  slugs
-    .map((slug) => techBySlug.get(slug))
-    .filter(Boolean)
-    .map(({ slug, name, icon }) => ({ slug, name, icon }));
-
-/** Project list item (ProjectResource in "summary" mode). */
-const projectSummary = (p) => ({
-  id: p.id,
-  slug: p.slug,
-  is_sample: p.is_sample,
-  title: p.title,
-  summary: p.summary,
-  type: p.type,
-  year: p.year,
-  role: p.role,
-  is_featured: p.is_featured,
-  cover_image: p.cover_image,
-  cover_alt: p.cover_alt,
-  preview_image: p.preview_image,
-  metrics: p.metrics,
-  technologies: expandTechs(p.technologies),
-  published_at: p.published_at,
-  updated_at: p.updated_at,
-});
-
 const groupBySlug = new Map(serviceGroups.map((group) => [group.slug, group]));
 
 /** Services in display order, each with its eager-loaded group (ServiceResource). */
@@ -63,21 +34,6 @@ const servicesWithGroups = () =>
   services
     .map((service) => ({ ...service, group: groupBySlug.get(service.group) ?? null }))
     .sort((a, b) => (a.group?.sort ?? 99) - (b.group?.sort ?? 99) || a.id - b.id);
-
-/** Related projects: shared type first, then most shared technologies. */
-function relatedProjects(project, limit = 3) {
-  return projects
-    .filter((p) => p.slug !== project.slug)
-    .map((p) => ({
-      p,
-      score:
-        (p.type === project.type ? 10 : 0) +
-        p.technologies.filter((tech) => project.technologies.includes(tech)).length,
-    }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .map(({ p }) => projectSummary(p));
-}
 
 const groupedTechnologies = () =>
   [...technologyCategories]
@@ -90,71 +46,98 @@ const groupedTechnologies = () =>
         .map(({ category: _omit, ...tech }) => tech),
     }));
 
-/** Server-side rules mirrored from the Laravel ContactRequest. */
+const CONTACT_TYPES = ['general_contact', 'project_inquiry', 'job_offer', 'consultation'];
+
+/**
+ * Rules mirrored from the Laravel contact request (API_CONTRACT.md §7).
+ * @param {Record<string, any>} body
+ */
 function validateContact(body) {
   /** @type {Record<string, string[]>} */
   const errors = {};
-  const required = ['name', 'email', 'message'];
-  required.forEach((field) => {
-    if (!String(body[field] ?? '').trim()) errors[field] = [`The ${field} field is required.`];
-  });
+  /** @type {Array<[string, number, boolean]>} field, max, required */
+  const rules = [
+    ['name', 150, true],
+    ['email', 150, true],
+    ['message', 5000, true],
+    ['phone', 50, false],
+    ['subject', 255, false],
+    ['service', 150, false],
+  ];
+  for (const [field, max, required] of rules) {
+    const value = String(body[field] ?? '').trim();
+    if (!value && required) errors[field] = [`The ${field} field is required.`];
+    else if (value.length > max) {
+      errors[field] = [`The ${field} field must not be greater than ${max} characters.`];
+    }
+  }
   if (body.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) {
     errors.email = ['The email field must be a valid email address.'];
   }
-  if (body.message && String(body.message).trim().length < 10) {
-    errors.message = ['The message field must be at least 10 characters.'];
+  if (body.type && !CONTACT_TYPES.includes(body.type)) {
+    errors.type = ['The selected type is invalid.'];
   }
   return errors;
 }
 
-const HTML = /<\/?[a-z!][^>]*>/i;
-const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
-
-/** Approved testimonials only: pending and rejected records are never listed. */
-const approvedTestimonials = () => testimonials.filter((item) => item.status === 'approved');
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
 /**
- * Server-side rules mirrored from the Laravel StoreTestimonialRequest
- * (see the README "Testimonials API contract").
- * @param {Record<string, any>} body Multipart fields; `avatar` is a Blob/File.
+ * A translatable multipart field: `name`, or `name[ar]` / `name[en]`. The
+ * error key follows Laravel's dot notation (`name.ar`).
+ * @param {Record<string, any>} body
+ * @param {string} field
+ * @returns {{ key: string, value: string }}
+ */
+function translatable(body, field) {
+  for (const key of [field, `${field}[ar]`, `${field}[en]`]) {
+    const value = String(body[key] ?? '').trim();
+    if (value) return { key: key.replace(/\[(ar|en)\]$/, '.$1'), value };
+  }
+  return { key: field, value: '' };
+}
+
+/**
+ * Rules mirrored from the Laravel testimonial request (API_CONTRACT.md §5).
+ * @param {Record<string, any>} body Multipart fields; `image` is a Blob/File.
  */
 function validateTestimonial(body) {
   /** @type {Record<string, string[]>} */
   const errors = {};
-  const text = (/** @type {string} */ field) => String(body[field] ?? '').trim();
+  if ('hp' in body) errors.hp = ['The hp field is prohibited.'];
   /** @type {Array<[string, number, number, boolean]>} field, min, max, required */
   const rules = [
-    ['name', 2, 60, true],
-    ['role', 2, 80, true],
-    ['company', 0, 80, false],
-    ['message', 20, 600, true],
+    ['name', 2, 80, true],
+    ['description', 10, 1000, true],
+    ['name_job', 0, 100, false],
+    ['company_name', 0, 100, false],
   ];
   for (const [field, min, max, required] of rules) {
-    const value = text(field);
+    const { key, value } = translatable(body, field);
     if (!value) {
       if (required) errors[field] = [`The ${field} field is required.`];
-      continue;
+    } else if (value.length < min) {
+      errors[key] = [`The ${field} field must be at least ${min} characters.`];
+    } else if (value.length > max) {
+      errors[key] = [`The ${field} field must not be greater than ${max} characters.`];
     }
-    if (value.length < min)
-      errors[field] = [`The ${field} field must be at least ${min} characters.`];
-    else if (value.length > max) {
-      errors[field] = [`The ${field} field must not be greater than ${max} characters.`];
-    } else if (HTML.test(value)) errors[field] = [`The ${field} field must be plain text.`];
   }
-  const rating = Number(body.rating);
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    errors.rating = ['The rating field must be between 1 and 5.'];
+  if (body.rating !== undefined) {
+    const rating = Number(body.rating);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      errors.rating = ['The rating field must be between 1 and 5.'];
+    }
   }
-  if (!['1', 'true', 'on', 'yes', true, 1].includes(body.consent)) {
+  if (body.consent !== undefined && !['1', 'true', 'on', 'yes'].includes(String(body.consent))) {
     errors.consent = ['The consent field must be accepted.'];
   }
-  const avatar = body.avatar;
-  if (avatar !== undefined && avatar !== null && avatar !== '') {
-    if (typeof avatar !== 'object' || !AVATAR_TYPES.includes(avatar.type)) {
-      errors.avatar = ['The avatar field must be a file of type: jpg, png, webp.'];
-    } else if (avatar.size >= AVATAR_MAX_BYTES) {
-      errors.avatar = ['The avatar field must not be greater than 5120 kilobytes.'];
+  const image = body.image ?? body.avatar;
+  if (image !== undefined && image !== null && image !== '') {
+    if (typeof image !== 'object' || !IMAGE_TYPES.includes(image.type)) {
+      errors.image = ['The image field must be a file of type: jpg, jpeg, png, webp.'];
+    } else if (image.size >= IMAGE_MAX_BYTES) {
+      errors.image = ['The image field must not be greater than 5120 kilobytes.'];
     }
   }
   return errors;
@@ -166,67 +149,12 @@ export const routes = [
   {
     method: 'get',
     pattern: '/home',
-    handler: ({ lang }) =>
-      ok(
-        localize(
-          {
-            stats,
-            featured_projects: projects.filter((p) => p.is_featured).map(projectSummary),
-            services: servicesWithGroups(),
-            testimonials: approvedTestimonials(),
-          },
-          lang,
-        ),
-      ),
-  },
-  {
-    method: 'get',
-    pattern: '/projects',
-    handler: ({ lang, query }) => {
-      let list = projects;
-      if (query.type) list = list.filter((p) => p.type === query.type);
-      if (query.technology) list = list.filter((p) => p.technologies.includes(query.technology));
-      if (query.featured !== undefined) {
-        const featured = ['1', 'true', true, 1].includes(query.featured);
-        list = list.filter((p) => p.is_featured === featured);
-      }
-      const { items, pagination } = paginate(list, query, 12);
-      return ok(localize(items.map(projectSummary), lang), { pagination });
-    },
-  },
-  {
-    method: 'get',
-    pattern: '/projects/:slug',
-    handler: ({ lang, params }) => {
-      const project = projects.find((p) => p.slug === params.slug);
-      if (!project) return fail(404, 'Project not found.');
-      return ok(
-        localize(
-          {
-            ...project,
-            technologies: expandTechs(project.technologies),
-            related_projects: relatedProjects(project),
-          },
-          lang,
-        ),
-      );
-    },
+    handler: ({ lang }) => ok(localize({ stats, services: servicesWithGroups() }, lang)),
   },
   {
     method: 'get',
     pattern: '/technologies',
     handler: ({ lang }) => ok(localize(groupedTechnologies(), lang)),
-  },
-  {
-    method: 'get',
-    pattern: '/experiences',
-    handler: ({ lang }) =>
-      ok(
-        localize(
-          experiences.map((e) => ({ ...e, technologies: expandTechs(e.technologies) })),
-          lang,
-        ),
-      ),
   },
   {
     method: 'get',
@@ -239,47 +167,47 @@ export const routes = [
     handler: ({ lang }) => ok(localize(servicesWithGroups(), lang)),
   },
   {
-    method: 'get',
-    pattern: '/testimonials',
-    handler: ({ lang }) => ok(localize(approvedTestimonials(), lang)),
-  },
-  {
     method: 'post',
     pattern: '/testimonials',
-    // Same contract as Laravel: validate, create as `pending`, answer 201.
-    // Nothing is stored (the list above never changes), like a moderation queue.
-    handler: ({ body, lang }) => {
-      const message =
-        lang === 'ar'
-          ? 'وصل رأيك، وسيظهر بعد المراجعة.'
-          : 'Your review was received and will appear after moderation.';
-      // Honeypot: bots fill hidden fields. Pretend success, store nothing.
-      if (body.hp) return ok({ id: 0, status: 'pending' }, { code: 201, message });
+    // Same contract as Laravel: validate, store inactive, answer 201.
+    // Nothing is stored, like a moderation queue that never approves.
+    handler: ({ body }) => {
       const errors = validateTestimonial(body);
-      if (Object.keys(errors).length) return fail(422, 'The given data was invalid.', errors);
-      return ok({ id: Date.now(), status: 'pending' }, { code: 201, message });
-    },
-  },
-  { method: 'get', pattern: '/faqs', handler: ({ lang }) => ok(localize(faqs, lang)) },
-  { method: 'get', pattern: '/stats', handler: ({ lang }) => ok(localize(stats, lang)) },
-  {
-    method: 'post',
-    pattern: '/contact',
-    handler: ({ body, lang }) => {
-      // Honeypot: bots fill hidden fields. Pretend success, store nothing.
-      if (body.website) return ok(null, { code: 201, message: 'Message sent.' });
-      const errors = validateContact(body);
-      if (Object.keys(errors).length) return fail(422, 'The given data was invalid.', errors);
+      const fields = Object.keys(errors);
+      if (fields.length) return fail(422, errors[fields[0]][0], errors);
       return ok(
-        { id: Date.now() },
+        { id: Date.now(), source: 'website', is_featured: false },
         {
           code: 201,
-          message: lang === 'ar' ? 'تم إرسال رسالتك بنجاح.' : 'Your message has been sent.',
+          message: 'Thank you! Your review has been submitted and is pending approval.',
         },
       );
     },
   },
+  { method: 'get', pattern: '/stats', handler: ({ lang }) => ok(localize(stats, lang)) },
+  {
+    method: 'post',
+    pattern: '/contact',
+    handler: ({ body }) => {
+      const errors = validateContact(body);
+      const fields = Object.keys(errors);
+      if (fields.length) return fail(422, errors[fields[0]][0], errors);
+      return ok(
+        { id: Date.now(), type: body.type ?? 'general_contact' },
+        { code: 201, message: 'Message created successfully' },
+      );
+    },
+  },
 ];
+
+/**
+ * Adds routes in front of the table (they win over existing ones). Used by the
+ * test suite to serve the real captured API responses for the live resources.
+ * @param {typeof routes} extra
+ */
+export function registerMockRoutes(extra) {
+  routes.unshift(...extra);
+}
 
 /**
  * Finds the handler for a method + path, extracting `:named` params.

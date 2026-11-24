@@ -50,9 +50,9 @@ describe('project filters', () => {
   });
 
   it('describes the query the filter state runs', () => {
-    expect(describeQuery(NO_FILTERS)).toBe('SELECT * FROM projects ORDER BY year DESC;');
+    expect(describeQuery(NO_FILTERS)).toBe('SELECT * FROM projects ORDER BY sort_order;');
     expect(describeQuery({ type: 'saas', tech: 'react' })).toBe(
-      "SELECT * FROM projects WHERE type = 'saas' AND 'react' IN stack ORDER BY year DESC;",
+      "SELECT * FROM projects WHERE type = 'saas' AND 'react' IN stack ORDER BY sort_order;",
     );
     expect(filtersKey({ type: 'saas', tech: null })).toBe('saas|*');
   });

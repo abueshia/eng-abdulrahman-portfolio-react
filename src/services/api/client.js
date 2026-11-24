@@ -63,3 +63,16 @@ export async function unwrap(promise) {
     pagination: body.pagination,
   };
 }
+
+/**
+ * Unwraps a request and maps its `data` with a resource mapper. The mappers
+ * are one lazy chunk, loaded with the first real request (prerendered pages
+ * hydrate from already-mapped data and never load it).
+ * @param {Promise<import('axios').AxiosResponse>} request
+ * @param {keyof typeof import('./mappers')} mapper Name of the mapper export.
+ * @returns {Promise<ApiResult<any>>}
+ */
+export const unwrapMapped = (request, mapper) =>
+  Promise.all([unwrap(request), import('./mappers')]).then(([result, mappers]) =>
+    mappers.mapResult(result, /** @type {(data: unknown) => unknown} */ (mappers[mapper])),
+  );

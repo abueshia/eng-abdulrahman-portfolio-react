@@ -8,7 +8,7 @@ import '@/i18n/sections';
 import { Section } from '@/components/layout/Section';
 import { SectionFx } from '@/components/layout/SectionFx';
 import { LineIcon } from '@/components/ui/LineIcon';
-import { env } from '@/config/env';
+import { api, isLiveResource } from '@/config/api';
 import { getStation, stationForSection } from '@/config/journey';
 import { useLocale } from '@/hooks/useLocale';
 import { useSettings } from '@/hooks/useSettings';
@@ -16,6 +16,7 @@ import { contactService } from '@/services/api';
 import { EASE } from '@/utils/motion';
 import {
   EMPTY_CONTACT,
+  contactFieldFor,
   contactSchema,
   fingerprint,
   requestPreview,
@@ -25,7 +26,7 @@ import { openRelay, relayMessage, relayTarget } from '../lib/relay';
 
 const ContactDirector = lazy(() => import('../fx/ContactDirector'));
 
-/** @typedef {'idle' | 'sending' | 'success' | 'relayed' | 'invalid' | 'failure' | 'duplicate'} Phase */
+/** @typedef {'idle' | 'sending' | 'success' | 'relayed' | 'invalid' | 'limited' | 'failure' | 'duplicate'} Phase */
 
 const SWAP = {
   initial: { clipPath: 'inset(0% 0% 100% 0%)' },
@@ -79,11 +80,12 @@ function Field({ name, label, error, children }) {
  * - Submitting turns the button into a progress bar; then "201 Created", or
  *   "500 — Retry", or the server's 422 errors on their fields. A honeypot
  *   catches bots, the same request is never sent twice, and HTML is refused.
- * - Mock mode is honest: while the API is not connected the success panel
- *   says the message was not delivered (development builds).
- * - Relay mode (`env.contactRelay`: a production build still on the mock
- *   adapter): the form says up front that sending opens WhatsApp (or the mail
- *   app), then opens it with the message pre-filled from the fields.
+ * - Live (`contact` in VITE_API_RESOURCES, the production setup): the
+ *   request goes to `POST /contact`. 201 shows the confirmation; 422 errors
+ *   land on their fields; 429 says "try again shortly"; a network or server
+ *   failure offers Retry. The form never loses what the visitor typed.
+ * - Not live: development says the message was not delivered; production
+ *   relays to WhatsApp or the mail app (`api.contactRelay`).
  * - Direct channels (email, WhatsApp, phone) and `ls ~/socials` from the
  *   real settings are always there. Reaching them is the Response station.
  */
@@ -94,7 +96,7 @@ export default function ContactSection() {
   const settings = data?.data;
   const general = settings?.general;
   const whatsapp = general?.socials?.find((s) => s.platform === 'whatsapp');
-  const relay = env.contactRelay;
+  const relay = api.contactRelay;
   const relayChannel = whatsapp ? 'whatsapp' : 'email';
   const [phase, setPhase] = useState(/** @type {Phase} */ ('idle'));
   const [response, setResponse] = useState(/** @type {any} */ (null));
@@ -102,6 +104,10 @@ export default function ContactSection() {
   const [relayed, setRelayed] = useState(
     /** @type {{ channel: 'whatsapp' | 'email', url: string } | null} */ (null),
   );
+  /** Server message of a 422 that names no visible field. */
+  const [formError, setFormError] = useState(/** @type {string | null} */ (null));
+  /** The last failure was the network (no response), not the server. */
+  const [offline, setOffline] = useState(false);
   const resultRef = useRef(/** @type {HTMLDivElement | null} */ (null));
 
   const {
@@ -118,25 +124,27 @@ export default function ContactSection() {
     reValidateMode: 'onChange',
   });
   const values = useWatch({ control, defaultValue: EMPTY_CONTACT });
+  /** @param {string | undefined} value */
+  const typeLabelOf = (value) =>
+    settings?.contact?.project_types?.find((/** @type {any} */ type) => type.value === value)
+      ?.label;
 
   useEffect(() => {
-    if (phase === 'success' || phase === 'relayed' || phase === 'failure') {
+    if (phase === 'success' || phase === 'relayed' || phase === 'failure' || phase === 'limited') {
       resultRef.current?.focus();
     }
   }, [phase]);
 
   const onSubmit = handleSubmit(async (formValues) => {
     if (phase === 'sending') return;
-    const payload = toPayload(formValues);
+    const typeLabel = typeLabelOf(formValues.type);
+    const payload = toPayload(formValues, typeLabel);
     const key = fingerprint(payload);
     if (sentKey === key) {
       setPhase('duplicate');
       return;
     }
     if (relay) {
-      const typeLabel = settings?.contact?.project_types?.find(
-        (/** @type {any} */ type) => type.value === payload.type,
-      )?.label;
       const message = relayMessage(
         payload,
         {
@@ -167,6 +175,7 @@ export default function ContactSection() {
       return;
     }
     setPhase('sending');
+    setFormError(null);
     try {
       const result = await contactService.send(payload);
       setSentKey(key);
@@ -174,17 +183,21 @@ export default function ContactSection() {
       setPhase('success');
     } catch (error) {
       const apiError = /** @type {any} */ (error);
+      // The form keeps every value: only the phase changes.
       if (apiError?.isValidation) {
-        Object.entries(apiError.errors ?? {}).forEach(([field, messages]) => {
-          if (field in EMPTY_CONTACT) {
-            setError(/** @type {any} */ (field), {
-              type: 'server',
-              message: [messages].flat()[0],
-            });
-          }
+        let placed = false;
+        Object.entries(apiError.errors ?? {}).forEach(([key, messages]) => {
+          const field = contactFieldFor(key);
+          if (!field) return;
+          placed = true;
+          setError(field, { type: 'server', message: [messages].flat()[0] });
         });
+        if (!placed) setFormError(apiError.message || null);
         setPhase('invalid');
+      } else if (apiError?.isRateLimited) {
+        setPhase('limited');
       } else {
+        setOffline(Boolean(apiError?.isNetwork));
         setPhase('failure');
       }
     }
@@ -205,8 +218,9 @@ export default function ContactSection() {
     sending: t('contact.sending'),
     success: `HTTP/1.1 ${response?.code ?? 201} Created`,
     relayed: t(`contact.relay.${relayed?.channel ?? relayChannel}.status`),
-    invalid: t('contact.invalid'),
-    failure: t('contact.failure.status'),
+    invalid: formError ? `${t('contact.invalid')} ${formError}` : t('contact.invalid'),
+    limited: t('contact.limited.status'),
+    failure: offline ? t('contact.failure.networkStatus') : t('contact.failure.status'),
   }[phase];
 
   return (
@@ -252,8 +266,7 @@ export default function ContactSection() {
                     {response?.code ?? 201} <span>Created</span>
                   </p>
                   <p className="req__result-title">{t('contact.success.title')}</p>
-                  <p className="req__result-body">{t('contact.success.body')}</p>
-                  {env.useMock && (
+                  {!isLiveResource('contact') && (
                     <p className="req__mock" role="note">
                       {t('contact.mock')}
                     </p>
@@ -408,9 +421,18 @@ export default function ContactSection() {
                   {phase === 'failure' && (
                     <div className="req__failure" ref={resultRef} tabIndex={-1} role="alert">
                       <p className="req__failure-status" dir="ltr">
-                        {t('contact.failure.status')}
+                        {offline ? t('contact.failure.networkStatus') : t('contact.failure.status')}
                       </p>
-                      <p>{t('contact.failure.body')}</p>
+                      <p>{offline ? t('contact.failure.network') : t('contact.failure.body')}</p>
+                    </div>
+                  )}
+
+                  {phase === 'limited' && (
+                    <div className="req__failure" ref={resultRef} tabIndex={-1} role="alert">
+                      <p className="req__failure-status" dir="ltr">
+                        {t('contact.limited.status')}
+                      </p>
+                      <p>{t('contact.limited.body')}</p>
                     </div>
                   )}
                 </m.form>
@@ -423,7 +445,7 @@ export default function ContactSection() {
               {t('contact.preview')}
             </p>
             <pre className="req__wire" dir="ltr" aria-describedby="contact-preview-hint">
-              <code>{requestPreview(values, locale)}</code>
+              <code>{requestPreview(values, locale, typeLabelOf(values.type))}</code>
             </pre>
             <p id="contact-preview-hint" className="sr-only">
               {t('contact.previewHint')}

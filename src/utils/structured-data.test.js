@@ -5,12 +5,11 @@ import { buildProjectJsonLd } from './structured-data';
 const LABELS = { home: 'Home', work: 'Work' };
 const project = {
   slug: 'real-project',
-  is_sample: false,
   title: 'Real Project',
   summary: 'What it is.',
   cover_image: '/images/projects/real-project/cover.webp',
-  published_at: '2026-01-10',
-  updated_at: '2026-02-01',
+  completed_at: '2026-01-10',
+  category: { id: 1, slug: 'enterprise-saas', name: 'Enterprise SaaS' },
   technologies: [{ slug: 'laravel', name: 'Laravel' }],
   github_url: null,
   live_url: 'https://example.com',
@@ -26,6 +25,10 @@ describe('buildProjectJsonLd', () => {
     expect(work.image).toMatch(/^https?:\/\/.+\/images\/projects\/real-project\/cover\.webp$/);
     expect(work.keywords).toEqual(['Laravel']);
     expect(work.sameAs).toEqual(['https://example.com']);
+    // The API's only real date is completion; there is no publish/update date.
+    expect(work.dateCreated).toBe('2026-01-10');
+    expect(work).not.toHaveProperty('dateModified');
+    expect(work.genre).toBe('Enterprise SaaS');
     expect(crumbs.itemListElement.map((item) => item.name)).toEqual([
       'Home',
       'Work',
@@ -41,8 +44,7 @@ describe('buildProjectJsonLd', () => {
     expect(graph[0].url).not.toContain('/en/');
   });
 
-  it('never describes a sample as real work', () => {
-    expect(buildProjectJsonLd({ ...project, is_sample: true }, 'en', LABELS)).toBeUndefined();
+  it('describes nothing without a project', () => {
     expect(buildProjectJsonLd(undefined, 'en', LABELS)).toBeUndefined();
   });
 });

@@ -6,9 +6,10 @@ import '@/i18n/work';
 import { Section } from '@/components/layout/Section';
 import { SectionFx } from '@/components/layout/SectionFx';
 import { LineIcon } from '@/components/ui/LineIcon';
+import { LocalizedLink } from '@/components/ui/LocalizedLink';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { getStation, stationForSection } from '@/config/journey';
-import { SampleBadge } from '@/features/projects/components/SampleBadge';
+import { paths } from '@/config/routes';
 import { useLocale } from '@/hooks/useLocale';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useTestimonials } from '../hooks/useTestimonials';
@@ -35,11 +36,12 @@ const TestimonialsDirector = lazy(() => import('../fx/TestimonialsDirector'));
  *
  * - The PR header aggregates the real data: approvals count and, when the
  *   records carry them, the checks the reviews passed. Each card shows the
- *   reviewer's photo (or a generated monogram), the star rating (as an
- *   image with a text label, never as structured data) and the words. Only
- *   approved records render. Sample records say so (badge on the section
- *   and on every card). The director runs the checks with the scroll and
- *   flips the state to "Approved" once they all pass.
+ *   reviewer's photo (or a generated monogram from the name), the star
+ *   rating (as an image with a text label, never as structured data), the
+ *   words, a "featured" mark for `is_featured` reviews and a link to the
+ *   reviewed case study when the API links a published project. Only
+ *   approved records render (the API lists nothing else). The director runs
+ *   the checks with the scroll and flips the state to "Approved".
  * - "Write a review" (GitHub "Review changes" style) closes the section: a
  *   real button in the HTML that opens the lazy review form dialog. New
  *   reviews are pending until approved, so they never appear here at once.
@@ -63,8 +65,10 @@ export default function TestimonialsSection() {
   );
   const [selected, setSelected] = useState(0);
 
-  const checks = useMemo(() => [...new Set(items.flatMap((item) => item.checks ?? []))], [items]);
-  const hasSamples = items.some((item) => item.is_sample);
+  const checks = useMemo(
+    () => [...new Set(items.flatMap((/** @type {any} */ item) => item.checks ?? []))],
+    [items],
+  );
 
   // Selected slide: from embla when it runs, from the native scroller before.
   useEffect(() => {
@@ -190,7 +194,6 @@ export default function TestimonialsSection() {
                   </span>
                 </>
               )}
-              {hasSamples && <SampleBadge className="pr__badge" />}
             </div>
             {checks.length > 0 && (
               <ul className="pr__checks" aria-label={t('testimonials.checksPassed')}>
@@ -229,24 +232,28 @@ export default function TestimonialsSection() {
                     <article className="review__card">
                       <header className="review__head">
                         <Avatar
-                          name={plainText(item.name || item.role)}
+                          name={plainText(item.name)}
                           src={safeAvatarUrl(item.avatar)}
-                          alt={t('testimonials.avatarAlt', {
-                            name: plainText(item.name || item.role),
-                          })}
+                          alt={t('testimonials.avatarAlt', { name: plainText(item.name) })}
                         />
                         <p className="review__who">
-                          <b className="review__name">{plainText(item.name || item.role)}</b>{' '}
+                          <b className="review__name">{plainText(item.name)}</b>{' '}
                           <span className="review__verb">
                             <LineIcon name="check" /> {t('testimonials.approved')}
                           </span>
                         </p>
-                        {item.is_sample && <SampleBadge className="review__badge" />}
+                        {item.is_featured && (
+                          <span className="review__badge review__featured">
+                            <span aria-hidden="true">★</span> {t('testimonials.featured')}
+                          </span>
+                        )}
                       </header>
-                      {item.name && item.role && (
+                      {(item.role || item.company) && (
                         <p className="review__role">
-                          {plainText(item.role)}
-                          {item.company && <> · {plainText(item.company)}</>}
+                          {[item.role, item.company]
+                            .filter(Boolean)
+                            .map((part) => plainText(part))
+                            .join(' · ')}
                         </p>
                       )}
                       {ratingOf(item.rating) > 0 && (
@@ -258,23 +265,17 @@ export default function TestimonialsSection() {
                       <blockquote className="review__quote">
                         <p>{plainText(item.quote)}</p>
                       </blockquote>
-                      {(item.scope || item.checks?.length > 0) && (
+                      {item.project && (
                         <footer className="review__foot">
-                          {item.scope && (
-                            <p className="review__scope">
-                              <span className="review__scope-key">{t('testimonials.scope')}:</span>{' '}
-                              {plainText(item.scope)}
-                            </p>
-                          )}
-                          {item.checks?.length > 0 && (
-                            <ul className="review__checks">
-                              {item.checks.map((check) => (
-                                <li key={check}>
-                                  <LineIcon name="check" /> <bdi>{check}</bdi>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
+                          <p className="review__scope">
+                            <span className="review__scope-key">{t('testimonials.scope')}:</span>{' '}
+                            <LocalizedLink
+                              to={paths.project(item.project.slug)}
+                              className="review__project"
+                            >
+                              {plainText(item.project.title)}
+                            </LocalizedLink>
+                          </p>
                         </footer>
                       )}
                     </article>

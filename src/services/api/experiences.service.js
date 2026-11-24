@@ -1,12 +1,13 @@
 import { ENDPOINTS } from './endpoints';
 import { http } from './http';
-import { requestConfig, unwrap } from './client';
+import { requestConfig, unwrapMapped } from './client';
 
-/** `GET /experiences` service. Work experience timeline, newest first. */
+/** `GET /experiences` service: the full work history (mapped, see `mappers/experiences.js`). */
 export const experiencesService = {
   /**
    * @param {import('./client').RequestOptions} [options]
-   * @returns {Promise<import('./client').ApiResult<any>>}
+   * @returns {Promise<import('./client').ApiResult<import('./mappers/experiences').Experience[]>>}
    */
-  list: (options) => unwrap(http.get(ENDPOINTS.experiences, requestConfig(options))),
+  list: (options) =>
+    unwrapMapped(http.get(ENDPOINTS.experiences, requestConfig(options)), 'mapExperiences'),
 };

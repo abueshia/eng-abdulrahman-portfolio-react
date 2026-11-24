@@ -11,17 +11,17 @@ import { useLocale } from '@/hooks/useLocale';
 import { buildProjectJsonLd } from '@/utils/structured-data';
 import NotFoundPage from './NotFoundPage';
 
-/** Open Graph needs a raster image; SVG covers (generated samples) fall back to the default. */
+/** Open Graph needs a raster image; an SVG cover falls back to the default image. */
 const isRaster = (/** @type {string | undefined} */ src) =>
   Boolean(src && /\.(jpe?g|png|webp)(\?.*)?$/i.test(src));
 
 /**
  * Case study page (`/projects/:slug`).
  *
- * SEO: one `<Seo>` with the project's title, summary and cover. Sample
- * projects (`is_sample`) are `noindex` (still generated, so links work, but
- * never listed in the sitemap) and carry no CreativeWork JSON-LD; real ones
- * get CreativeWork/SoftwareSourceCode + BreadcrumbList.
+ * SEO: one `<Seo>` with the project's title, summary and cover, plus
+ * CreativeWork (SoftwareSourceCode when the repository is public) and
+ * BreadcrumbList JSON-LD. Every project comes from the API and is real work:
+ * indexable, and listed in the sitemap with its `completed_at` as lastmod.
  */
 export default function ProjectDetailsPage() {
   const { slug } = useParams();
@@ -51,9 +51,8 @@ export default function ProjectDetailsPage() {
       <Seo
         title={project?.title}
         description={project?.summary}
-        image={isRaster(project?.cover_image) ? project.cover_image : undefined}
+        image={isRaster(project?.cover_image ?? undefined) ? project?.cover_image : undefined}
         type="article"
-        noIndex={Boolean(project?.is_sample)}
         jsonLd={jsonLd}
       />
       {isPending && (

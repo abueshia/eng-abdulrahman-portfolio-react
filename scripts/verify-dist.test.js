@@ -36,7 +36,7 @@ ${extra}
 /** @type {string[]} */
 const dirs = [];
 
-/** @param {Record<string, string>} files */
+/** @param {Record<string, string | null>} files `null` omits a file. */
 function site(files) {
   const dir = mkdtempSync(join(tmpdir(), 'dist-'));
   dirs.push(dir);
@@ -53,6 +53,7 @@ function site(files) {
     ...files,
   };
   for (const [name, content] of Object.entries(all)) {
+    if (content === null) continue;
     mkdirSync(dirname(join(dir, name)), { recursive: true });
     writeFileSync(join(dir, name), content);
   }
@@ -108,8 +109,8 @@ describe('verifyDist (post-build check)', () => {
   });
 
   it('fails without llms.txt or a sitemap line in robots.txt', () => {
-    const dir = site({ 'robots.txt': 'User-agent: *\n' });
-    rmSync(join(dir, 'llms.txt'));
+    // `null` leaves a file out (deleting one just written can fail on Windows).
+    const dir = site({ 'robots.txt': 'User-agent: *\n', 'llms.txt': null });
     const { problems } = verifyDist(dir);
     expect(problems).toContain('robots.txt: no "Sitemap:" line');
     expect(problems).toContain('llms.txt missing');

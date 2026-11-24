@@ -110,6 +110,9 @@ export default function ExperienceSection() {
   const { t } = useTranslation();
   const { data } = useExperiences();
   const graph = useMemo(() => buildGitGraph(data?.data ?? []), [data]);
+  // The director rebuilds its triggers (and refreshes ScrollTrigger) whenever
+  // the rendered log changes: data arriving after mount, or a language switch.
+  const graphKey = graph.rows.map((row) => row.key).join(',');
 
   return (
     <Section id="experience" className="experience">
@@ -152,8 +155,13 @@ export default function ExperienceSection() {
                           <span className="gl__now">{t('experience.present')}</span>
                         )}
                         {job.location && <span>{job.location}</span>}
-                        {job.employment_type && (
-                          <span>{t(`experience.types.${job.employment_type}`)}</span>
+                        {(job.employment_label || job.employment_type) && (
+                          <span>
+                            {job.employment_label ||
+                              t(`experience.types.${job.employment_type}`, {
+                                defaultValue: job.employment_type,
+                              })}
+                          </span>
                         )}
                       </p>
                       {job.summary && <p className="gl__msg">{job.summary}</p>}
@@ -193,7 +201,7 @@ export default function ExperienceSection() {
         </div>
       </div>
       <SectionFx target="experience">
-        <ExperienceDirector />
+        <ExperienceDirector graphKey={graphKey} />
       </SectionFx>
     </Section>
   );

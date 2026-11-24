@@ -1,0 +1,381 @@
+{
+    "code": 200,
+    "success": true,
+    "message": "Projects retrieved successfully",
+    "pagination": {
+        "current_page": 1,
+        "first_page_url": "http://localhost:8003/api/v1/projects?per_page=2&page=1",
+        "prev_page_url": "",
+        "next_page_url": "http://localhost:8003/api/v1/projects?per_page=2&page=2",
+        "last_page_url": "http://localhost:8003/api/v1/projects?per_page=2&page=7",
+        "total_pages": 7,
+        "per_page": 2,
+        "total_items": 14,
+        "path": "http://localhost:8003/api/v1/projects"
+    },
+    "data": [
+        {
+            "id": 11,
+            "title": "موقع تعريفي ومنصة منتجات لشركة Steel Tech للمعدات الصناعية",
+            "subtitle": "عرض ماكينات تشكيل المعادن، الكتالوج، الأخبار، والمدونة بثنائية اللغة (عربي / إنجليزي)",
+            "slug": "high-throughput-ecommerce-api",
+            "short_description": "موقع تعريفي ومنصة عرض منتجات ثنائية اللغة لشركة Steel Tech المتخصصة في معدات تشكيل ومعالجة المعادن، يشمل الأقسام والمنتجات والكتالوج والأخبار والمدونة وصفحات التواصل.",
+            "description": "تطوير موقع تعريفي متكامل ثنائي اللغة (العربية والإنجليزية) لشركة Steel Tech لتقديم هويتها وخدماتها في توريد معدات تشكيل ومعالجة المعادن بالشراكة مع مصنّعين في الاتحاد الأوروبي وخدمة فروعها في الإمارات ومصر وتونس والمغرب. يضم الموقع عرضاً منظماً لتصنيفات الماكينات والمنتجات (مثل CNC Tube Bending، CNC Laser Cutting، CNC Waterjet Cutting & Beveling، Press Brakes، Shears، والمخارط)، إلى جانب أقسام الكتالوج، والأخبار والفعاليات، والمدونة التقنية، ونماذج التواصل والاستفسار.",
+            "challenge": [
+                {
+                    "title": "تنظيم كتالوج معدات صناعية وتقنية متنوع",
+                    "description": "عرض فئات ومنتجات صناعية وتقنية متخصصة بشكل واضح ومنظم يسهّل على الزوار استعراض التفاصيل والكتالوج والوصول للمنتج المطلوب."
+                },
+                {
+                    "title": "تجربة تصفح متكاملة بالعربية والإنجليزية",
+                    "description": "الحفاظ على اتساق المحتوى والقوائم والصفحات التعريفية والمدونة والأخبار عبر التبديل بين العربية والإنجليزية."
+                },
+                {
+                    "title": "ربط الهوية المؤسسية بقنوات تواصل واضحة",
+                    "description": "إبراز حضور الشركة وفروعها وخبراتها الصناعية مع توفير مسارات مباشرة للتواصل والاستفسار عن المعدات."
+                }
+            ],
+            "solution": "هيكلة هرمية للأقسام والمنتجات والكتالوج\r\nدعم ثنائي اللغة كامل للمحتوى والصفحات\r\nتوزيع واضح للمحتوى المؤسسي ووسائل التواصل",
+            "results": "إطلاق موقع تعريفي ومنصة عرض منتجات ثنائية اللغة لشركة Steel Tech تجمع بين استعراض معدات تشكيل المعادن، والكتالوج، والأخبار، والمدونة، وقنوات التواصل بشكل منظم.",
+            "metrics": [],
+            "client_name": "",
+            "role_title": "",
+            "duration": "",
+            "project_type": "web_app",
+            "project_type_label": "تطبيق ويب متكامل",
+            "status": "published",
+            "live_url": "https://steeltechae.com/ar",
+            "repo_url": null,
+            "case_study_url": null,
+            "started_at": null,
+            "completed_at": "2024-10-10",
+            "is_featured": false,
+            "sort_order": 2,
+            "cover_image": "http://localhost:8003/storage/20/WhatsApp-Image-2026-11-24-at-2.42.40-AM.jpeg",
+            "gallery": [
+                "http://localhost:8003/storage/32/WhatsApp-Image-2026-11-24-at-2.41.38-AM.jpeg",
+                "http://localhost:8003/storage/33/WhatsApp-Image-2026-11-24-at-2.42.18-AM.jpeg",
+                "http://localhost:8003/storage/34/WhatsApp-Image-2026-11-24-at-2.42.40-AM.jpeg"
+            ],
+            "category": {
+                "id": 13,
+                "name": "مواقع تعريفيه",
+                "slug": "informational-showcase-websites",
+                "description": "تطوير مواقع تعريفية ومؤسسية سريعة وصديقة لمحركات البحث (SEO)، مع نظام إدارة محتوى ديناميكي، ولوحات تحكم مخصصة، ونماذج تواصل واستفسار، ودعم تعدد اللغات، وبنية خلفية منظمة تضمن الموثوقية وسهولة التحديث.",
+                "icon_class": null,
+                "sort_order": 5,
+                "image": null
+            },
+            "technologies": [
+                {
+                    "id": 22,
+                    "name": "PHP 8.3",
+                    "slug": "php-8",
+                    "category": "backend",
+                    "category_label": "تطوير الواجهات الخلفية (Backend)",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 96,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 1,
+                    "image": null
+                },
+                {
+                    "id": 23,
+                    "name": "Laravel 10",
+                    "slug": "laravel",
+                    "category": "backend",
+                    "category_label": "تطوير الواجهات الخلفية (Backend)",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 98,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 2,
+                    "image": null
+                },
+                {
+                    "id": 26,
+                    "name": "MySQL & Database Design",
+                    "slug": "mysql",
+                    "category": "database",
+                    "category_label": "قواعد البيانات والتخزين المؤقت",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 95,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 5,
+                    "image": null
+                },
+                {
+                    "id": 27,
+                    "name": "RESTful APIs",
+                    "slug": "restful-apis",
+                    "category": "backend",
+                    "category_label": "تطوير الواجهات الخلفية (Backend)",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 97,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 6,
+                    "image": null
+                },
+                {
+                    "id": 28,
+                    "name": "Clean Architecture & SOLID",
+                    "slug": "clean-architecture-solid",
+                    "category": "architecture",
+                    "category_label": "هندسة ومعمارية البرمجيات",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 95,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 7,
+                    "image": null
+                },
+                {
+                    "id": 29,
+                    "name": "HTML5, CSS3 & Bootstrap 5",
+                    "slug": "html5-css3-bootstrap",
+                    "category": "frontend",
+                    "category_label": "تطوير الواجهات الأمامية (Frontend)",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 96,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 8,
+                    "image": null
+                },
+                {
+                    "id": 31,
+                    "name": "PHPUnit & Automated Testing",
+                    "slug": "phpunit-testing",
+                    "category": "testing",
+                    "category_label": "الاختبارات وجودة الكود",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 92,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 10,
+                    "image": null
+                },
+                {
+                    "id": 32,
+                    "name": "Git, GitHub & Linux/cPanel Deployment",
+                    "slug": "git-devops",
+                    "category": "devops",
+                    "category_label": "الخوادم والنشر السحابي (DevOps)",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 94,
+                    "years_experience": null,
+                    "is_featured": false,
+                    "sort_order": 11,
+                    "image": null
+                }
+            ]
+        },
+        {
+            "id": 13,
+            "title": "منصة إستدامة بلس (Estedama Plus) التعليمية للأطفال",
+            "subtitle": "محتوى تعليمي، ألعاب وأنشطة تفاعلية، اختبارات، قصص، ومحتوى للمعلمين وأولياء الأمور",
+            "slug": "estedama-plus-interactive-kids-sustainability-platform",
+            "short_description": "منصة تعليمية تفاعلية للأطفال حول الاستدامة تجمع بين القصص والفيديوهات والاختبارات وورش العمل والتحديات والألعاب، مع محتوى للمعلمين وأولياء الأمور، ولوحة تحكم، وAPIs لخدمة التطبيق.",
+            "description": "تطوير منصة إستدامة بلس كمنصة تعليمية تفاعلية للأطفال تركز على مفاهيم الاستدامة بأسلوب شيّق يجمع بين المحتوى التعليمي والأنشطة التفاعلية وألعاب الاستدامة. تشمل المنظومة لوحة تحكم لإدارة الأدوار والمديرين والمستخدمين، وتنظيم فئات وورش العمل والتحديات والقصص والاختبارات والفيديوهات، بالإضافة إلى أقسام محتوى المعلمين وأولياء الأمور، والأخبار والتحديثات، وتطوير واجهات برمجية (APIs) لربط بيانات المنصة وخدماتها بالتطبيق.",
+            "challenge": [
+                {
+                    "title": "تنوع أشكال المحتوى التعليمي والأنشطة للأطفال",
+                    "description": "تنظيم القصص والفيديوهات والاختبارات وورش العمل والتحديات والألعاب ضمن تجربة سلسة ومناسبة للأطفال."
+                },
+                {
+                    "title": "إشراك المعلمين وأولياء الأمور بجانب الطفل",
+                    "description": "توفير محتوى مخصص للمعلمين وأولياء الأمور يدعم العملية التعليمية حول الاستدامة إلى جانب أنشطة الأطفال."
+                },
+                {
+                    "title": "إدارة شاملة للمحتوى والمستخدمين والأدوار",
+                    "description": "تسهيل إدارة كم متنوع من العناصر التعليمية والحسابات والصلاحيات والتحديثات من لوحة تحكم مركزية واحدة."
+                }
+            ],
+            "solution": "تمت هيكلة لوحة التحكم والمنصة لفصل إدارة وحدات المحتوى التعليمي المتنوعة (القصص، الفيديوهات، الاختبارات، التحديات، وفئات وورش العمل) مع نظام أدوار وصلاحيات لإدارة المديرين والمستخدمين، وبناء واجهات APIs لتزويد التطبيق بالبيانات والخدمات بشكل منظم، وتخصيص مسارات واضحة للمحتوى التفاعلي والألعاب ومواد المعلمين وأولياء الأمور والأخبار والتواصل.",
+            "results": "تقديم منصة تعليمية متكاملة للأطفال حول الاستدامة تجمع بين المحتوى المتنوع والألعاب التفاعلية ودعم المعلمين وأولياء الأمور ولوحة إدارة مركزية وAPIs لخدمة التطبيق.",
+            "metrics": [],
+            "client_name": "",
+            "role_title": "",
+            "duration": "",
+            "project_type": "saas",
+            "project_type_label": "منصة سحابية (SaaS)",
+            "status": "published",
+            "live_url": "https://estedamaplus.com/ar",
+            "repo_url": null,
+            "case_study_url": null,
+            "started_at": null,
+            "completed_at": "2024-10-01",
+            "is_featured": false,
+            "sort_order": 4,
+            "cover_image": "http://localhost:8003/storage/21/WhatsApp-Image-2026-11-24-at-4.42.29-AM.jpeg",
+            "gallery": [
+                "http://localhost:8003/storage/28/WhatsApp-Image-2026-11-24-at-4.42.29-AM.jpeg",
+                "http://localhost:8003/storage/29/WhatsApp-Image-2026-11-24-at-4.43.05-AM.jpeg",
+                "http://localhost:8003/storage/30/WhatsApp-Image-2026-11-24-at-4.43.41-AM.jpeg",
+                "http://localhost:8003/storage/31/WhatsApp-Image-2026-11-24-at-4.44.22-AM.jpeg"
+            ],
+            "category": {
+                "id": 12,
+                "name": "منصات تعلمية",
+                "slug": "mnsat-taalmy",
+                "description": "تطوير منصات تعليمية تفاعلية وأنظمة تعلم إلكتروني قابلة للتوسع، تشمل إدارة الدورات والدروس، والاختبارات والتقييمات، ومتابعة تقدم الطلاب، وإدارة الصلاحيات، وبناء واجهات برمجية (APIs) عالية الأداء وسهلة الصيانة.",
+                "icon_class": null,
+                "sort_order": 4,
+                "image": null
+            },
+            "technologies": [
+                {
+                    "id": 22,
+                    "name": "PHP 8.3",
+                    "slug": "php-8",
+                    "category": "backend",
+                    "category_label": "تطوير الواجهات الخلفية (Backend)",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 96,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 1,
+                    "image": null
+                },
+                {
+                    "id": 23,
+                    "name": "Laravel 10",
+                    "slug": "laravel",
+                    "category": "backend",
+                    "category_label": "تطوير الواجهات الخلفية (Backend)",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 98,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 2,
+                    "image": null
+                },
+                {
+                    "id": 25,
+                    "name": "JavaScript (ES6+)",
+                    "slug": "javascript-es6",
+                    "category": "frontend",
+                    "category_label": "تطوير الواجهات الأمامية (Frontend)",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 94,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 4,
+                    "image": null
+                },
+                {
+                    "id": 26,
+                    "name": "MySQL & Database Design",
+                    "slug": "mysql",
+                    "category": "database",
+                    "category_label": "قواعد البيانات والتخزين المؤقت",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 95,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 5,
+                    "image": null
+                },
+                {
+                    "id": 27,
+                    "name": "RESTful APIs",
+                    "slug": "restful-apis",
+                    "category": "backend",
+                    "category_label": "تطوير الواجهات الخلفية (Backend)",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 97,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 6,
+                    "image": null
+                },
+                {
+                    "id": 28,
+                    "name": "Clean Architecture & SOLID",
+                    "slug": "clean-architecture-solid",
+                    "category": "architecture",
+                    "category_label": "هندسة ومعمارية البرمجيات",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 95,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 7,
+                    "image": null
+                },
+                {
+                    "id": 29,
+                    "name": "HTML5, CSS3 & Bootstrap 5",
+                    "slug": "html5-css3-bootstrap",
+                    "category": "frontend",
+                    "category_label": "تطوير الواجهات الأمامية (Frontend)",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 96,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 8,
+                    "image": null
+                },
+                {
+                    "id": 30,
+                    "name": "Redis & Performance Caching",
+                    "slug": "redis-caching",
+                    "category": "database",
+                    "category_label": "قواعد البيانات والتخزين المؤقت",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 90,
+                    "years_experience": null,
+                    "is_featured": false,
+                    "sort_order": 9,
+                    "image": null
+                },
+                {
+                    "id": 31,
+                    "name": "PHPUnit & Automated Testing",
+                    "slug": "phpunit-testing",
+                    "category": "testing",
+                    "category_label": "الاختبارات وجودة الكود",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 92,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 10,
+                    "image": null
+                },
+                {
+                    "id": 32,
+                    "name": "Git, GitHub & Linux/cPanel Deployment",
+                    "slug": "git-devops",
+                    "category": "devops",
+                    "category_label": "الخوادم والنشر السحابي (DevOps)",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 94,
+                    "years_experience": null,
+                    "is_featured": false,
+                    "sort_order": 11,
+                    "image": null
+                }
+            ]
+        }
+    ]
+}

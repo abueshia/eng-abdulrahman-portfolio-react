@@ -5,10 +5,10 @@ import { testimonialsService } from '@/services/api';
 import { renderWithProviders } from '@/test/renderWithProviders';
 import TestimonialsSection from './TestimonialsSection';
 
-// A production build still on the mock adapter: the review form relays to WhatsApp.
-vi.mock('@/config/env', async (importOriginal) => {
+// A production build where `testimonials` is not a live API resource: the form relays to WhatsApp.
+vi.mock('@/config/api', async (importOriginal) => {
   const actual = /** @type {any} */ (await importOriginal());
-  return { ...actual, env: { ...actual.env, useMock: true, reviewRelay: true } };
+  return { ...actual, api: { ...actual.api, reviewRelay: true } };
 });
 
 beforeAll(() => {
@@ -29,8 +29,8 @@ async function openAndFill() {
   const dialog = await screen.findByRole('dialog', { name: 'Write a review' });
   const d = within(dialog);
   await view.user.type(d.getByLabelText('Name'), 'Visitor Reviewer');
-  await view.user.type(d.getByLabelText('Job title'), 'Operations lead');
-  await view.user.type(d.getByLabelText('Company (optional)'), 'Sample Co');
+  await view.user.type(d.getByLabelText(/Job title/), 'Operations lead');
+  await view.user.type(d.getByLabelText('Company (optional)'), 'Example Co');
   await view.user.click(d.getByRole('radio', { name: /5 stars/ }));
   fireEvent.change(d.getByLabelText('Your review'), {
     target: { value: 'A calm, well organised project from start to finish.' },
@@ -39,7 +39,7 @@ async function openAndFill() {
   return { ...view, dialog, d };
 }
 
-describe('Write a review in relay mode (production without the API)', () => {
+describe('Write a review in relay mode (production, testimonials not a live resource)', () => {
   it('says up front that WhatsApp is used and the photo is not sent, then opens it pre-filled', async () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(/** @type {any} */ ({ opener: {} }));
     const submit = vi.spyOn(testimonialsService, 'submit');
@@ -58,7 +58,7 @@ describe('Write a review in relay mode (production without the API)', () => {
     expect(String(url)).toMatch(/^https:\/\/wa\.me\/201028292449\?text=/);
     const text = decodeURIComponent(String(url).split('text=')[1]);
     expect(text).toContain("Hello, I'm Visitor Reviewer.");
-    expect(text).toContain('Job title: Operations lead · Sample Co');
+    expect(text).toContain('Job title: Operations lead · Example Co');
     expect(text).toContain('Rating 5/5: ★★★★★');
     expect(text).toContain('A calm, well organised project from start to finish.');
     expect(d.queryByText(/Mock mode: not delivered/)).not.toBeInTheDocument();
@@ -71,7 +71,7 @@ describe('Write a review in relay mode (production without the API)', () => {
   it('opens nothing when the honeypot is filled, but looks done', async () => {
     const open = vi.spyOn(window, 'open').mockReturnValue(null);
     const { user, dialog, d } = await openAndFill();
-    fireEvent.change(/** @type {HTMLElement} */ (dialog.querySelector('#review-hp')), {
+    fireEvent.change(/** @type {HTMLElement} */ (dialog.querySelector('#review-website')), {
       target: { value: 'bot' },
     });
     await user.click(d.getByRole('button', { name: /Send via WhatsApp/ }));

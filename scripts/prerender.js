@@ -15,9 +15,12 @@
  * the display font of that language, because the name in that font is the
  * home page's LCP element.
  *
- * Content comes from the same services as the app: the mock adapter when
- * VITE_USE_MOCK=true, the live Laravel API otherwise. New CMS content
- * therefore needs a rebuild (see SEO.md → "Publishing workflow").
+ * Content comes from the same services as the app: the live Laravel API for
+ * the resources in VITE_API_RESOURCES (projects, experiences, testimonials,
+ * FAQs), the static/mock data for the rest. If the API fails, the build
+ * fails with the request that failed: no empty pages, no silent fallback to
+ * mock data. New CMS content needs a rebuild (the backend calls the Vercel
+ * Deploy Hook; see SEO.md → "Publishing workflow").
  */
 import { readdirSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
@@ -33,6 +36,7 @@ const {
   renderLlmsTxt,
   getPrerenderRoutes,
   env,
+  api,
   localizePath,
   getDirection,
   DEFAULT_LOCALE,
@@ -145,7 +149,27 @@ if (/localhost|127\.0\.0\.1/.test(env.siteUrl)) {
   );
 }
 
-const { routes, locales } = await getPrerenderRoutes();
+/**
+ * Stops the build with a readable reason (the API being down is the usual one).
+ * @param {string} step
+ * @param {unknown} error
+ * @returns {never}
+ */
+function abort(step, error) {
+  console.error(
+    `
+✗ Build aborted while ${step}.
+  ${error instanceof Error ? error.message : error}` +
+      `
+  API: ${api.url} · live resources: ${api.resources.join(', ') || 'none'}
+`,
+  );
+  process.exit(1);
+}
+
+const { routes, locales } = await getPrerenderRoutes().catch((error) =>
+  abort('listing the routes', error),
+);
 const failures = [];
 let written = 0;
 
@@ -169,7 +193,7 @@ await writeFile(join(distDir, '404.html'), buildDocument(notFound, '/404', '/404
 
 // sitemap.xml with hreflang alternates (one <url> per locale variant).
 const buildDate = new Date().toISOString().slice(0, 10);
-// Generated-but-noindex pages (sample case studies) are left out.
+// Generated-but-unlisted pages (`sitemap: false`) are left out.
 const entries = routes
   .filter((route) => route.sitemap !== false)
   .flatMap((route) =>
@@ -197,7 +221,11 @@ await writeFile(
 );
 
 // llms.txt: a factual brief for AI answer engines, from the same data (GEO).
-await writeFile(join(distDir, 'llms.txt'), await renderLlmsTxt(), 'utf-8');
+await writeFile(
+  join(distDir, 'llms.txt'),
+  await renderLlmsTxt().catch((error) => abort('writing llms.txt', error)),
+  'utf-8',
+);
 
 // The server bundle and the manifest are build intermediates only.
 await rm(ssrDir, { recursive: true, force: true });

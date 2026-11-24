@@ -30,7 +30,11 @@ describe('Contact request builder', () => {
     expect(screen.getByText(/"name": "Sample Person"/)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /Send request/ }));
-    const result = await screen.findByText('Request received.', {}, { timeout: 3000 });
+    const result = await screen.findByText(
+      "We've received your request and will get back to you as soon as possible.",
+      {},
+      { timeout: 3000 },
+    );
     const panel = result.closest('.req__result');
     expect(
       within(/** @type {HTMLElement} */ (panel)).getByText(/Mock mode: not delivered/),
@@ -43,7 +47,10 @@ describe('Contact request builder', () => {
       new ApiError({
         message: 'The given data was invalid.',
         status: 422,
-        errors: { email: ['The email has already been used today.'] },
+        errors: {
+          email: ['The email has already been used today.'],
+          service: ['The service may not be greater than 150 characters.'],
+        },
       }),
     );
     const { user } = renderWithProviders(<ContactSection />, { initialEntries: ['/en'] });
@@ -52,7 +59,61 @@ describe('Contact request builder', () => {
 
     expect(await screen.findByText('The email has already been used today.')).toBeInTheDocument();
     expect(screen.getByLabelText(/Email/)).toHaveAttribute('aria-invalid', 'true');
+    // `service` is the project type select on the form.
+    expect(
+      screen.getByText('The service may not be greater than 150 characters.'),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/Project type/)).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByText('422 — Some fields need attention.')).toBeInTheDocument();
+    spy.mockRestore();
+  });
+
+  it('sends the contract fields: request type mapped, the project type label as service', async () => {
+    const spy = vi
+      .spyOn(contactService, 'send')
+      .mockResolvedValueOnce({ data: { id: 1 }, message: '', code: 201, pagination: undefined });
+    const { user } = renderWithProviders(<ContactSection />, { initialEntries: ['/en'] });
+    await fill(user);
+    await user.click(screen.getByRole('button', { name: /Send request/ }));
+    await screen.findByText(/We've received your request/);
+    expect(spy).toHaveBeenCalledWith({
+      name: 'Sample Person',
+      email: 'person@example.com',
+      type: 'project_inquiry',
+      service: 'API design & development',
+      message: 'We need a documented REST API.',
+    });
+    spy.mockRestore();
+  });
+
+  it('says "try again shortly" on 429 and keeps what was typed', async () => {
+    const spy = vi
+      .spyOn(contactService, 'send')
+      .mockRejectedValueOnce(new ApiError({ message: 'Too Many Attempts.', status: 429 }));
+    const { user } = renderWithProviders(<ContactSection />, { initialEntries: ['/en'] });
+    await fill(user);
+    await user.click(screen.getByRole('button', { name: /Send request/ }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/try again shortly/);
+    expect(screen.getByLabelText(/Name/)).toHaveValue('Sample Person');
+    expect(screen.getByLabelText(/Message/)).toHaveValue('We need a documented REST API.');
+    spy.mockRestore();
+  });
+
+  it('offers Retry after a network error, keeps the values and succeeds on retry', async () => {
+    const spy = vi
+      .spyOn(contactService, 'send')
+      .mockRejectedValueOnce(new ApiError({ message: 'Network Error', status: 0 }))
+      .mockResolvedValueOnce({ data: { id: 2 }, message: '', code: 201, pagination: undefined });
+    const { user } = renderWithProviders(<ContactSection />, { initialEntries: ['/en'] });
+    await fill(user);
+    await user.click(screen.getByRole('button', { name: /Send request/ }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/could not be reached/);
+    expect(screen.getByLabelText(/Email/)).toHaveValue('person@example.com');
+    await user.click(screen.getByRole('button', { name: /Retry/ }));
+    expect(await screen.findByText(/We've received your request/)).toBeInTheDocument();
+    expect(spy).toHaveBeenCalledTimes(2);
     spy.mockRestore();
   });
 

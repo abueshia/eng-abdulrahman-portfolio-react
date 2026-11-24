@@ -1,0 +1,381 @@
+{
+    "code": 200,
+    "success": true,
+    "message": "Projects retrieved successfully",
+    "pagination": {
+        "current_page": 1,
+        "first_page_url": "http://localhost:8003/api/v1/projects?per_page=2&page=1",
+        "prev_page_url": "",
+        "next_page_url": "http://localhost:8003/api/v1/projects?per_page=2&page=2",
+        "last_page_url": "http://localhost:8003/api/v1/projects?per_page=2&page=7",
+        "total_pages": 7,
+        "per_page": 2,
+        "total_items": 14,
+        "path": "http://localhost:8003/api/v1/projects"
+    },
+    "data": [
+        {
+            "id": 11,
+            "title": "Steel Tech Industrial Equipment Corporate Website & Product Showcase",
+            "subtitle": "Bilingual Industrial Machinery Showcase, Catalogue, News & Technical Blog",
+            "slug": "high-throughput-ecommerce-api",
+            "short_description": "A bilingual corporate website and product showcase for Steel Tech specializing in metal processing and industrial machinery, featuring categories, products, a catalogue, news, a blog, and contact pages.",
+            "description": "Built a bilingual (Arabic and English) corporate website and product catalog for Steel Tech showcasing its industrial metalworking equipment—backed by European Union manufacturer partnerships and regional presence across the UAE, Egypt, Tunisia, and Morocco. The platform organizes machinery categories and products (including CNC tube bending, CNC laser cutting, CNC waterjet cutting & beveling, press brakes, shears, and lathes) alongside a catalogue, news and events, a technical blog, and inquiry/contact flows.",
+            "challenge": [
+                {
+                    "title": "Structuring Diverse Industrial Machinery & Catalogue",
+                    "description": "Presenting specialized metalworking categories, products, and catalogue sections clearly so visitors can browse specifications and details effortlessly."
+                },
+                {
+                    "title": "Consistent Bilingual Experience Across Sections",
+                    "description": "Keeping navigation, product listings, news, blog articles, and corporate pages aligned across both Arabic and English."
+                },
+                {
+                    "title": "Connecting Corporate Identity With Direct Inquiries",
+                    "description": "Highlighting the company's regional footprint and industrial background while providing clear paths for customer inquiries and contact."
+                }
+            ],
+            "solution": "Hierarchical Categories, Product Pages & Catalogue\r\nFull Bilingual Content & Navigation Support\r\nUnified Corporate Sections & Contact Pathways",
+            "results": "Delivered a bilingual corporate website and machinery showcase for Steel Tech uniting metalworking equipment presentation, catalogue access, news, blog content, and contact channels in a structured experience.",
+            "metrics": [],
+            "client_name": "",
+            "role_title": "",
+            "duration": "",
+            "project_type": "web_app",
+            "project_type_label": "Web Application",
+            "status": "published",
+            "live_url": "https://steeltechae.com/ar",
+            "repo_url": null,
+            "case_study_url": null,
+            "started_at": null,
+            "completed_at": "2024-10-10",
+            "is_featured": false,
+            "sort_order": 2,
+            "cover_image": "http://localhost:8003/storage/20/WhatsApp-Image-2026-11-24-at-2.42.40-AM.jpeg",
+            "gallery": [
+                "http://localhost:8003/storage/32/WhatsApp-Image-2026-11-24-at-2.41.38-AM.jpeg",
+                "http://localhost:8003/storage/33/WhatsApp-Image-2026-11-24-at-2.42.18-AM.jpeg",
+                "http://localhost:8003/storage/34/WhatsApp-Image-2026-11-24-at-2.42.40-AM.jpeg"
+            ],
+            "category": {
+                "id": 13,
+                "name": "Informational & Showcase Websites",
+                "slug": "informational-showcase-websites",
+                "description": "Development of fast, SEO-friendly informational and corporate websites with dynamic content management, custom admin panels, contact and inquiry workflows, multi-language support, and clean backend architecture built for reliability and easy updates.",
+                "icon_class": null,
+                "sort_order": 5,
+                "image": null
+            },
+            "technologies": [
+                {
+                    "id": 22,
+                    "name": "PHP 8.3",
+                    "slug": "php-8",
+                    "category": "backend",
+                    "category_label": "Backend Engineering",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 96,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 1,
+                    "image": null
+                },
+                {
+                    "id": 23,
+                    "name": "Laravel 10",
+                    "slug": "laravel",
+                    "category": "backend",
+                    "category_label": "Backend Engineering",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 98,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 2,
+                    "image": null
+                },
+                {
+                    "id": 26,
+                    "name": "MySQL & Database Design",
+                    "slug": "mysql",
+                    "category": "database",
+                    "category_label": "Databases & Caching",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 95,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 5,
+                    "image": null
+                },
+                {
+                    "id": 27,
+                    "name": "RESTful APIs",
+                    "slug": "restful-apis",
+                    "category": "backend",
+                    "category_label": "Backend Engineering",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 97,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 6,
+                    "image": null
+                },
+                {
+                    "id": 28,
+                    "name": "Clean Architecture & SOLID",
+                    "slug": "clean-architecture-solid",
+                    "category": "architecture",
+                    "category_label": "Software Architecture",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 95,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 7,
+                    "image": null
+                },
+                {
+                    "id": 29,
+                    "name": "HTML5, CSS3 & Bootstrap 5",
+                    "slug": "html5-css3-bootstrap",
+                    "category": "frontend",
+                    "category_label": "Frontend & UI",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 96,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 8,
+                    "image": null
+                },
+                {
+                    "id": 31,
+                    "name": "PHPUnit & Automated Testing",
+                    "slug": "phpunit-testing",
+                    "category": "testing",
+                    "category_label": "Testing & Quality",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 92,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 10,
+                    "image": null
+                },
+                {
+                    "id": 32,
+                    "name": "Git, GitHub & Linux/cPanel Deployment",
+                    "slug": "git-devops",
+                    "category": "devops",
+                    "category_label": "DevOps & Deployment",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 94,
+                    "years_experience": null,
+                    "is_featured": false,
+                    "sort_order": 11,
+                    "image": null
+                }
+            ]
+        },
+        {
+            "id": 13,
+            "title": "Estedama Plus Interactive Kids Sustainability Platform",
+            "subtitle": "Educational Content, Interactive Games & Activities, Quizzes, Stories & Parent/Teacher Resources",
+            "slug": "estedama-plus-interactive-kids-sustainability-platform",
+            "short_description": "An interactive kids sustainability learning platform combining stories, videos, quizzes, workshops, challenges, and games, supported by parent/teacher resources, an admin dashboard, and APIs powering the mobile app.",
+            "description": "Engineered Estedama Plus as an interactive sustainability learning platform for children that pairs educational content with interactive activities and sustainability games. The system includes an admin panel for managing roles, admins, and users, organizing workshop categories, workshops, challenges, stories, quizzes, and videos, alongside dedicated sections for teachers and parents, news and updates, and backend APIs serving the companion mobile application.",
+            "challenge": [
+                {
+                    "title": "Diverse Learning Formats & Kids' Activities",
+                    "description": "Structuring stories, videos, quizzes, workshops, challenges, and games into an engaging, kid-friendly experience."
+                },
+                {
+                    "title": "Supporting Teachers & Parents Alongside Kids",
+                    "description": "Providing dedicated teacher and parent content that reinforces sustainability learning alongside children's activities."
+                },
+                {
+                    "title": "Centralized Content, User & Role Management",
+                    "description": "Keeping varied educational modules, user accounts, roles, and updates manageable from a unified admin panel."
+                }
+            ],
+            "solution": "Structured the platform and admin dashboard to separate diverse educational modules—including stories, videos, quizzes, challenges, and workshop categories/workshops—alongside role-based access for admins and users, while building APIs to serve the mobile app and organizing clear pathways for interactive activities, games, teacher/parent resources, news, and contact flows.",
+            "results": "Delivered an integrated kids' sustainability learning platform uniting varied educational content, interactive games, teacher and parent resources, centralized admin management, and APIs powering the app.",
+            "metrics": [],
+            "client_name": "",
+            "role_title": "",
+            "duration": "",
+            "project_type": "saas",
+            "project_type_label": "SaaS Platform",
+            "status": "published",
+            "live_url": "https://estedamaplus.com/ar",
+            "repo_url": null,
+            "case_study_url": null,
+            "started_at": null,
+            "completed_at": "2024-10-01",
+            "is_featured": false,
+            "sort_order": 4,
+            "cover_image": "http://localhost:8003/storage/21/WhatsApp-Image-2026-11-24-at-4.42.29-AM.jpeg",
+            "gallery": [
+                "http://localhost:8003/storage/28/WhatsApp-Image-2026-11-24-at-4.42.29-AM.jpeg",
+                "http://localhost:8003/storage/29/WhatsApp-Image-2026-11-24-at-4.43.05-AM.jpeg",
+                "http://localhost:8003/storage/30/WhatsApp-Image-2026-11-24-at-4.43.41-AM.jpeg",
+                "http://localhost:8003/storage/31/WhatsApp-Image-2026-11-24-at-4.44.22-AM.jpeg"
+            ],
+            "category": {
+                "id": 12,
+                "name": "Educational Platforms",
+                "slug": "mnsat-taalmy",
+                "description": "Development of scalable, interactive e-learning platforms and educational systems, including course and lesson management, quizzes and assessments, student progress tracking, role-based access, and RESTful APIs built for performance and maintainability.",
+                "icon_class": null,
+                "sort_order": 4,
+                "image": null
+            },
+            "technologies": [
+                {
+                    "id": 22,
+                    "name": "PHP 8.3",
+                    "slug": "php-8",
+                    "category": "backend",
+                    "category_label": "Backend Engineering",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 96,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 1,
+                    "image": null
+                },
+                {
+                    "id": 23,
+                    "name": "Laravel 10",
+                    "slug": "laravel",
+                    "category": "backend",
+                    "category_label": "Backend Engineering",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 98,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 2,
+                    "image": null
+                },
+                {
+                    "id": 25,
+                    "name": "JavaScript (ES6+)",
+                    "slug": "javascript-es6",
+                    "category": "frontend",
+                    "category_label": "Frontend & UI",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 94,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 4,
+                    "image": null
+                },
+                {
+                    "id": 26,
+                    "name": "MySQL & Database Design",
+                    "slug": "mysql",
+                    "category": "database",
+                    "category_label": "Databases & Caching",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 95,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 5,
+                    "image": null
+                },
+                {
+                    "id": 27,
+                    "name": "RESTful APIs",
+                    "slug": "restful-apis",
+                    "category": "backend",
+                    "category_label": "Backend Engineering",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 97,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 6,
+                    "image": null
+                },
+                {
+                    "id": 28,
+                    "name": "Clean Architecture & SOLID",
+                    "slug": "clean-architecture-solid",
+                    "category": "architecture",
+                    "category_label": "Software Architecture",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 95,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 7,
+                    "image": null
+                },
+                {
+                    "id": 29,
+                    "name": "HTML5, CSS3 & Bootstrap 5",
+                    "slug": "html5-css3-bootstrap",
+                    "category": "frontend",
+                    "category_label": "Frontend & UI",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 96,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 8,
+                    "image": null
+                },
+                {
+                    "id": 30,
+                    "name": "Redis & Performance Caching",
+                    "slug": "redis-caching",
+                    "category": "database",
+                    "category_label": "Databases & Caching",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 90,
+                    "years_experience": null,
+                    "is_featured": false,
+                    "sort_order": 9,
+                    "image": null
+                },
+                {
+                    "id": 31,
+                    "name": "PHPUnit & Automated Testing",
+                    "slug": "phpunit-testing",
+                    "category": "testing",
+                    "category_label": "Testing & Quality",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 92,
+                    "years_experience": null,
+                    "is_featured": true,
+                    "sort_order": 10,
+                    "image": null
+                },
+                {
+                    "id": 32,
+                    "name": "Git, GitHub & Linux/cPanel Deployment",
+                    "slug": "git-devops",
+                    "category": "devops",
+                    "category_label": "DevOps & Deployment",
+                    "icon_class": null,
+                    "brand_color": null,
+                    "proficiency_percent": 94,
+                    "years_experience": null,
+                    "is_featured": false,
+                    "sort_order": 11,
+                    "image": null
+                }
+            ]
+        }
+    ]
+}

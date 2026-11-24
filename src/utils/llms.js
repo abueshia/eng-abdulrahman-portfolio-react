@@ -66,8 +66,7 @@ export function buildLlmsTxt({ siteUrl, en, ar }) {
     `- [Home, English](${siteUrl}/en): profile, skills, experience, services, FAQ and contact`,
   );
   out.push(`- [الرئيسية، عربي](${siteUrl}/): the same content in Arabic (default language)`);
-  const real = en.projects.filter((project) => !project.is_sample);
-  for (const project of real) {
+  for (const project of en.projects) {
     out.push(
       `- [${line(project.title)}](${siteUrl}/en/projects/${project.slug}): ${line(project.summary)}`,
     );

@@ -6,7 +6,7 @@
  * pre-filled from the form fields. The visitor sends it themselves.
  *
  * Pure helpers (plus `openRelay`, called from event handlers); the decision
- * lives in `env.contactRelay`. The review form reuses them (`env.reviewRelay`).
+ * lives in `api.contactRelay`. The review form reuses them (`api.reviewRelay`).
  */
 
 /**

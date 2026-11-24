@@ -47,21 +47,3 @@ export const fail = (code, message, errors) => ({
   status: code,
   body: { code, success: false, message, data: null, ...(errors ? { errors } : {}) },
 });
-
-/**
- * Laravel-style length-aware pagination.
- * @template T
- * @param {T[]} items
- * @param {{ page?: unknown, per_page?: unknown }} params
- * @param {number} defaultPerPage
- */
-export function paginate(items, params, defaultPerPage) {
-  const perPage = Math.min(Math.max(Number(params.per_page) || defaultPerPage, 1), 100);
-  const total = items.length;
-  const lastPage = Math.max(Math.ceil(total / perPage), 1);
-  const page = Math.min(Math.max(Number(params.page) || 1, 1), lastPage);
-  return {
-    items: items.slice((page - 1) * perPage, page * perPage),
-    pagination: { current_page: page, per_page: perPage, total, last_page: lastPage },
-  };
-}

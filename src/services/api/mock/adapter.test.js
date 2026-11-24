@@ -8,6 +8,7 @@ import {
   technologiesService,
   testimonialsService,
 } from '@/services/api';
+import { FIXTURE_SLUG, FIXTURE_SLUG_WITH_REVIEW } from '@/test/api-fixtures';
 
 describe('Axios mock adapter & resource services', () => {
   it('returns localised payloads according to the requested language (ar vs en)', async () => {
@@ -19,39 +20,31 @@ describe('Axios mock adapter & resource services', () => {
     expect(ar.data.sections_visibility.hero).toBe(true);
   });
 
-  it('filters and paginates projects by type, technology and featured flag', async () => {
-    const all = await projectsService.list({}, { lang: 'en' });
-    expect(all.data).toHaveLength(3);
-    // Sample records say so: the UI badges them and keeps them out of the index.
-    expect(all.data.every((p) => p.is_sample === true)).toBe(true);
-    expect(all.pagination).toMatchObject({
-      current_page: 1,
-      total: all.data.length,
-    });
+  it('pages through the API projects and maps them (real captured responses)', async () => {
+    const page1 = await projectsService.list({ page: 1 }, { lang: 'ar' });
+    // API pagination (`total_pages`, `total_items`) in the app's shape.
+    expect(page1.pagination).toEqual({ current_page: 1, per_page: 9, total: 14, last_page: 2 });
+    expect(page1.data).toHaveLength(9);
 
-    const apis = await projectsService.list({ type: 'api' }, { lang: 'en' });
-    expect(apis.data.length).toBeGreaterThan(0);
-    expect(apis.data.every((p) => p.type === 'api')).toBe(true);
-
-    const redisProjects = await projectsService.list({ technology: 'redis' }, { lang: 'en' });
-    expect(redisProjects.data.length).toBeGreaterThan(0);
-    expect(
-      redisProjects.data.every((p) => p.technologies.some((tech) => tech.slug === 'redis')),
-    ).toBe(true);
-
-    const page1 = await projectsService.list({ per_page: 2, page: 1 }, { lang: 'en' });
-    expect(page1.data).toHaveLength(2);
-    expect(page1.pagination?.per_page).toBe(2);
-    expect(page1.pagination?.last_page).toBe(2);
+    const all = await projectsService.all({ lang: 'ar' });
+    expect(all.data).toHaveLength(14);
+    expect(new Set(all.data.map((p) => p.slug)).size).toBe(14);
+    for (const project of all.data) {
+      expect(project).not.toHaveProperty('is_sample');
+      expect(project.type_label).toBeTruthy();
+      expect(Array.isArray(project.technologies)).toBe(true);
+    }
   });
 
-  it('returns a full case study with related_projects and rejects unknown slugs with 404', async () => {
-    const detail = await projectsService.show('sample-saas-billing', { lang: 'en' });
-    expect(detail.data.title).toBe('Multi-tenant SaaS Subscription Platform');
-    expect(detail.data.architecture.nodes.length).toBeGreaterThan(0);
-    expect(detail.data.metrics.some((metric) => metric.value === null)).toBe(true);
-    expect(detail.data.related_projects.length).toBeGreaterThan(0);
-    expect(detail.data.technologies[0]).toHaveProperty('name');
+  it('returns a full case study with related projects and rejects unknown slugs with 404', async () => {
+    const detail = await projectsService.show(FIXTURE_SLUG, { lang: 'en' });
+    expect(detail.data?.title).toMatch(/Dr\. KROK/);
+    expect(detail.data?.related_projects).toHaveLength(3);
+    expect(detail.data?.gallery.length).toBeGreaterThan(3);
+    expect(detail.data?.technologies[0]).toHaveProperty('name');
+
+    const withReview = await projectsService.show(FIXTURE_SLUG_WITH_REVIEW, { lang: 'en' });
+    expect(withReview.data?.testimonials).toHaveLength(1);
 
     await expect(projectsService.show('non-existent-slug')).rejects.toSatisfy(
       (err) => err instanceof ApiError && err.isNotFound,
@@ -66,20 +59,21 @@ describe('Axios mock adapter & resource services', () => {
     expect(res.data[0].technologies.some((t) => t.slug === 'laravel')).toBe(true);
   });
 
-  it('validates POST /contact (422), handles honeypot, and returns 201 on valid input', async () => {
+  it('validates POST /contact (422), answers a filled honeypot without sending, and returns 201', async () => {
     await expect(
-      contactService.send({ name: '', email: 'not-an-email', message: 'short' }),
+      contactService.send({ name: '', email: 'not-an-email', message: '', type: 'unknown_type' }),
     ).rejects.toSatisfy(
       (err) =>
         err instanceof ApiError &&
         err.isValidation &&
-        Boolean(err.errors.name && err.errors.email && err.errors.message),
+        Boolean(err.errors.name && err.errors.email && err.errors.message && err.errors.type),
     );
 
     const spam = await contactService.send({
       name: '',
       email: '',
       message: '',
+      type: 'general_contact',
       website: 'https://spam.bot',
     });
     expect(spam.code).toBe(201);
@@ -88,46 +82,48 @@ describe('Axios mock adapter & resource services', () => {
     const valid = await contactService.send({
       name: 'Eng. Reviewer',
       email: 'cto@company.io',
-      type: 'web_app',
+      type: 'project_inquiry',
+      service: 'Full web application',
       message: 'We would love to discuss a modular Laravel + React architecture.',
     });
     expect(valid.code).toBe(201);
     expect(valid.data).toHaveProperty('id');
   });
 
-  it('accepts POST /testimonials as multipart, validates it (422) and never publishes it', async () => {
+  it('posts a review as multipart under the page language, validates it (422) and never lists it', async () => {
     const before = await testimonialsService.list({ lang: 'en' });
-    expect(before.data.every((item) => item.status === 'approved')).toBe(true);
 
     await expect(
       testimonialsService.submit({
+        locale: 'ar',
         name: 'A',
-        role: '',
+        description: 'short',
         rating: 9,
-        message: 'short <b>x</b>',
-        consent: false,
-        hp: '',
-        avatar: new Blob(['gif'], { type: 'image/gif' }),
+        project_id: 0,
+        consent: true,
+        website: '',
+        image: new Blob(['gif'], { type: 'image/gif' }),
       }),
     ).rejects.toSatisfy(
       (err) =>
         err instanceof ApiError &&
         err.isValidation &&
-        ['name', 'role', 'rating', 'message', 'consent', 'avatar'].every((f) => err.errors[f]),
+        // Translatable keys come back in Laravel's dot notation.
+        ['name.ar', 'description.ar', 'rating', 'image'].every((f) => err.errors[f]),
     );
 
     const created = await testimonialsService.submit({
+      locale: 'en',
       name: 'Visitor Reviewer',
-      role: 'Operations lead',
-      company: 'Sample Co',
+      name_job: 'Operations lead',
+      company_name: 'Example Co',
+      description: 'A calm, well organised project from start to finish.',
       rating: 5,
-      message: 'A calm, well organised project from start to finish.',
       consent: true,
-      hp: '',
-      avatar: new Blob(['webp'], { type: 'image/webp' }),
+      website: '',
+      image: new Blob(['webp'], { type: 'image/webp' }),
     });
     expect(created.code).toBe(201);
-    expect(created.data).toMatchObject({ status: 'pending' });
 
     const after = await testimonialsService.list({ lang: 'en' });
     expect(after.data).toHaveLength(before.data.length);
