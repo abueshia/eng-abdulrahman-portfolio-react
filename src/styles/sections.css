@@ -500,6 +500,9 @@
   text-wrap: balance;
   color: var(--text);
 }
+:root[lang='ar'] .about__eyebrow {
+  letter-spacing: 0;
+}
 :root[lang='ar'] .about__quote {
   font-style: normal;
   font-weight: 600;

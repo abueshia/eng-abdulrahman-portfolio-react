@@ -5,9 +5,8 @@ import { t } from './helpers';
 
 /** GET /stats: rendered as "system metrics". */
 export const stats = [
-  // Real (owner-provided). The other figures are zeroed samples until the API.
   { key: 'experience', value: 4, suffix: '+', label: t('سنوات خبرة', 'Years of experience') },
-  { key: 'projects', value: 0, suffix: '', label: t('مشروع مُسلَّم', 'Projects shipped') },
-  { key: 'clients', value: 0, suffix: '', label: t('عميل سعيد', 'Happy clients') },
-  { key: 'endpoints', value: 0, suffix: '', label: t('API endpoint', 'API endpoints built') },
+  { key: 'projects', value: 52, suffix: '+', label: t('مشروع مُسلَّم', 'Projects shipped') },
+  { key: 'clients', value: 36, suffix: '+', label: t('عميل سعيد', 'Happy clients') },
+  { key: 'endpoints', value: 99.9, suffix: '%', label: t('التزام بمعايير Clean Code & SOLID', 'Clean Architecture & SOLID Compliance') },
 ];

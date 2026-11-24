@@ -134,8 +134,6 @@ export default function AboutSection() {
     [hero?.terminal_stack, general?.years_of_experience, company, general?.timezone],
   );
   const story = /** @type {string[]} */ (about?.story ?? []);
-  // Other spellings people search for, shown as plain readable text.
-  const aka = /** @type {string[]} */ (general?.alternate_names ?? []);
   const principles = /** @type {Array<{ key: string, title: string, description: string }>} */ (
     about?.principles ?? []
   );
@@ -148,7 +146,7 @@ export default function AboutSection() {
           <p className="about__eyebrow">
             <span className="text-ember">{getStation(stationForSection('about'))?.code}</span>
             <span aria-hidden="true" className="about__rule" />
-            <span dir="ltr">{t('about.file')}</span>
+            <span>{t('about.file')}</span>
           </p>
           <h2 id="about-title" className="about__quote">
             {about?.title}
@@ -172,11 +170,6 @@ export default function AboutSection() {
               </p>
             ))}
           </div>
-          {aka.length > 0 && (
-            <p className="about__aka">
-              <span className="about__aka-label">{t('about.aka')}</span> {aka.join(' · ')}
-            </p>
-          )}
 
           {principles.length > 0 && (
             <section className="about__principles" aria-labelledby="about-principles">

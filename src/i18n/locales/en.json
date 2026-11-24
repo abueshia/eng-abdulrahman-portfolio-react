@@ -181,7 +181,7 @@
     }
   },
   "about": {
-    "file": "README.md",
+    "file": "About the Engineer",
     "whoami": "whoami",
     "companyLine": "{{role}} of {{company}}",
     "aka": "Also written as:",
@@ -207,7 +207,7 @@
     "swipe": "Swipe to switch clusters"
   },
   "experience": {
-    "lead": "The career as a commit history: every role a commit, every company a branch, and what each release shipped.",
+    "lead": "4+ years of hands-on experience engineering clean, testable web systems, RESTful APIs, and responsive user interfaces following SOLID principles.",
     "command": "git log --graph --decorate",
     "present": "present",
     "merge": "Merge branch '{{branch}}' into main",

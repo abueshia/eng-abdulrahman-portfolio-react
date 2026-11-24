@@ -72,7 +72,7 @@ describe('Prerendering (entry-server)', () => {
     const [page, person] = graph;
     expect(page.mainEntity).toEqual({ '@id': person['@id'] });
     expect(person.name).toBe('Abdulrahman Abu Eisha');
-    expect(person.jobTitle).toEqual(['Full-Stack Software Engineer', 'CEO, iCode Tech']);
+    expect(person.jobTitle).toEqual(['Full-Stack Software Engineer', 'Team Lead, iCode Tech']);
     expect(person.worksFor).toEqual({ '@type': 'Organization', name: 'iCode Tech' });
     // Identity profiles only: no contact channels (WhatsApp) and no X.
     expect(person.sameAs).toEqual([
@@ -230,7 +230,7 @@ describe('Prerendering (entry-server)', () => {
     expect(html).toContain('No data');
     // About: statement, story, company title and the PHP class.
     expect(html).toMatch(/<h2[^>]*id="about-title"[^>]*>I write code that outlives the project\./);
-    expect(html).toContain('CEO of iCode Tech');
+    expect(html).toContain('Team Lead of iCode Tech');
     expect(html).toContain('final class');
     expect(html).toContain('AbdulrahmanAbuEisha');
     expect(html).toContain('<span class="tok tok--fn">test</span>');

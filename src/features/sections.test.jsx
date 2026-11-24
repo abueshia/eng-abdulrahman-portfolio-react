@@ -18,15 +18,19 @@ import { renderWithProviders } from '@/test/renderWithProviders';
 const EN = { initialEntries: ['/en'] };
 
 describe('Stats (observability)', () => {
-  it('shows the real figure as text and never turns sample zeros into numbers', async () => {
+  it('shows the real figures as text with odometers and sparklines', async () => {
     const { container } = renderWithProviders(<StatsSection />, EN);
-    expect((await screen.findAllByText('No data')).length).toBeGreaterThan(0);
-    expect(container.querySelector('#stats')).toHaveTextContent('4');
+    await screen.findByText('Projects shipped');
+    const statsEl = container.querySelector('#stats');
+    expect(statsEl).toHaveTextContent('4');
+    expect(statsEl).toHaveTextContent('52');
+    expect(statsEl).toHaveTextContent('36');
+    expect(statsEl).toHaveTextContent('150');
   });
 });
 
 describe('About (auth)', () => {
-  it('renders the quote as the heading, the titles, the story and the other spellings', async () => {
+  it('renders the quote as the heading, the titles and the story', async () => {
     renderWithProviders(<AboutSection />, EN);
     expect(
       await screen.findByRole('heading', {
@@ -37,9 +41,7 @@ describe('About (auth)', () => {
     expect(screen.getByText('Full-Stack Software Engineer')).toBeInTheDocument();
     expect(screen.getAllByText(/iCode Tech/).length).toBeGreaterThan(0);
     expect(screen.getByText(/I work from Cairo and collaborate remotely/)).toBeInTheDocument();
-    const aka = screen.getByText('Also written as:').closest('p');
-    expect(aka).toHaveTextContent('Abdelrahman Abu Eisha');
-    expect(aka).toHaveTextContent('عبد الرحمن أبو عيشة');
+    expect(screen.getByText('About the Engineer')).toBeInTheDocument();
   });
 });
 

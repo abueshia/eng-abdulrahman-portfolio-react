@@ -185,9 +185,9 @@
     }
   },
   "about": {
-    "file": "README.md",
+    "file": "نبذة عن المهندس",
     "whoami": "whoami",
-    "companyLine": "{{role}} لشركة {{company}}",
+    "companyLine": "{{role}} شركة {{company}}",
     "aka": "يُكتب الاسم أيضاً:",
     "principles": "المبادئ",
     "codeLabel": "الملف التعريفي للمهندس مكتوباً ككلاس PHP",
@@ -219,7 +219,7 @@
     "swipe": "اسحب للتنقل بين المجموعات"
   },
   "experience": {
-    "lead": "المسيرة كسجل commits: كل دور commit، وكل شركة فرع، ومع كل إصدار ما تم تسليمه.",
+    "lead": "خبرة عملية تزيد عن 4 سنوات في هندسة البرمجيات، بناء الـ RESTful APIs، لوحات التحكم المتقدمة، وتطبيق مبادئ SOLID و Clean Architecture.",
     "command": "git log --graph --decorate",
     "present": "حتى الآن",
     "merge": "Merge branch '{{branch}}' into main",

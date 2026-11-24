@@ -15,7 +15,7 @@ export const settings = {
     // Secondary title (owner-provided): the company the owner runs.
     company: {
       name: 'iCode Tech',
-      role: t('الرئيس التنفيذي', 'CEO'),
+      role: t('قائد الفريق التقني في', 'Team Lead'),
     },
     years_of_experience: 4,
     // Transparent cutout: lets the head break out of the hero frame.

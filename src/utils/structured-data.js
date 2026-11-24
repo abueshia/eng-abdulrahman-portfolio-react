@@ -13,7 +13,7 @@ const isAbsoluteUrl = (/** @type {unknown} */ value) =>
   typeof value === 'string' && /^https?:\/\//.test(value);
 
 /** Short English role used in `jobTitle` alongside the localized one. */
-const COMPANY_ROLE_EN = 'CEO';
+const COMPANY_ROLE_EN = 'Team Lead';
 
 /** Topics the Person demonstrably works with (mirrors the skills and services sections). */
 const KNOWS_ABOUT = [

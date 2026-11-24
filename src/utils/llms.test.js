@@ -27,7 +27,7 @@ describe('llms.txt', () => {
   it('opens with a factual, quotable definition from the data', () => {
     expect(text.startsWith('# Eng. Abdulrahman Abu Eisha · م. عبدالرحمن أبو عيشة\n')).toBe(true);
     expect(text).toContain(
-      '> Abdulrahman Abu Eisha (عبدالرحمن أبو عيشة) is a Full-Stack Software Engineer based in Cairo, Egypt, with 4 years of experience, and CEO of iCode Tech.',
+      '> Abdulrahman Abu Eisha (عبدالرحمن أبو عيشة) is a Full-Stack Software Engineer based in Cairo, Egypt, with 4 years of experience, and Team Lead of iCode Tech.',
     );
     expect(text).toContain('Also written as: عبد الرحمن أبو عيشة');
   });
