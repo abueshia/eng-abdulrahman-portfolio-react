@@ -15,6 +15,9 @@
     "noData": "No data",
     "open": "Open case file",
     "swipe": "Swipe through the case files",
+    "viewAll": "View all projects",
+    "pageTitle": "All projects",
+    "pageDescription": "Every project by Eng. Abdulrahman Abu Eisha: Laravel and PHP systems, React front ends and REST APIs, each with a full case study. Filter by type and stack.",
     "counter": "{{current}} / {{total}}"
   },
   "caseStudy": {

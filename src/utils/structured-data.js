@@ -200,6 +200,42 @@ function buildServicesNode({ general, url, personId, services, catalogName }) {
   };
 }
 
+/** Absolute URL of the `/projects` index in a locale. */
+const projectsUrl = (/** @type {'ar' | 'en'} */ locale) =>
+  `${env.siteUrl}${localizePath(locale, '/projects')}`;
+
+/**
+ * `/projects` structured data: a `CollectionPage` (part of the site, about
+ * the Person's work) and its `BreadcrumbList`.
+ * @param {'ar' | 'en'} locale
+ * @param {{ home: string, work: string }} labels Breadcrumb names (localised).
+ */
+export function buildProjectsJsonLd(locale, labels) {
+  const home = `${env.siteUrl}${localizePath(locale, '/')}`;
+  const url = projectsUrl(locale);
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'CollectionPage',
+        '@id': `${url}#page`,
+        url,
+        name: labels.work,
+        inLanguage: locale,
+        isPartOf: { '@id': `${env.siteUrl}/#website` },
+        about: { '@id': `${env.siteUrl}/#person` },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: labels.home, item: home },
+          { '@type': 'ListItem', position: 2, name: labels.work, item: url },
+        ],
+      },
+    ],
+  };
+}
+
 /**
  * Case-study structured data: `CreativeWork` (or `SoftwareSourceCode` when
  * the code is public) authored by the Person, plus a `BreadcrumbList`.
@@ -240,7 +276,7 @@ export function buildProjectJsonLd(project, locale, labels) {
         '@type': 'BreadcrumbList',
         itemListElement: [
           { '@type': 'ListItem', position: 1, name: labels.home, item: home },
-          { '@type': 'ListItem', position: 2, name: labels.work, item: `${home}#projects` },
+          { '@type': 'ListItem', position: 2, name: labels.work, item: projectsUrl(locale) },
           { '@type': 'ListItem', position: 3, name: project.title, item: url },
         ],
       },

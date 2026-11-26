@@ -83,7 +83,26 @@ describe('Prerendering (entry-server)', () => {
     const keys = /** @type {any} */ (queryState).queries.map((q) => q.queryKey);
 
     expect(keys).toContainEqual(['settings', 'ar']);
-    expect(keys).toContainEqual(['projects', 'ar']);
+    expect(keys).toContainEqual(['projects', 'featured', 'ar']);
+  });
+
+  it('prerenders /projects with every case file, an <h1> and its own head', async () => {
+    const result = await renderPage('/en/projects');
+    const head = result.head ? headToHtml(result.head) : '';
+
+    expect(result.status).toBe(200);
+    expect(result.html).toMatch(/<h1[^>]*id="projects-title"/);
+    for (const project of projectsEn.data) {
+      expect(result.html).toContain(`href="/en/projects/${project.slug}"`);
+    }
+    expect(result.html).not.toContain('View all projects');
+    expect(head).toMatch(/<title>All projects \| /);
+    expect(head).toMatch(/rel="canonical" href="[^"]*\/en\/projects"/);
+    expect(head).toMatch(/hreflang="ar" href="[^"]*\/projects"/);
+    expect(head).not.toContain('noindex');
+    const ld = result.head?.tags.find((tag) => tag.attrs.type === 'application/ld+json');
+    const graph = JSON.parse(ld?.content ?? '{}')['@graph'];
+    expect(graph.map((node) => node['@type'])).toEqual(['CollectionPage', 'BreadcrumbList']);
   });
 
   it('emits ProfilePage/Person/WebSite JSON-LD on the home page', async () => {
@@ -198,15 +217,24 @@ describe('Prerendering (entry-server)', () => {
     });
   });
 
-  it('prerenders every API case file and every service contract as real text', async () => {
+  it('prerenders three home case files (one query) and every service contract', async () => {
     const { html, queryState } = await renderPage('/en');
-    const keys = /** @type {any} */ (queryState).queries.map((q) => q.queryKey[0]);
+    const keys = /** @type {any} */ (queryState).queries.map((q) => q.queryKey);
 
-    expect(keys).toEqual(expect.arrayContaining(['projects', 'services']));
-    for (const project of projectsEn.data) {
+    // No project is featured yet: the home page tops up with the API's first three.
+    expect(keys).toContainEqual(['projects', 'featured', 'en']);
+    expect(keys).not.toContainEqual(['projects', 'en']);
+    for (const project of projectsEn.data.slice(0, 3)) {
       expect(html).toContain(escape(project.title));
       expect(html).toContain(`href="/en/projects/${project.slug}"`);
     }
+    for (const project of projectsEn.data.slice(3)) {
+      expect(html).not.toContain(`href="/en/projects/${project.slug}"`);
+    }
+    expect(html).toContain('href="/en/projects"');
+    expect(html).toContain('View all projects');
+    // The home case files carry no filter console (that lives on /projects).
+    expect(html).not.toContain('Clear filters');
     expect(html).not.toContain('sample-badge');
     // Services: endpoints, titles, deliverables (closed contracts included).
     expect(html).toContain('/services/payment-integration');
@@ -346,7 +374,11 @@ describe('Prerendering (entry-server)', () => {
     expect(locales).toEqual(['ar', 'en']);
     // Every published API project, listed in the sitemap with completed_at as lastmod.
     const published = [...projectsAr.data, ...projectsAr2.data];
-    expect(routePaths).toEqual(['/', ...published.map((project) => `/projects/${project.slug}`)]);
+    expect(routePaths).toEqual([
+      '/',
+      '/projects',
+      ...published.map((project) => `/projects/${project.slug}`),
+    ]);
     for (const project of published) {
       const route = routes.find((r) => r.path === `/projects/${project.slug}`);
       expect(route?.sitemap).toBe(true);

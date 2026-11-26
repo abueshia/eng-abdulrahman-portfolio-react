@@ -8,9 +8,23 @@ import { projectsService } from '@/services/api';
 /**
  * Every published project (the API pages are followed; filtering happens
  * client-side, see `lib/filters`).
+ * @param {boolean} [enabled=true]
  */
-export function useProjects() {
-  return useApiQuery(['projects'], projectsService.all, { staleTime: 5 * 60 * 1000 });
+export function useProjects(enabled = true) {
+  return useApiQuery(['projects'], projectsService.all, { staleTime: 5 * 60 * 1000, enabled });
+}
+
+/**
+ * The home page's three case files (featured, topped up with the latest; see
+ * `projectsService.featured`). Its own key: the home page never loads the
+ * full list.
+ * @param {boolean} [enabled=true]
+ */
+export function useFeaturedProjects(enabled = true) {
+  return useApiQuery(['projects', 'featured'], projectsService.featured, {
+    staleTime: 5 * 60 * 1000,
+    enabled,
+  });
 }
 
 /**

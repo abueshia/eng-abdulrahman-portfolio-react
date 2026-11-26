@@ -52,6 +52,7 @@ const assetFiles = readdirSync(join(distDir, 'assets'));
 /** Page module per locale-agnostic path (mirrors src/app/router.jsx). */
 const PAGE_MODULES = [
   [/^\/$/, 'src/pages/HomePage.jsx'],
+  [/^\/projects$/, 'src/pages/ProjectsPage.jsx'],
   [/^\/projects\/[^/]+$/, 'src/pages/ProjectDetailsPage.jsx'],
 ];
 

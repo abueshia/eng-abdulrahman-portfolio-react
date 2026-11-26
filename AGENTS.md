@@ -64,7 +64,7 @@ src/
     hero/         Hero ومكوّناته + fx/HeroDirector + lib/{mesh/graph, mesh/renderer, terminal, telemetry, portrait}
     journey/      journey-store (تتبع موضع الطلب على مسار المحطات)
   lib/            بنية تحتية بلا واجهة: create-store · idle · events · device (useDeviceTier) · gsap (كسول فقط) · use-director (لوحدات الـ director فقط) · hydrate-on-demand (whenNeeded) · theme · sound/{sfx, engine}
-  pages/          صفحات التطبيق المقسمة بـ React.lazy (HomePage, ProjectDetailsPage, NotFoundPage)
+  pages/          صفحات التطبيق المقسمة بـ React.lazy (HomePage, ProjectsPage, ProjectDetailsPage, NotFoundPage)
   hooks/          خطافات عامة (useTheme, useLocale, useApiQuery, useSettings, useMediaQuery, useReducedMotion, usePointerFine, useInView, useScrollState, useSmoothScroll, useHydrated/useIdleReady, useMagnetic, usePointerParallax)
   context/        سياقات React (ThemeContext, LocaleContext, lenis-context, head-context)
   services/api/   client.js (unwrap/unwrapMapped/requestConfig بدون axios) · axios-client.js (كسول، يختار الـ API أو الـ mock لكل مورد) · http.js (واجهة كسولة + ذاكرة طلبات GET وقت البناء فقط) · endpoints.js · errors.js · rate-limit.js (Retry-After، كسول) + خدمات الموارد (*.service.js) + mappers/ (تحويل رد الـ API لشكل داخلي، chunk كسول) + محول البيانات الوهمية (mock/adapter.js, handlers.js, response.js)
@@ -269,6 +269,11 @@ scripts/          prerender.js (الصفحات الثابتة + sitemap + robots
 ---
 
 ## 9) سجل التغييرات (Changelog)
+
+### تعديل — 3 مشاريع في الرئيسية وصفحة `/projects`
+- **الرئيسية:** قسم المشاريع يعرض 3 فقط عبر `projectsService.featured()` (`useFeaturedProjects`، المفتاح `['projects','featured',lang]`): `GET /projects?featured=1&per_page=3`، وإذا رجع أقل من 3 يُكمَّل من `GET /projects?per_page=3` بدون تكرار. الطلب الثاني يُرسل فقط عند الحاجة. الواجهة لا تقرأ `is_featured` أبداً. القسم بلا QueryConsole، ويُخفى إذا لم يرجع أي مشروع، وتحته زر "عرض كل المشاريع" إلى `/projects`.
+- **`/projects` و`/en/projects`:** صفحة `ProjectsPage` (chunk كسول) تعرض كل المشاريع مع الفلاتر (`ProjectsSection variant="index"`، والعنوان `<h1>`)، مولّدة مسبقاً وفي الـ sitemap، مع JSON-LD من نوع `CollectionPage` + `BreadcrumbList`. رابط "الأعمال" في breadcrumb دراسة الحالة وفي JSON-LD الخاص بها أصبح يشير إليها (`paths.allProjects()`).
+- **الـ prerender:** الرئيسية تجلب الطلب المختصر فقط، ولا تجلب كل المشاريع. الـ JS الأولي 169.2 KB بدون زيادة.
 
 ### المرحلة 7 (الجزء 1) — ربط الفرونت بالـ Laravel API الحقيقي
 - **النطاق:** المشاريع (القائمة والتفاصيل)، والخبرات، والتوصيات (GET وPOST)، والأسئلة الشائعة، والتواصل (POST). الباقي (settings والخدمات والإحصائيات والـ About والمهارات) بقي static كما هو.

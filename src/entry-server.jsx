@@ -186,6 +186,7 @@ export async function getPrerenderRoutes() {
     locales: SUPPORTED_LOCALES,
     routes: [
       { path: paths.home() },
+      { path: paths.allProjects() },
       ...projects.map((project) => ({
         path: paths.project(project.slug),
         // The API has no updated_at/published_at: completion is the one real date.

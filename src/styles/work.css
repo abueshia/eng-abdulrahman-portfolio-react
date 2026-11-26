@@ -49,6 +49,11 @@
   gap: var(--section-head);
 }
 
+.projects__more {
+  display: flex;
+  justify-content: center;
+}
+
 .query {
   display: grid;
   gap: 0.9rem;

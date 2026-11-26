@@ -94,23 +94,37 @@ describe('Experience (queue)', () => {
 });
 
 describe('Projects (database)', () => {
-  it('lists every API project as an article linking to its case study, no sample badge', async () => {
+  it('shows three API case files on the home page and links to every project', async () => {
     const { container } = renderWithProviders(<ProjectsSection />, EN);
     await screen.findByText(projectsEn.data[0].title);
     const files = container.querySelectorAll('#projects article');
-    expect(files).toHaveLength(projectsEn.data.length);
+    // No project is featured yet: topped up with the API's first three.
+    expect(files).toHaveLength(3);
     const first = within(/** @type {HTMLElement} */ (files[0]));
     expect(first.getByRole('link', { name: /.+/ }).getAttribute('href')).toBe(
       `/en/projects/${projectsEn.data[0].slug}`,
     );
-    // The type facet shows the API's localised labels.
-    expect(screen.getAllByText(projectsEn.data[0].project_type_label).length).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: 'View all projects' })).toHaveAttribute(
+      'href',
+      '/en/projects',
+    );
+    expect(screen.queryByRole('button', { pressed: false })).toBeNull();
     expect(container.querySelector('.sample-badge')).toBeNull();
     expect(container).not.toHaveTextContent(/\bSample\b/);
   });
 
+  it('lists every API project on /projects with the type facet', async () => {
+    const { container } = renderWithProviders(<ProjectsSection variant="index" />, EN);
+    await screen.findByText(projectsEn.data[0].title);
+    expect(container.querySelectorAll('#projects article')).toHaveLength(projectsEn.data.length);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/.+/);
+    // The type facet shows the API's localised labels.
+    expect(screen.getAllByText(projectsEn.data[0].project_type_label).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('link', { name: 'View all projects' })).toBeNull();
+  });
+
   it('filters with pressed toggle buttons and announces the result', async () => {
-    const { user } = renderWithProviders(<ProjectsSection />, EN);
+    const { user } = renderWithProviders(<ProjectsSection variant="index" />, EN);
     const chips = await screen.findAllByRole('button', { pressed: false });
     await user.click(chips[0]);
     expect(chips[0]).toHaveAttribute('aria-pressed', 'true');

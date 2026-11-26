@@ -85,5 +85,7 @@ export const paths = Object.freeze({
   home: () => '/',
   section: (/** @type {string} */ id) => `/#${id}`,
   projects: () => '/#projects',
+  /** Every case file, with the filters (`/projects`). */
+  allProjects: () => '/projects',
   project: (/** @type {string} */ slug) => `/projects/${slug}`,
 });

@@ -52,7 +52,11 @@ const capture =
 function projectsPage(
   /** @type {{ lang: 'ar' | 'en', query: Record<string, any> }} */ { lang, query },
 ) {
-  const all = PROJECTS[lang];
+  // `featured=1` filters like the API does (today it returns `[]`).
+  const featured = ['1', 'true'].includes(String(query.featured));
+  const all = featured
+    ? PROJECTS[lang].filter((project) => project.is_featured === true)
+    : PROJECTS[lang];
   const perPage = Math.min(Math.max(Number(query.per_page) || 9, 1), 50);
   const lastPage = Math.max(Math.ceil(all.length / perPage), 1);
   const page = Math.min(Math.max(Number(query.page) || 1, 1), lastPage);

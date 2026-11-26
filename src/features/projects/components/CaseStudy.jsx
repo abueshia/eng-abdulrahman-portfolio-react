@@ -74,7 +74,7 @@ export function CaseStudy({ project, next }) {
               <LocalizedLink to={paths.home()}>{t('caseStudy.home')}</LocalizedLink>
             </li>
             <li>
-              <LocalizedLink to={paths.projects()}>{t('caseStudy.work')}</LocalizedLink>
+              <LocalizedLink to={paths.allProjects()}>{t('caseStudy.work')}</LocalizedLink>
             </li>
             <li aria-current="page">{project.title}</li>
           </ol>

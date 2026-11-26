@@ -6,14 +6,18 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import '@/i18n/work';
 import { Section } from '@/components/layout/Section';
 import { SectionFx } from '@/components/layout/SectionFx';
+import { Button } from '@/components/ui/Button';
+import { LineIcon } from '@/components/ui/LineIcon';
+import { LocalizedLink } from '@/components/ui/LocalizedLink';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { getStation, stationForSection } from '@/config/journey';
+import { paths } from '@/config/routes';
 import { useHydrated } from '@/hooks/useHydrated';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { EVENTS, emit } from '@/lib/events';
 import { EASE } from '@/utils/motion';
 import { useFlip } from '../hooks/useFlip';
-import { useProjects } from '../hooks/useProjects';
+import { useFeaturedProjects, useProjects } from '../hooks/useProjects';
 import {
   NO_FILTERS,
   facets as buildFacets,
@@ -84,10 +88,23 @@ function useSwipePager(listRef, pagerRef, total) {
  * - Phones: a purpose-built horizontal swipe deck with a pager.
  * - The scroll scenes (each record "read from disk", parallax, the query
  *   cursor riding the index) live in the lazy director.
+ *
+ * Two variants:
+ * - `home` (default): the three home-page case files (featured, topped up
+ *   with the latest; one query, see `useFeaturedProjects`), no filters, and a
+ *   "View all projects" link to `/projects`. Hidden when the API has none.
+ * - `index`: the `/projects` page. Every project, the query console, and the
+ *   heading is the page's `<h1>`.
+ *
+ * @param {{ variant?: 'home' | 'index' }} props
  */
-export default function ProjectsSection() {
+export default function ProjectsSection({ variant = 'home' }) {
+  const isIndex = variant === 'index';
   const { t } = useTranslation();
-  const { data } = useProjects();
+  // Both hooks always run (rules of hooks); the unused one is disabled.
+  const featuredQuery = useFeaturedProjects(!isIndex);
+  const allQuery = useProjects(isIndex);
+  const { data, isSuccess } = isIndex ? allQuery : featuredQuery;
   const hydrated = useHydrated();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -98,12 +115,12 @@ export default function ProjectsSection() {
   const all = useMemo(() => data?.data ?? [], [data]);
   const facetData = useMemo(() => buildFacets(all), [all]);
   const filters = useMemo(() => {
-    if (!hydrated) return NO_FILTERS;
+    if (!hydrated || !isIndex) return NO_FILTERS;
     return parseFilters(searchParams, {
       types: facetData.types.map((type) => type.slug),
       techs: facetData.techs.map((tech) => tech.slug),
     });
-  }, [hydrated, searchParams, facetData]);
+  }, [hydrated, isIndex, searchParams, facetData]);
   const visible = useMemo(() => filterProjects(all, filters), [all, filters]);
   const key = filtersKey(filters);
   const reduced = useReducedMotion();
@@ -124,6 +141,9 @@ export default function ProjectsSection() {
 
   useSwipePager(listRef, pagerRef, visible.length);
 
+  // Never an empty home section: nothing to show once the API has answered.
+  if (!isIndex && isSuccess && all.length === 0) return null;
+
   return (
     <Section id="projects" className="projects">
       <div className="container-fluid projects__layout">
@@ -133,14 +153,17 @@ export default function ProjectsSection() {
           eyebrow={<span dir="ltr">db · projects</span>}
           title={t('sections.projects')}
           description={t('projects.lead')}
+          as={isIndex ? 'h1' : 'h2'}
         />
 
-        <QueryConsole
-          filters={filters}
-          facets={facetData}
-          count={visible.length}
-          onChange={setFilters}
-        />
+        {isIndex && (
+          <QueryConsole
+            filters={filters}
+            facets={facetData}
+            count={visible.length}
+            onChange={setFilters}
+          />
+        )}
 
         <div className="cases-wrap" data-cases>
           <span className="cases__spine" aria-hidden="true">
@@ -181,6 +204,15 @@ export default function ProjectsSection() {
             </span>
             <span className="cases__bar" />
             <span>{t('projects.swipe')}</span>
+          </p>
+        )}
+
+        {!isIndex && all.length > 0 && (
+          <p className="projects__more">
+            <Button as={LocalizedLink} to={paths.allProjects()} variant="secondary" size="lg">
+              {t('projects.viewAll')}
+              <LineIcon name="arrow" className="rtl:-scale-x-100" />
+            </Button>
           </p>
         )}
       </div>
